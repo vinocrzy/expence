@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Wallet, ArrowRightLeft, Tag, Users, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, Wallet, ArrowRightLeft, Tag, Users, User, LogOut, Landmark } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
@@ -15,6 +15,7 @@ export default function Navbar() {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/accounts', label: 'Accounts', icon: Wallet },
     { href: '/transactions', label: 'Transactions', icon: ArrowRightLeft },
+    { href: '/loans', label: 'Loans', icon: Landmark },
     { href: '/categories', label: 'Categories', icon: Tag },
     { href: '/household', label: 'Household', icon: Users },
   ];

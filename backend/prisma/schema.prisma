@@ -61,6 +61,7 @@ model Account {
   
   transactions Transaction[]
   recurringRules RecurringRule[]
+  loans       Loan[]
 }
 
 // Enum TransactionType removed, handled as String
@@ -97,6 +98,8 @@ model Transaction {
   creator     User @relation(fields: [createdBy], references: [id])
   
   createdAt   DateTime @default(now())
+  
+  loanEmi     LoanEMI?
 }
 
 // Enum CategoryKind removed
@@ -117,15 +120,60 @@ model Loan {
   householdId String
   household   Household @relation(fields: [householdId], references: [id])
   
+  name        String      @default("My Loan")
   lender      String?
-  borrower    String?
+  type        String      @default("PERSONAL") // HOME, PERSONAL, AUTO, OTHER
+  
   principal   Decimal
   interestRate Decimal
+  interestType String     @default("REDUCING") // REDUCING, FLAT
+  
   startDate   DateTime
-  termMonths  Int
+  tenureMonths Int        // Was termMonths
+  
   emiAmount   Decimal
-  outstanding Decimal
-  amortizationSchedule String? // Was Json
+  
+  linkedAccountId String?
+  linkedAccount   Account? @relation(fields: [linkedAccountId], references: [id])
+  
+  outstandingPrincipal Decimal // Was outstanding
+  
+  status      String      @default("ACTIVE") // ACTIVE, CLOSED, FORECLOSED
+  
+  createdAt   DateTime @default(now())
+  
+  emis        LoanEMI[]
+  prepayments LoanPrepayment[]
+}
+
+model LoanEMI {
+  id          String   @id @default(uuid())
+  loanId      String
+  loan        Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  
+  emiNumber   Int
+  dueDate     DateTime
+  
+  principalComponent Decimal
+  interestComponent  Decimal
+  totalAmount        Decimal
+  
+  status      String   @default("PENDING") // PENDING, PAID, SKIPPED, PARTIAL
+  paidDate    DateTime?
+  
+  transactionId String?   @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+}
+
+model LoanPrepayment {
+  id          String   @id @default(uuid())
+  loanId      String
+  loan        Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  
+  amount      Decimal
+  date        DateTime
+  strategy    String   // REDUCE_TENURE, REDUCE_EMI
+  
   createdAt   DateTime @default(now())
 }
 
