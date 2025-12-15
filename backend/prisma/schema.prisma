@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite does not support Enums or JSON natively in Prisma the same way as Postgres.
+// We convert Enums to String and Json to String (stored as serialized JSON).
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  
+  householdId  String?
+  household    Household? @relation(fields: [householdId], references: [id])
+  
+  accounts     Account[]
+  createdTransactions Transaction[]
+  alerts       Alert[]
+}
+
+model Household {
+  id        String   @id @default(uuid())
+  name      String
+  inviteCode String  @unique @default(cuid()) // Simple unique code for joining
+  createdAt DateTime @default(now())
+  
+  users     User[]
+  accounts  Account[]
+  categories Category[]
+  loans     Loan[]
+  subscriptions Subscription[]
+  goals     Goal[]
+  people    Person[]
+  recurringRules RecurringRule[]
+}
+
+// Enum AccountType removed, handled as String in application
+model Account {
+  id          String      @id @default(uuid())
+  householdId String
+  household   Household   @relation(fields: [householdId], references: [id])
+  
+  userId      String?     
+  user        User?       @relation(fields: [userId], references: [id])
+  
+  type        String      // Was AccountType
+  name        String
+  currency    String      @default("INR") // Default to Indian Rupee
+  balance     Decimal     @default(0)
+  meta        String?     // Was Json, stored as stringified JSON
+  createdAt   DateTime    @default(now())
+  
+  transactions Transaction[]
+  recurringRules RecurringRule[]
+}
+
+// Enum TransactionType removed, handled as String
+model Transaction {
+  id          String          @id @default(uuid())
+  
+  accountId   String
+  account     Account         @relation(fields: [accountId], references: [id])
+  
+  amount      Decimal
+  currency    String          @default("INR")
+  type        String          // Was TransactionType
+  
+  categoryId  String?
+  category    Category?       @relation(fields: [categoryId], references: [id])
+  
+  subCategory String?
+  description String?
+  date        DateTime
+  // tags        String[] // SQLite doesn't natively support arrays
+  tags        String?     // Stored as comma-separated string or stringified JSON
+  
+  counterpartyId String?
+  person         Person? @relation(fields: [counterpartyId], references: [id])
+
+  linkedTransactionId String?  @unique
+  linkedTransaction   Transaction? @relation("TransferLink", fields: [linkedTransactionId], references: [id])
+  linkedFrom          Transaction? @relation("TransferLink")
+
+  recurringRuleId String?
+  recurringRule   RecurringRule? @relation(fields: [recurringRuleId], references: [id])
+  
+  createdBy   String
+  creator     User @relation(fields: [createdBy], references: [id])
+  
+  createdAt   DateTime @default(now())
+}
+
+// Enum CategoryKind removed
+model Category {
+  id          String       @id @default(uuid())
+  householdId String
+  household   Household    @relation(fields: [householdId], references: [id])
+  name        String
+  kind        String       // Was CategoryKind
+  color       String?
+  
+  transactions Transaction[]
+  recurringRules RecurringRule[]
+}
+
+model Loan {
+  id          String   @id @default(uuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+  
+  lender      String?
+  borrower    String?
+  principal   Decimal
+  interestRate Decimal
+  startDate   DateTime
+  termMonths  Int
+  emiAmount   Decimal
+  outstanding Decimal
+  amortizationSchedule String? // Was Json
+  createdAt   DateTime @default(now())
+}
+
+// Enum SubscriptionPeriod removed
+model Subscription {
+  id          String   @id @default(uuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+  name        String
+  amount      Decimal
+  period      String     // Was SubscriptionPeriod
+  nextBillingDate DateTime
+  autoRenew   Boolean @default(true)
+  createdAt   DateTime @default(now())
+}
+
+// Enum GoalType removed
+model Goal {
+  id          String   @id @default(uuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+  name        String
+  targetAmount Decimal
+  currentAmount Decimal
+  targetDate  DateTime
+  type        String     // Was GoalType
+  createdAt   DateTime @default(now())
+}
+
+model Alert {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  type        String
+  condition   String
+  nextTrigger DateTime?
+  isActive    Boolean  @default(true)
+}
+
+model Person {
+  id          String   @id @default(uuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+  name        String
+  contactInfo String?
+  notes       String?
+  transactions Transaction[]
+}
+
+model RecurringRule {
+  id          String   @id @default(uuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id])
+  ruleType    String
+  cron        String?
+  amount      Decimal
+  
+  accountId   String
+  account     Account  @relation(fields: [accountId], references: [id])
+  
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  
+  transactions Transaction[]
+}
