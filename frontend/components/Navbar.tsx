@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
     LayoutDashboard, ArrowRightLeft, Plus, BarChart2, User, 
-    Wallet, CreditCard, Landmark, LogOut, ChevronDown, Menu, Target 
+    Wallet, CreditCard, Landmark, LogOut, ChevronDown, Menu, Target,
+    MoreHorizontal, Home, Settings
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
@@ -16,6 +17,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [accounts, setAccounts] = useState([]);
   
   // Fetch accounts only if needed for FAB (lazy load or on mount?)
@@ -28,14 +30,13 @@ export default function Navbar() {
   
   if (!user) return null;
 
-  // Mobile Bottom Nav Items
+  // Mobile Bottom Nav Items (optimized count: 5)
   const mobileNavItems = [
-    { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
-    { href: '/transactions', label: 'Activity', icon: ArrowRightLeft },
-    { href: '/budgets', label: 'Budgets', icon: Target },
+    { href: '/dashboard', label: 'Home', icon: Home },
+    { href: '/finances', label: 'Wallet', icon: Wallet }, // Grouping: Accounts, Cards, Loans
     { href: '#add', label: 'Add', icon: Plus, isFab: true },
-    { href: '/analytics', label: 'Insights', icon: BarChart2 },
-    { href: '/profile', label: 'Profile', icon: User },
+    { href: '/budgets', label: 'Budgets', icon: Target },
+    { href: '#menu', label: 'Menu', icon: Menu, isMenu: true }, // Grouping: Activity, Insights, Household, Profile
   ];
 
   // Desktop Top Nav Items
@@ -45,7 +46,6 @@ export default function Navbar() {
       { href: '/budgets', label: 'Budgets' },
       // Finances Dropdown logic handled separately
       { href: '/analytics', label: 'Insights' },
-      { href: '/profile', label: 'Profile' },
   ];
 
   return (
@@ -126,6 +126,9 @@ export default function Navbar() {
                <div className="h-6 w-px bg-gray-800"></div>
                
                <div className="flex items-center gap-3">
+                    <Link href="/household" className="text-gray-400 hover:text-white transition-colors" title="Household Settings">
+                        <Settings className="h-5 w-5" />
+                    </Link>
                     <Link href="/profile" className="flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white">
                         <User className="h-5 w-5" />
                         <span className="hidden lg:inline">{user.name}</span>
@@ -149,9 +152,9 @@ export default function Navbar() {
                  </div>
                  <span className="font-bold text-white text-lg">Pocket</span>
            </Link>
-           <button onClick={logout} className="text-gray-400">
-               <LogOut className="h-5 w-5" />
-           </button>
+           <Link href="/profile" className="text-gray-400">
+               <User className="h-6 w-6" />
+           </Link>
       </nav>
 
       {/* Bottom Nav (Mobile) */}
@@ -175,6 +178,19 @@ export default function Navbar() {
                             </motion.button>
                         </div>
                     );
+                }
+
+                if (item.isMenu) {
+                    return (
+                        <button 
+                            key="menu"
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className={`relative flex flex-col items-center justify-center py-3 px-2 w-16 ${isMobileMenuOpen ? 'text-white' : 'text-gray-500'}`}
+                        >
+                            <Menu className="h-6 w-6 mb-1" />
+                            <span className="text-[10px] font-medium">Menu</span>
+                        </button>
+                    )
                 }
 
                 return (
@@ -201,6 +217,59 @@ export default function Navbar() {
             })}
         </div>
       </nav>
+
+      {/* Mobile Menu Drawer */}
+       {isMobileMenuOpen && (
+            <div className="fixed inset-0 z-50 md:hidden">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+                <motion.div 
+                    initial={{ y: '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: '100%' }}
+                    className="absolute bottom-0 left-0 right-0 bg-gray-900 rounded-t-3xl border-t border-gray-800 p-6 pb-24"
+                >
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xl font-bold">Menu</h3>
+                        <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 bg-gray-800 rounded-full">
+                            <ChevronDown className="h-6 w-6" />
+                        </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-4 gap-4">
+                        <Link href="/transactions" onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
+                             <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                 <ArrowRightLeft className="h-6 w-6" />
+                             </div>
+                             <span className="text-xs font-medium">Activity</span>
+                        </Link>
+                         <Link href="/analytics" onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
+                             <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
+                                 <BarChart2 className="h-6 w-6" />
+                             </div>
+                             <span className="text-xs font-medium">Insights</span>
+                        </Link>
+                        <Link href="/household" onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
+                             <div className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-500">
+                                 <Settings className="h-6 w-6" />
+                             </div>
+                             <span className="text-xs font-medium">Household</span>
+                        </Link>
+                        <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
+                             <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-gray-300">
+                                 <User className="h-6 w-6" />
+                             </div>
+                             <span className="text-xs font-medium">Profile</span>
+                        </Link>
+                    </div>
+
+                    <div className="mt-6 pt-6 border-t border-gray-800">
+                         <button onClick={logout} className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 text-red-500 rounded-xl font-bold hover:bg-red-500/20">
+                             <LogOut className="h-5 w-5" /> Logout
+                         </button>
+                    </div>
+                </motion.div>
+            </div>
+       )}
       {/* Spacer */}
       <div className="h-24 md:hidden"></div>
       
