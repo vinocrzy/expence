@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import api from '../lib/api';
 
 interface Account {
   id: string;
@@ -19,12 +20,22 @@ interface Category {
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit?: (data: any) => Promise<void>;
+  onSuccess?: () => void;
   initialData?: any;
+  initialType?: string;
   accounts: Account[];
 }
 
-export default function TransactionModal({ isOpen, onClose, onSubmit, initialData, accounts }: TransactionModalProps) {
+export default function TransactionModal({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  onSuccess,
+  initialData, 
+  initialType = 'EXPENSE',
+  accounts 
+}: TransactionModalProps) {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [accountId, setAccountId] = useState('');
@@ -36,12 +47,12 @@ export default function TransactionModal({ isOpen, onClose, onSubmit, initialDat
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch categories when modal opens (or could be passed as prop)
+  // Fetch categories when modal opens
   useEffect(() => {
     if (isOpen) {
-        import('../lib/api').then((mod) => {
-            mod.default.get('/categories').then(res => setCategories(res.data)).catch(console.error);
-        });
+      api.get('/categories')
+        .then(res => setCategories(res.data))
+        .catch(console.error);
     }
   }, [isOpen]);
 
@@ -56,16 +67,15 @@ export default function TransactionModal({ isOpen, onClose, onSubmit, initialDat
             setType(initialData.type);
             setDescription(initialData.description || '');
         } else {
-             // ... reset fields ...
             setAmount('');
             setDate(new Date().toISOString().split('T')[0]);
             setAccountId(accounts.length > 0 ? accounts[0].id : '');
             setCategoryId('');
-            setType('EXPENSE');
+            setType(initialType);
             setDescription('');
         }
     }
-  }, [initialData, isOpen, accounts]);
+  }, [initialData, isOpen, accounts, initialType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,15 +88,22 @@ export default function TransactionModal({ isOpen, onClose, onSubmit, initialDat
         return;
     }
 
+    const transactionData = {
+      amount: parseFloat(amount),
+      date: new Date(date).toISOString(),
+      accountId,
+      categoryId: categoryId || undefined,
+      type,
+      description
+    };
+
     try {
-      await onSubmit({
-        amount: parseFloat(amount),
-        date: new Date(date).toISOString(),
-        accountId,
-        categoryId: categoryId || undefined,
-        type,
-        description
-      });
+      if (onSubmit) {
+        await onSubmit(transactionData);
+      } else {
+        await api.post('/transactions', transactionData);
+      }
+      onSuccess?.();
       onClose();
     } catch (err: any) {
       console.error(err);

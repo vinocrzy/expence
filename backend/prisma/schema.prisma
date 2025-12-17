@@ -62,6 +62,7 @@ model Account {
   transactions Transaction[]
   recurringRules RecurringRule[]
   loans       Loan[]
+  creditCard  CreditCard?
 }
 
 // Enum TransactionType removed, handled as String
@@ -100,6 +101,7 @@ model Transaction {
   createdAt   DateTime @default(now())
   
   loanEmi     LoanEMI?
+  creditCardPayment CreditCardPayment?
 }
 
 // Enum CategoryKind removed
@@ -239,3 +241,66 @@ model RecurringRule {
   
   transactions Transaction[]
 }
+
+model CreditCard {
+  id                  String   @id @default(uuid())
+  accountId           String   @unique
+  account             Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  issuer              String?
+  creditLimit         Decimal
+  billingCycleStartDay Int     // Day of month (1-31)
+  dueDays             Int      // Days to pay after statement generation
+  interestRateMonthly Decimal
+  minimumDuePercent   Decimal  @default(5)
+  outstandingAmount   Decimal  @default(0)
+  
+  status              String   @default("ACTIVE") // ACTIVE, BLOCKED, CLOSED
+  
+  statements          CreditCardStatement[]
+  payments            CreditCardPayment[]
+}
+
+model CreditCardStatement {
+  id              String   @id @default(uuid())
+  creditCardId    String
+  creditCard      CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  
+  cycleStart      DateTime
+  cycleEnd        DateTime
+  statementDate   DateTime
+  
+  openingBalance  Decimal
+  totalSpends     Decimal
+  totalPayments   Decimal 
+  
+  interestCharged Decimal  @default(0)
+  lateFee         Decimal  @default(0)
+  
+  closingBalance  Decimal
+  minimumDue      Decimal
+  dueDate         DateTime
+  
+  status          String   @default("OPEN") // OPEN, PAID, OVERDUE
+  
+  createdAt       DateTime @default(now())
+  
+  payments        CreditCardPayment[] // Payments made *against* this statement
+}
+
+model CreditCardPayment {
+  id              String   @id @default(uuid())
+  creditCardId    String
+  creditCard      CreditCard @relation(fields: [creditCardId], references: [id])
+  
+  statementId     String?
+  statement       CreditCardStatement? @relation(fields: [statementId], references: [id])
+  
+  amount          Decimal
+  paymentDate     DateTime
+  paymentType     String   // FULL, PARTIAL, MINIMUM
+  
+  transactionId   String   @unique
+  transaction     Transaction @relation(fields: [transactionId], references: [id])
+}
+
