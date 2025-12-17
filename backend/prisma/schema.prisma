@@ -61,6 +61,7 @@ model Account {
   name        String
   currency    String      @default("INR") // Default to Indian Rupee
   balance     Decimal     @default(0)
+  isArchived  Boolean     @default(false)
   meta        String?     // Was Json, stored as stringified JSON
   createdAt   DateTime    @default(now())
   
@@ -109,7 +110,7 @@ model Transaction {
   creditCardPayment CreditCardPayment?
   
   budgetId    String?
-  budget      Budget? @relation(fields: [budgetId], references: [id])
+  budget      Budget? @relation(fields: [budgetId], references: [id], onDelete: SetNull)
 }
 
 // Enum CategoryKind removed
@@ -124,6 +125,7 @@ model Category {
   transactions Transaction[]
   recurringRules RecurringRule[]
   budgets     Budget[]
+  planItems   BudgetPlanItem[]
 }
 
 model Loan {
@@ -320,6 +322,7 @@ model Budget {
   
   name        String
   type        String   // RECURRING, EVENT
+  status      String   @default("ACTIVE") // ACTIVE, PLANNING
   amount      Decimal
   
   // For RECURRING
@@ -335,5 +338,22 @@ model Budget {
   createdAt   DateTime @default(now())
   
   transactions Transaction[]
+  planItems   BudgetPlanItem[]
+}
+
+model BudgetPlanItem {
+  id          String   @id @default(uuid())
+  budgetId    String
+  budget      Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  name        String
+  unitAmount  Decimal
+  quantity    Int      @default(1)
+  totalAmount Decimal
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  createdAt   DateTime @default(now())
 }
 

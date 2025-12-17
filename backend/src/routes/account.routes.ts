@@ -51,7 +51,10 @@ export default async function accountRoutes(fastify: FastifyInstance) {
     const { householdId } = request.user;
     try {
         const accounts = await prisma.account.findMany({ 
-            where: { householdId },
+            where: { 
+                householdId,
+                isArchived: (request.query as any).includeArchived === 'true' ? undefined : false
+            },
             orderBy: { createdAt: 'desc' }
         });
         return accounts;
@@ -138,10 +141,66 @@ export default async function accountRoutes(fastify: FastifyInstance) {
             return reply.status(404).send({ error: 'Account not found' });
         }
 
-        // Check if transactions exist (optional safety, skipping for now to allow easy delete)
+        // Check if transactions exist
+        const transactionCount = await prisma.transaction.count({ where: { accountId: id } });
+        
+        if (transactionCount > 0) {
+            return reply.status(409).send({ 
+                error: 'Cannot delete account with existing transactions',
+                code: 'HAS_TRANSACTIONS',
+                suggestion: 'ARCHIVE_ONLY'
+            });
+        }
+
         await prisma.account.delete({ where: { id } });
         
         return { message: 'Account deleted successfully' };
+    } catch (e) {
+        fastify.log.error(e);
+        reply.status(500).send({ error: 'Failed to delete account' });
+    }
+  });
+
+  // Archive Account
+  fastify.post('/accounts/:id/archive', {
+    onRequest: [fastify.authenticate]
+  }, async (request: any, reply: any) => {
+      const { id } = request.params;
+      const { householdId } = request.user;
+      
+      try {
+          const account = await prisma.account.findFirst({ where: { id, householdId } });
+          if (!account) return reply.status(404).send({ error: 'Account not found' });
+
+          await prisma.account.update({
+              where: { id },
+              data: { isArchived: true }
+          });
+          
+          return { success: true };
+      } catch (e) {
+          fastify.log.error(e);
+          reply.status(500).send({ error: 'Failed to archive account' });
+      }
+  });
+
+  // Unarchive Account
+  fastify.post('/accounts/:id/unarchive', {
+    onRequest: [fastify.authenticate]
+  }, async (request: any, reply: any) => {
+      const { id } = request.params;
+      const { householdId } = request.user;
+      
+      try {
+          const account = await prisma.account.findFirst({ where: { id, householdId } });
+          if (!account) return reply.status(404).send({ error: 'Account not found' });
+
+          await prisma.account.update({
+              where: { id },
+              data: { isArchived: false }
+          });
+          
+          return { success: true };
     } catch (e) {
         fastify.log.error(e);
         reply.status(500).send({ error: 'Failed to delete account' });

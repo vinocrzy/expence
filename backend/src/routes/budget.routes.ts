@@ -14,10 +14,12 @@ export default async function budgetRoutes(fastify: FastifyInstance) {
         const budgets = await prisma.budget.findMany({
             where: { 
                 householdId,
-                isActive: true
+                isActive: true,
+                ...(request.query.status ? { status: request.query.status } : {}) 
             },
             include: {
                 category: true,
+                planItems: true,
                 transactions: {
                     select: { 
                         id: true, 
@@ -62,13 +64,14 @@ export default async function budgetRoutes(fastify: FastifyInstance) {
                 amount: { type: 'number' },
                 categoryId: { type: 'string' },
                 startDate: { type: 'string' }, // ISO date
-                endDate: { type: 'string' }    // ISO date
+                endDate: { type: 'string' },    // ISO date
+                status: { type: 'string', enum: ['ACTIVE', 'PLANNING'] }
             }
         }
     }
   }, async (request: any, reply: any) => {
     const { householdId } = request.user;
-    const { name, type, amount, categoryId, startDate, endDate } = request.body;
+    const { name, type, amount, categoryId, startDate, endDate, status } = request.body;
 
     try {
         const budget = await prisma.budget.create({
@@ -79,7 +82,8 @@ export default async function budgetRoutes(fastify: FastifyInstance) {
                 amount,
                 categoryId: categoryId || null,
                 startDate: startDate ? new Date(startDate) : null,
-                endDate: endDate ? new Date(endDate) : null
+                endDate: endDate ? new Date(endDate) : null,
+                status: status || 'ACTIVE'
             }
         });
 
@@ -113,6 +117,141 @@ export default async function budgetRoutes(fastify: FastifyInstance) {
         reply.status(500).send({ error: 'Failed to fetch active event budgets' });
     }
   });
+
+  // Convert Budget (Planning -> Active)
+  fastify.post('/budgets/:id/convert', {
+    onRequest: [fastify.authenticate]
+  }, async (request: any, reply: any) => {
+    const { householdId } = request.user;
+    const { id } = request.params;
+
+    try {
+        const budget = await prisma.budget.updateMany({
+            where: { id, householdId, status: 'PLANNING' },
+            data: { status: 'ACTIVE' }
+        });
+
+        if (budget.count === 0) {
+             return reply.status(404).send({ error: 'Budget not found or already active' });
+        }
+
+        return { success: true };
+    } catch (e) {
+        fastify.log.error(e);
+        reply.status(500).send({ error: 'Failed to convert budget' });
+    }
+  });
+
+  // Add Plan Item
+  fastify.post('/budgets/:id/plan', {
+    onRequest: [fastify.authenticate],
+    schema: {
+        body: {
+            type: 'object',
+            required: ['name', 'unitAmount', 'quantity'],
+            properties: {
+                name: { type: 'string' },
+                unitAmount: { type: 'number' },
+                quantity: { type: 'number' },
+                categoryId: { type: 'string' }
+            }
+        }
+    }
+  }, async (request: any, reply: any) => {
+    const { householdId } = request.user;
+    const { id } = request.params;
+    const { name, unitAmount, quantity, categoryId } = request.body;
+
+    // Verify budget ownership
+    const budget = await prisma.budget.findFirst({
+        where: { id, householdId }
+    });
+    if (!budget) return reply.status(404).send({ error: 'Budget not found' });
+
+    try {
+        const item = await prisma.budgetPlanItem.create({
+            data: {
+                budgetId: id,
+                name,
+                unitAmount,
+                quantity,
+                totalAmount: unitAmount * quantity,
+                categoryId: categoryId || null
+            }
+        });
+        return item;
+    } catch (e) {
+        fastify.log.error(e);
+        reply.status(500).send({ error: 'Failed to add plan item' });
+    }
+  });
+
+  // Delete Plan Item
+  fastify.delete('/budgets/plan/:itemId', {
+    onRequest: [fastify.authenticate]
+  }, async (request: any, reply: any) => {
+    const { householdId } = request.user;
+    const { itemId } = request.params;
+
+    try {
+        // Verify via transaction or budget relation somewhat difficult directly if not careful, 
+        // but simple query works.
+        const item = await prisma.budgetPlanItem.findUnique({
+            where: { id: itemId },
+            include: { budget: true }
+        });
+
+        if (!item || item.budget.householdId !== householdId) {
+             return reply.status(404).send({ error: 'Item not found' });
+        }
+
+        await prisma.budgetPlanItem.delete({
+            where: { id: itemId }
+        });
+
+        return { success: true };
+    } catch (e) {
+        fastify.log.error(e);
+        reply.status(500).send({ error: 'Failed to delete plan item' });
+    }
+  });
+  // Delete Budget (Safe Delete)
+  fastify.delete('/budgets/:id', {
+    onRequest: [fastify.authenticate]
+  }, async (request: any, reply: any) => {
+    const { householdId } = request.user;
+    const { id } = request.params;
+
+    try {
+        const budget = await prisma.budget.findUnique({
+             where: { id },
+             include: { _count: { select: { transactions: true } } }
+        });
+
+        if (!budget || budget.householdId !== householdId) {
+            return reply.status(404).send({ error: 'Budget not found' });
+        }
+
+        if (budget.status === 'PLANNING') {
+            // Drafts are safe to hard delete (planItems cascade)
+            await prisma.budget.delete({ where: { id } });
+            return { success: true, message: 'Draft budget deleted' };
+        } else {
+            // Active budgets: Archive
+            // Even if 0 transactions, better to keep history of "Active" budgets unless explicitly requested?
+            // Prompt says: "Active budgets are archived"
+            await prisma.budget.update({ 
+                where: { id }, 
+                data: { isActive: false } 
+            });
+            return { success: true, message: 'Budget archived' };
+        }
+    } catch (e) {
+        fastify.log.error(e);
+        reply.status(500).send({ error: 'Failed to delete budget' });
+    }
+  });
+
   // Get Budget Breakdown (Insights)
   fastify.get('/budgets/:id/breakdown', {
     onRequest: [fastify.authenticate]

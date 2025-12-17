@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import api from '../../lib/api';
-import { Plus, Target, Calendar, TrendingUp, AlertTriangle } from 'lucide-react';
+import ConfirmationModal from '../../components/ConfirmationModal';
+import { Plus, Target, Calendar, TrendingUp, AlertTriangle, CheckCircle2, Trash2, Archive, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '../../lib/motion';
 
@@ -15,6 +16,16 @@ export default function BudgetsPage() {
   const [budgets, setBudgets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('ACTIVE'); // ACTIVE, PLANNING
+  
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    isDangerous: false,
+    confirmText: 'Confirm'
+  });
 
   useEffect(() => {
     fetchBudgets();
@@ -31,8 +42,42 @@ export default function BudgetsPage() {
     }
   };
 
-  const activeEvents = budgets.filter(b => b.type === 'EVENT' && b.isActive);
-  const recurringBudgets = budgets.filter(b => b.type === 'RECURRING' && b.isActive);
+  const convertBudget = async (id: string) => {
+      try {
+          await api.post(`/budgets/${id}/convert`);
+          fetchBudgets();
+      } catch(e) {
+          console.error(e);
+      }
+  };
+
+  const handleDeleteClick = (id: string, isDraft: boolean) => {
+    setConfirmModal({
+        isOpen: true,
+        title: isDraft ? 'Delete Draft Budget?' : 'Archive Active Budget?',
+        message: isDraft 
+            ? "Are you sure you want to delete this draft budget? This action cannot be undone." 
+            : "Are you sure you want to archive this active budget? It will be removed from your active list, but all transaction history will be preserved.",
+        isDangerous: isDraft, // Deleting is dangerous, Archiving is safer
+        confirmText: isDraft ? 'Delete Draft' : 'Archive Budget',
+        onConfirm: () => deleteBudget(id, isDraft)
+    });
+  };
+
+  const deleteBudget = async (id: string, isDraft: boolean) => {
+      const action = isDraft ? 'delete' : 'archive';
+      try {
+          await api.delete(`/budgets/${id}`);
+          fetchBudgets();
+      } catch (e) {
+          console.error(e);
+          alert(`Failed to ${action} budget`);
+      }
+  };
+
+  const activeEvents = budgets.filter(b => b.type === 'EVENT' && b.isActive && b.status === 'ACTIVE');
+  const recurringBudgets = budgets.filter(b => b.type === 'RECURRING' && b.isActive && b.status === 'ACTIVE');
+  const plannedBudgets = budgets.filter(b => b.status === 'PLANNING' && b.isActive);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
@@ -50,13 +95,93 @@ export default function BudgetsPage() {
             <button 
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 transition-colors"
+                style={{ backgroundColor: activeTab === 'PLANNING' ? '#F59E0B' : undefined }}
             >
                 <Plus className="h-5 w-5" />
-                Create Budget
+                {activeTab === 'PLANNING' ? 'Draft Budget' : 'Create Budget'}
             </button>
         </div>
 
-        {/* Event Budgets */}
+        {/* Tabs */}
+        <div className="flex gap-4 border-b border-gray-700 mb-8">
+            <button 
+                onClick={() => setActiveTab('ACTIVE')}
+                className={`pb-4 px-2 font-medium transition-colors relative ${activeTab === 'ACTIVE' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+                Active Budgets
+                {activeTab === 'ACTIVE' && (
+                    <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                )}
+            </button>
+            <button 
+                onClick={() => setActiveTab('PLANNING')}
+                className={`pb-4 px-2 font-medium transition-colors relative ${activeTab === 'PLANNING' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+                Budget Planner
+                {activeTab === 'PLANNING' && (
+                    <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500" />
+                )}
+            </button>
+        </div>
+
+        {activeTab === 'PLANNING' ? (
+            <motion.section 
+                key="planning"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid gap-4"
+            >
+                {plannedBudgets.length === 0 ? (
+                     <div className="text-center py-16 bg-gray-800/30 rounded-2xl border border-dashed border-gray-700">
+                        <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Calendar className="h-8 w-8 text-yellow-500" />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-300">No Planned Budgets</h3>
+                        <p className="text-sm text-gray-500 mt-2 max-w-sm mx-auto">
+                            Use the planner to sandbox future events or monthly budgets without affecting your current tracking.
+                        </p>
+                    </div>
+                ) : (
+                    plannedBudgets.map(budget => (
+                        <div key={budget.id} className="bg-gray-800 p-6 rounded-2xl border border-yellow-500/20 relative overflow-hidden group">
+                           <div className="absolute top-0 right-0 bg-yellow-500/20 text-yellow-500 text-[10px] uppercase font-bold px-3 py-1 rounded-bl-xl">
+                               Draft Mode
+                           </div>
+                           <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="text-xl font-bold">{budget.name}</h3>
+                                    <div className="text-sm text-gray-400 mt-1">
+                                        {budget.type} • {budget.amount ? `₹${budget.amount.toLocaleString()}` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-3 mt-4">
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, true); }}
+                                    className="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-red-400 flex items-center gap-1"
+                                >
+                                    <Trash2 className="h-3 w-3" /> Delete
+                                </button>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); router.push(`/budgets/${budget.id}/plan`); }}
+                                    className="px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white"
+                                >
+                                    Edit Plan
+                                </button>
+                                <button 
+                                    onClick={() => convertBudget(budget.id)}
+                                    className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-yellow-900/20"
+                                >
+                                    Convert to Active <CheckCircle2 className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </motion.section>
+        ) : (
+            <>
+                {/* Event Budgets */}
         {activeEvents.length > 0 && (
             <motion.section 
                 variants={staggerContainer}
@@ -86,7 +211,16 @@ export default function BudgetsPage() {
                                 </div>
                                 <div className="text-right">
                                     <div className="text-2xl font-bold font-mono">₹{budget.amount.toLocaleString()}</div>
-                                    <div className="text-xs text-gray-500 uppercase">Target</div>
+                                    <div className="text-xs text-gray-500 uppercase flex items-center justify-end gap-2 mt-1">
+                                        Target
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, false); }}
+                                            className="p-1 hover:text-red-400 text-gray-600 transition-colors"
+                                            title="Archive Budget"
+                                        >
+                                            <Archive className="h-3 w-3" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -144,12 +278,24 @@ export default function BudgetsPage() {
                 </div>
             )}
         </section>
+        </>
+      )}
 
       </main>
 
       {showCreateModal && (
-          <CreateBudgetModal onClose={() => setShowCreateModal(false)} onSuccess={fetchBudgets} />
+          <CreateBudgetModal onClose={() => setShowCreateModal(false)} onSuccess={fetchBudgets} initialStatus={activeTab} />
       )}
+      
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        isDangerous={confirmModal.isDangerous}
+        confirmText={confirmModal.confirmText}
+      />
     </div>
   );
 }
@@ -204,10 +350,11 @@ function BudgetTransactionsModal({ budget, onClose }: any) {
 
 // ... CreateBudgetModal ...
 
-function CreateBudgetModal({ onClose, onSuccess }: any) {
+function CreateBudgetModal({ onClose, onSuccess, initialStatus }: any) {
     const [name, setName] = useState('');
-    const [type, setType] = useState('EVENT'); // Default to Event for this task focus
+    const [type, setType] = useState('EVENT'); 
     const [amount, setAmount] = useState('');
+    const [status, setStatus] = useState(initialStatus || 'ACTIVE');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [loading, setLoading] = useState(false);
@@ -217,10 +364,10 @@ function CreateBudgetModal({ onClose, onSuccess }: any) {
         setLoading(true);
         try {
             await api.post('/budgets', {
-                name, type, amount: parseFloat(amount), startDate, endDate
+                name, type, amount: parseFloat(amount), startDate, endDate, status
             });
-            onSuccess();
-            onClose();
+            onClose(); // Close first
+            await onSuccess(); // Then refresh
         } catch (e) {
             console.error(e);
         } finally {
@@ -237,6 +384,23 @@ function CreateBudgetModal({ onClose, onSuccess }: any) {
                         <label className="text-sm text-gray-400">Budget Name</label>
                         <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-2 rounded-lg" required placeholder="e.g. Goa Trip" />
                     </div>
+                    
+                    {/* Status Selection (Simplified: if creating from Planner tab, default to PLANNING, user can override) */}
+                     <div>
+                         <label className="text-sm text-gray-400">Status</label>
+                         <select 
+                            value={status} 
+                            onChange={(e) => setStatus(e.target.value)} 
+                            className="w-full bg-gray-900 border border-gray-700 p-2 rounded-lg"
+                         >
+                             <option value="ACTIVE">Active (Live Tracking)</option>
+                             <option value="PLANNING">Planner (Sandbox)</option>
+                         </select>
+                         <div className="text-[10px] text-gray-500 mt-1">
+                             Use the tabs on the main screen to create different budget types.
+                         </div>
+                    </div>
+
                     <div>
                          <label className="text-sm text-gray-400">Type</label>
                          <select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-2 rounded-lg">

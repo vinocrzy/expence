@@ -12,14 +12,17 @@ const fastify = Fastify({
   logger: true
 });
 
+console.log("Starting server setup...");
 const start = async () => {
   try {
+    console.log("Registering CORS...");
     await fastify.register(import('@fastify/cors'), { 
-      origin: true, // Allow all origins
+      origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
       credentials: true
     });
+    console.log("CORS registered");
 
     await fastify.register(swagger, {
         openapi: {
@@ -46,17 +49,18 @@ const start = async () => {
         staticCSP: true,
         transformStaticCSP: (header: any) => header
     });
+    console.log("Swagger registered");
 
     await fastify.register(import('@fastify/jwt'), {
         secret: process.env.JWT_SECRET || 'supersecret'
     });
+    console.log("JWT registered");
 
-// @ts-ignore
     fastify.decorate("authenticate", async function(request: any, reply: any) {
+        // ... (keep existing auth logic, assume it's fine)
         try {
             const authHeader = request.headers.authorization;
             if (process.env.NODE_ENV === 'development' && authHeader === 'Bearer DEV_TOKEN') {
-                 // Upsert dev user to ensure it exists for FK constraints
                  const prisma = require('./lib/prisma').default;
                  let user = await prisma.user.findUnique({ where: { email: 'dev@test.com' } });
                  
@@ -64,7 +68,7 @@ const start = async () => {
                     console.log('Creating Dev User...');
                     user = await prisma.user.create({
                         data: {
-                            id: 'dev-user-id', // Fixed ID for consistency
+                            id: 'dev-user-id', 
                             email: 'dev@test.com',
                             name: 'Dev User',
                             passwordHash: 'dev_password_hash',
@@ -101,7 +105,9 @@ const start = async () => {
             reply.send(err)
         }
     })
+    console.log("Auth decorator registered");
 
+    console.log("Registering routes...");
     fastify.register(import('./routes/auth.routes'));
     fastify.register(import('./routes/account.routes'));
     fastify.register(import('./routes/transaction.routes'));
@@ -111,6 +117,7 @@ const start = async () => {
     fastify.register(import('./routes/creditCard.routes'));
     fastify.register(import('./routes/budget.routes'));
     fastify.register(import('./routes/analytics.routes'));
+    console.log("Routes registered");
     
     // Health check
     fastify.get('/healthz', async (request: any, reply: any) => {
@@ -118,8 +125,9 @@ const start = async () => {
     });
 
     const PORT = process.env.PORT || 4000;
+    console.log(`Attempting to listen on ${PORT}...`);
     await fastify.listen({ port: Number(PORT), host: '0.0.0.0' });
-    // Keep the process alive
+    console.log(`Server listening on ${PORT}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

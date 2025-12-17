@@ -4,13 +4,23 @@ import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import AccountModal from '../../components/AccountModal';
 import api from '../../lib/api';
-import { Wallet, Plus, Pencil, Trash2, CreditCard, Banknote, Landmark, TrendingUp } from 'lucide-react';
+import ConfirmationModal from '../../components/ConfirmationModal';
+import { Wallet, Plus, Pencil, Trash2, CreditCard, Banknote, Landmark, TrendingUp, Archive } from 'lucide-react';
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    isDangerous: false,
+    confirmText: 'Confirm'
+  });
 
   useEffect(() => {
     fetchAccounts();
@@ -37,14 +47,61 @@ export default function AccountsPage() {
     setIsModalOpen(true);
   };
 
+  const handleArchiveClick = (id: string) => {
+    setConfirmModal({
+        isOpen: true,
+        title: 'Archive Account?',
+        message: 'This account will be hidden from your main list, but its transaction history will be preserved. You can restore it later if needed.',
+        isDangerous: false,
+        confirmText: 'Archive',
+        onConfirm: () => handleArchive(id)
+    });
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setConfirmModal({
+        isOpen: true,
+        title: 'Delete Account?',
+        message: 'Are you sure you want to delete this account? This action cannot be undone.',
+        isDangerous: true,
+        confirmText: 'Delete',
+        onConfirm: () => handleDelete(id)
+    });
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+        await api.post(`/accounts/${id}/archive`);
+        fetchAccounts();
+    } catch (e) {
+        console.error(e);
+        alert('Failed to archive account');
+    }
+  };
+
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this account?')) return;
     try {
       await api.delete(`/accounts/${id}`);
       fetchAccounts();
-    } catch (error) {
-      console.error('Failed to delete account', error);
-      alert('Failed to delete account');
+    } catch (error: any) {
+      if (error.response?.status === 409 && error.response?.data?.code === 'HAS_TRANSACTIONS') {
+           // Close current modal first if open (though handleDelete is called after confirm)
+           // Logic check: handleDelete is the *action* of the first modal.
+           // We need to show *another* modal suggesting archive.
+           setTimeout(() => {
+               setConfirmModal({
+                   isOpen: true,
+                   title: 'Cannot Delete Account',
+                   message: 'This account has linked transactions and cannot be permanently deleted to preserve history. Would you like to ARCHIVE it instead?',
+                   isDangerous: false,
+                   confirmText: 'Archive Instead',
+                   onConfirm: () => handleArchive(id)
+               });
+           }, 200);
+      } else {
+          console.error('Failed to delete account', error);
+          alert('Failed to delete account');
+      }
     }
   };
 
@@ -110,8 +167,16 @@ export default function AccountsPage() {
                         <Pencil className="h-4 w-4" />
                     </button>
                     <button 
-                        onClick={() => handleDelete(account.id)}
+                        onClick={() => handleArchiveClick(account.id)}
+                        className="p-2 rounded-lg hover:bg-yellow-500/20 text-gray-400 hover:text-yellow-400 transition-colors"
+                        title="Archive Account"
+                    >
+                        <Archive className="h-4 w-4" />
+                    </button>
+                    <button 
+                        onClick={() => handleDeleteClick(account.id)}
                         className="p-2 rounded-lg hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
+                        title="Delete Account"
                     >
                         <Trash2 className="h-4 w-4" />
                     </button>
@@ -141,6 +206,16 @@ export default function AccountsPage() {
           onClose={() => setIsModalOpen(false)}
           onSubmit={handleSubmit}
           initialData={editingAccount}
+        />
+        
+        <ConfirmationModal
+            isOpen={confirmModal.isOpen}
+            onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+            onConfirm={confirmModal.onConfirm}
+            title={confirmModal.title}
+            message={confirmModal.message}
+            isDangerous={confirmModal.isDangerous}
+            confirmText={confirmModal.confirmText}
         />
       </main>
     </div>
