@@ -65,22 +65,29 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Category Breakdown (Current Month)
+  // Category Breakdown (Current Cycle)
   fastify.get('/analytics/categories', {
     onRequest: [fastify.authenticate]
   }, async (request: any, reply: any) => {
     const { householdId } = request.user;
     
     try {
-        const start = startOfMonth(new Date());
-        const end = endOfMonth(new Date());
+        const household = await prisma.household.findUnique({ 
+            where: { id: householdId } 
+        });
+
+        if (!household) return reply.status(404).send({ error: 'Household not found' });
+
+        // Lazy import to avoid circular dep issues if any, or just import at top
+        const { getBudgetContext } = require('../lib/budget');
+        const { startDate, endDate, description } = getBudgetContext(new Date(), household.budgetMode, household.budgetConfig);
 
         const transactions = await prisma.transaction.findMany({
             where: {
                 account: { householdId },
                 date: {
-                    gte: start,
-                    lte: end
+                    gte: startDate,
+                    lte: endDate
                 },
                 type: 'EXPENSE'
             },
@@ -97,7 +104,17 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
             categoryMap.set(catName, current);
         });
 
-        return Array.from(categoryMap.values());
+        // Return object-wrapped response to include context, or stick to array?
+        // Changing to object { data, context } is cleaner but requires FE change.
+        // Let's do it and fix FE.
+        return {
+            data: Array.from(categoryMap.values()),
+            context: {
+                description,
+                startDate,
+                endDate
+            }
+        };
 
     } catch (e) {
         fastify.log.error(e);

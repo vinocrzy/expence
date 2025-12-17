@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
     LayoutDashboard, ArrowRightLeft, Plus, BarChart2, User, 
-    Wallet, CreditCard, Landmark, LogOut, ChevronDown, Menu 
+    Wallet, CreditCard, Landmark, LogOut, ChevronDown, Menu, Target 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
@@ -32,6 +32,7 @@ export default function Navbar() {
   const mobileNavItems = [
     { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
     { href: '/transactions', label: 'Activity', icon: ArrowRightLeft },
+    { href: '/budgets', label: 'Budgets', icon: Target },
     { href: '#add', label: 'Add', icon: Plus, isFab: true },
     { href: '/analytics', label: 'Insights', icon: BarChart2 },
     { href: '/profile', label: 'Profile', icon: User },
@@ -41,6 +42,7 @@ export default function Navbar() {
   const desktopNavItems = [
       { href: '/dashboard', label: 'Home' },
       { href: '/transactions', label: 'Activity' },
+      { href: '/budgets', label: 'Budgets' },
       // Finances Dropdown logic handled separately
       { href: '/analytics', label: 'Insights' },
       { href: '/profile', label: 'Profile' },

@@ -12,7 +12,7 @@ import {
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>({ accounts: [], monthly: [], categories: [] });
+  const [data, setData] = useState<any>({ accounts: [], monthly: [], categories: [], context: null });
 
   useEffect(() => {
     if (!authLoading) {
@@ -30,7 +30,8 @@ export default function DashboardPage() {
       setData({ 
         accounts: acc.data, 
         monthly: mon.data, 
-        categories: cat.data 
+        categories: cat.data.data || cat.data, // Fallback if API rollback
+        context: cat.data.context
       });
     } catch (e) {
       console.error(e);
@@ -103,7 +104,7 @@ export default function DashboardPage() {
 
             {/* Expense Categories Pie Chart */}
             <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50 shadow-lg">
-                <h3 className="text-lg font-bold text-white mb-6">Expense Breakdown (This Month)</h3>
+                <h3 className="text-lg font-bold text-white mb-6">Expense Breakdown ({data.context?.description || 'This Month'})</h3>
                 <div className="h-64 w-full">
                     {data.categories.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-gray-500">

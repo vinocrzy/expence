@@ -73,4 +73,42 @@ export default async function householdRoutes(fastify: FastifyInstance) {
         reply.status(500).send({ error: 'Failed to join household' });
     }
   });
+
+  // Update Household Settings
+  fastify.patch('/household', {
+    onRequest: [fastify.authenticate],
+    schema: {
+        body: {
+            type: 'object',
+            properties: {
+                budgetMode: { type: 'string', enum: ['CALENDAR', 'SALARY', 'CASHFLOW'] },
+                budgetConfig: { type: 'object' },
+                name: { type: 'string' }
+            }
+        }
+    }
+  }, async (request: any, reply: any) => {
+      const { householdId } = request.user;
+      const { budgetMode, budgetConfig, name } = request.body;
+      
+      try {
+          const data: any = {};
+          if (budgetMode) data.budgetMode = budgetMode;
+          // Prisma expects String for budgetConfig, but we receive Object here usually? 
+          // Schema says 'budgetConfig: { type: 'object' }'. Fastify validates it as object.
+          // We need to stringify it.
+          if (budgetConfig) data.budgetConfig = JSON.stringify(budgetConfig);
+          if (name) data.name = name;
+          
+          const household = await prisma.household.update({
+              where: { id: householdId },
+              data
+          });
+          
+          return household;
+      } catch (e) {
+          fastify.log.error(e);
+          return reply.status(500).send({ error: 'Failed to update household' });
+      }
+  });
 }

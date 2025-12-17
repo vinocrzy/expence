@@ -15,7 +15,10 @@ const fastify = Fastify({
 const start = async () => {
   try {
     await fastify.register(import('@fastify/cors'), { 
-      origin: true // Allow all origins
+      origin: true, // Allow all origins
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      credentials: true
     });
 
     await fastify.register(swagger, {
@@ -106,6 +109,7 @@ const start = async () => {
     fastify.register(import('./routes/household.routes'));
     fastify.register(import('./routes/loan.routes'));
     fastify.register(import('./routes/creditCard.routes'));
+    fastify.register(import('./routes/budget.routes'));
     fastify.register(import('./routes/analytics.routes'));
     
     // Health check

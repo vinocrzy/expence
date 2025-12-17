@@ -52,12 +52,13 @@ export default async function transactionRoutes(fastify: FastifyInstance) {
                 accountId: { type: 'string' },
                 categoryId: { type: 'string' },
                 type: { type: 'string', enum: ['INCOME', 'EXPENSE', 'TRANSFER'] },
-                description: { type: 'string' }
+                description: { type: 'string' },
+                budgetId: { type: 'string' }
             }
         }
     }
   }, async (request: any, reply: any) => {
-    const { amount, date, accountId, categoryId, type, description } = request.body;
+    const { amount, date, accountId, categoryId, type, description, budgetId } = request.body;
     const { id: userId, householdId } = request.user;
 
     try {
@@ -85,6 +86,7 @@ export default async function transactionRoutes(fastify: FastifyInstance) {
                     categoryId,
                     type,
                     description,
+                    budgetId,
                     createdBy: userId,
                     currency: account.currency // Inherit account currency
                 },

@@ -15,6 +15,8 @@ export default function Profile() {
   const [email, setEmail] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [budgetMode, setBudgetMode] = useState('CALENDAR');
+  const [salaryDay, setSalaryDay] = useState(1);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -27,6 +29,17 @@ export default function Profile() {
       setName(user.name);
       setEmail(user.email);
     }
+    if (user?.householdId) {
+        api.get('/household').then(res => {
+            if(res.data.budgetMode) setBudgetMode(res.data.budgetMode);
+             if(res.data.budgetConfig) {
+                 try {
+                    const conf = JSON.parse(res.data.budgetConfig);
+                    if(conf.salaryDay) setSalaryDay(conf.salaryDay);
+                 } catch(e) {}
+            }
+        });
+    }
   }, [user]);
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -36,6 +49,12 @@ export default function Profile() {
 
     try {
       await api.put('/auth/me', { name, email });
+      if (user.householdId) {
+          await api.patch('/household', {
+              budgetMode,
+              budgetConfig: { salaryDay }
+          });
+      }
       await refreshUser();
       setMessage({ type: 'success', text: 'Profile updated successfully' });
     } catch (e: any) {
@@ -98,6 +117,44 @@ export default function Profile() {
                 <code className="block w-full p-3 bg-gray-900/50 rounded-lg text-sm text-purple-300 font-mono break-all select-all">
                     {user.householdId || 'No active household'}
                 </code>
+            </div>
+
+            {/* Budget Settings */}
+            <div className="pt-8 border-t border-gray-700/50">
+                <h2 className="text-xl font-bold text-white mb-6">Budget Settings</h2>
+                <div className="space-y-6">
+                     <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300 ml-1">Budget Mode</label>
+                        <select 
+                            value={budgetMode}
+                            onChange={(e) => setBudgetMode(e.target.value)}
+                            className="block w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                        >
+                            <option value="CALENDAR">Calendar Month (Default)</option>
+                            <option value="SALARY">Salary Cycle</option>
+                            <option value="CASHFLOW">Cashflow Window</option>
+                        </select>
+                        <p className="text-xs text-gray-500 ml-1">
+                            {budgetMode === 'CALENDAR' && 'Budgets run from 1st to last day of each month.'}
+                            {budgetMode === 'SALARY' && 'Budgets run from your payday to the day before next payday.'}
+                            {budgetMode === 'CASHFLOW' && 'Budgets track available cash until next expected income.'}
+                        </p>
+                    </div>
+
+                    {budgetMode === 'SALARY' && (
+                         <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-300 ml-1">Salary Day of Month</label>
+                            <input
+                                type="number"
+                                min="1"
+                                max="31"
+                                value={salaryDay}
+                                onChange={(e) => setSalaryDay(parseInt(e.target.value))}
+                                className="block w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
 
             {message && (

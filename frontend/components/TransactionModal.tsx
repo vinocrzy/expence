@@ -46,6 +46,8 @@ export default function TransactionModal({
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [activeEvents, setActiveEvents] = useState<any[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState('');
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -53,6 +55,12 @@ export default function TransactionModal({
       api.get('/categories')
         .then(res => setCategories(res.data))
         .catch(console.error);
+        
+      if (process.env.NEXT_PUBLIC_ENABLE_EVENT_BUDGETS !== 'false') {
+          api.get('/budgets/events/active')
+            .then(res => setActiveEvents(res.data))
+            .catch(() => setActiveEvents([]));
+      }
     }
   }, [isOpen]);
 
@@ -69,10 +77,11 @@ export default function TransactionModal({
         } else {
             setAmount('');
             setDate(new Date().toISOString().split('T')[0]);
-            setAccountId(accounts.length > 0 ? accounts[0].id : '');
             setCategoryId('');
             setType(initialType);
             setDescription('');
+            setDescription('');
+            setSelectedEventId('');
         }
     }
   }, [initialData, isOpen, accounts, initialType]);
@@ -94,7 +103,8 @@ export default function TransactionModal({
       accountId,
       categoryId: categoryId || undefined,
       type,
-      description
+      description,
+      budgetId: selectedEventId || undefined
     };
 
     try {
@@ -202,6 +212,23 @@ export default function TransactionModal({
               placeholder="What is this for?"
             />
           </div>
+
+          {/* Event Budget Tag */}
+          {activeEvents.length > 0 && (
+             <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Tag Event (Optional)</label>
+                <select
+                    value={selectedEventId}
+                    onChange={(e) => setSelectedEventId(e.target.value)}
+                    className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                >
+                    <option value="">None (Regular Budget)</option>
+                    {activeEvents.map(evt => (
+                        <option key={evt.id} value={evt.id}>{evt.name}</option>
+                    ))}
+                </select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
              {/* ... Account & Date ... */}
