@@ -49,12 +49,22 @@ export default async function accountRoutes(fastify: FastifyInstance) {
     onRequest: [fastify.authenticate]
   }, async (request: any, reply: any) => {
     const { householdId } = request.user;
+    const { updatedAfter } = request.query as any;
+
     try {
+        const where: any = { 
+            householdId,
+            isArchived: (request.query as any).includeArchived === 'true' ? undefined : false
+        };
+
+        if (updatedAfter) {
+            where.updatedAt = {
+                gt: new Date(updatedAfter)
+            };
+        }
+
         const accounts = await prisma.account.findMany({ 
-            where: { 
-                householdId,
-                isArchived: (request.query as any).includeArchived === 'true' ? undefined : false
-            },
+            where,
             orderBy: { createdAt: 'desc' }
         });
         return accounts;

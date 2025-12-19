@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { X } from 'lucide-react';
 import api from '../lib/api';
+import { useCategories, useTransactionMutations } from '../hooks/useOfflineData';
 
 interface Account {
   id: string;
@@ -27,7 +28,7 @@ interface TransactionModalProps {
   accounts: Account[];
 }
 
-export default function TransactionModal({ 
+function TransactionModal({ 
   isOpen, 
   onClose, 
   onSubmit, 
@@ -43,7 +44,8 @@ export default function TransactionModal({
   const [type, setType] = useState('EXPENSE');
   const [description, setDescription] = useState('');
   
-  const [categories, setCategories] = useState<Category[]>([]);
+  const { categories } = useCategories({ subscribe: false });
+  const { addTransaction } = useTransactionMutations();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeEvents, setActiveEvents] = useState<any[]>([]);
@@ -52,9 +54,7 @@ export default function TransactionModal({
   // Fetch categories when modal opens
   useEffect(() => {
     if (isOpen) {
-      api.get('/categories')
-        .then(res => setCategories(res.data))
-        .catch(console.error);
+        // Categories handled by hook
         
       if (process.env.NEXT_PUBLIC_ENABLE_EVENT_BUDGETS !== 'false') {
           api.get('/budgets/events/active')
@@ -111,7 +111,7 @@ export default function TransactionModal({
       if (onSubmit) {
         await onSubmit(transactionData);
       } else {
-        await api.post('/transactions', transactionData);
+        await addTransaction(transactionData);
       }
       onSuccess?.();
       onClose();
@@ -123,9 +123,9 @@ export default function TransactionModal({
     }
   };
 
+  const filteredCategories = useMemo(() => categories.filter(c => c.kind === type), [categories, type]);
+
   if (!isOpen) return null;
-  
-  const filteredCategories = categories.filter(c => c.kind === type);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -280,3 +280,5 @@ export default function TransactionModal({
     </div>
   );
 }
+
+export default memo(TransactionModal);

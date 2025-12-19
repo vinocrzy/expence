@@ -4,7 +4,7 @@ import {
     X, ArrowUpRight, ArrowDownLeft, RefreshCw, CreditCard, Landmark, Send 
 } from 'lucide-react';
 import TransactionModal from './TransactionModal';
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -14,10 +14,16 @@ interface QuickActionSheetProps {
   accounts: any[];
 }
 
-export default function QuickActionSheet({ isOpen, onClose, accounts }: QuickActionSheetProps) {
+function QuickActionSheet({ isOpen, onClose, accounts }: QuickActionSheetProps) {
   const router = useRouter();
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
   const [transactionType, setTransactionType] = useState('EXPENSE');
+
+  // Stabilize the onClose handler for TransactionModal to prevent re-renders
+  const handleTransactionModalClose = useCallback(() => {
+      setTransactionModalOpen(false);
+      onClose(); // Triggers parent close as well, assuming that's desired behavior from the inline code
+  }, [onClose]);
 
   const handleAction = (type: string) => {
       switch(type) {
@@ -119,7 +125,7 @@ export default function QuickActionSheet({ isOpen, onClose, accounts }: QuickAct
         {transactionModalOpen && (
              <TransactionModal
                 isOpen={transactionModalOpen}
-                onClose={() => { setTransactionModalOpen(false); onClose(); }} 
+                onClose={handleTransactionModalClose} 
                 accounts={accounts}
                 onSuccess={() => {}} 
                 initialType={transactionType}
@@ -152,3 +158,5 @@ function ActionButton({ icon: Icon, label, color, onClick }: any) {
         </motion.button>
     );
 }
+
+export default QuickActionSheet;

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
-import api from '../../lib/api';
+// import api from '../../lib/api'; // Removed direct API usage for analytics
 import { useAuth } from '../../context/AuthContext';
+import { useAccounts } from '../../hooks/useOfflineData';
+import { useAnalytics } from '../../hooks/useAnalytics';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend
@@ -11,41 +13,32 @@ import {
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>({ accounts: [], monthly: [], categories: [], context: null });
+  const { accounts, loading: accLoading } = useAccounts();
+  const { monthly, categories, loading: analyticsLoading } = useAnalytics();
+  
+  const loading = authLoading || accLoading || analyticsLoading;
 
-  useEffect(() => {
-    if (!authLoading) {
-      if (user) fetchData();
-    }
-  }, [user, authLoading]);
-
-  const fetchData = async () => {
-    try {
-      const [acc, mon, cat] = await Promise.all([
-        api.get('/accounts'),
-        api.get('/analytics/monthly'),
-        api.get('/analytics/categories')
-      ]);
-      setData({ 
-        accounts: acc.data, 
-        monthly: mon.data, 
-        categories: cat.data.data || cat.data, // Fallback if API rollback
-        context: cat.data.context
-      });
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+  // Derive total balance from accounts
+  const totalBalance = accounts?.reduce((acc: any, curr: any) => acc + Number(curr.balance), 0) || 0;
+  const formattedBalance = totalBalance.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
+  
+  // Prepare data object for existing render logic
+  const data = {
+      accounts: accounts || [],
+      monthly: monthly || [],
+      categories: categories || [],
+      context: { description: 'This Month' }
   };
 
   if (authLoading || loading) {
     return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading...</div>;
   }
 
-  const totalBalance = data.accounts.reduce((acc: any, curr: any) => acc + Number(curr.balance), 0);
-  const formattedBalance = totalBalance.toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
+  if (loading) {
+// ...
+  }
+// ...
+// ... existing render logic uses 'data' and 'totalBalance' which are now derived above
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">

@@ -9,7 +9,7 @@ export default async function transactionRoutes(fastify: FastifyInstance) {
     onRequest: [fastify.authenticate]
   }, async (request: any, reply: any) => {
     const { householdId } = request.user;
-    const { limit = 50, offset = 0, accountId } = request.query;
+    const { limit = 50, offset = 0, accountId, updatedAfter } = request.query;
 
     const where: any = {
         account: {
@@ -19,6 +19,12 @@ export default async function transactionRoutes(fastify: FastifyInstance) {
 
     if (accountId) {
         where.accountId = accountId;
+    }
+
+    if (updatedAfter) {
+        where.updatedAt = {
+            gt: new Date(updatedAfter)
+        };
     }
 
     try {
@@ -47,6 +53,7 @@ export default async function transactionRoutes(fastify: FastifyInstance) {
             type: 'object',
             required: ['amount', 'date', 'accountId', 'type'],
             properties: {
+                id: { type: 'string' }, // Allow client-generated ID
                 amount: { type: 'number' }, // Sent as number, stored as Decimal
                 date: { type: 'string' },
                 accountId: { type: 'string' },
@@ -58,7 +65,7 @@ export default async function transactionRoutes(fastify: FastifyInstance) {
         }
     }
   }, async (request: any, reply: any) => {
-    const { amount, date, accountId, categoryId, type, description, budgetId } = request.body;
+    const { id, amount, date, accountId, categoryId, type, description, budgetId } = request.body;
     const { id: userId, householdId } = request.user;
 
     try {
@@ -80,6 +87,7 @@ export default async function transactionRoutes(fastify: FastifyInstance) {
         const transaction = await prisma.$transaction(async (tx: any) => {
             const t = await tx.transaction.create({
                 data: {
+                    id, // Use client ID if provided
                     amount,
                     date: new Date(date),
                     accountId,

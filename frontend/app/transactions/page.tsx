@@ -3,38 +3,20 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import TransactionModal from '../../components/TransactionModal';
-import api from '../../lib/api';
+import { useTransactions, useAccounts } from '../../hooks/useOfflineData';
 import { Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Trash2, Calendar, Search } from 'lucide-react';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { transactions, loading: txLoading, addTransaction, deleteTransaction } = useTransactions();
+  const { accounts, loading: accLoading } = useAccounts();
+  const loading = txLoading || accLoading;
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Basic filtering (can be expanded)
   const [filterType, setFilterType] = useState('ALL');
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [transRes, accRes] = await Promise.all([
-        api.get('/transactions'),
-        api.get('/accounts')
-      ]);
-      setTransactions(transRes.data);
-      setAccounts(accRes.data);
-    } catch (error) {
-      console.error('Failed to fetch data', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreate = () => {
     setIsModalOpen(true);
@@ -42,8 +24,8 @@ export default function TransactionsPage() {
 
   const handleSubmit = async (data: any) => {
     try {
-      await api.post('/transactions', data);
-      fetchData(); // Refresh list
+      await addTransaction(data);
+       // List updates automatically via hook
     } catch (error) {
       throw error; // Let modal handle error display
     }
@@ -52,8 +34,7 @@ export default function TransactionsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this transaction? This will revert the account balance.')) return;
     try {
-        await api.delete(`/transactions/${id}`);
-        fetchData();
+        await deleteTransaction(id);
     } catch (error) {
         console.error('Failed to delete transaction', error);
         alert('Failed to delete transaction');

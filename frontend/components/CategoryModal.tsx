@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useCategories } from '../hooks/useOfflineData';
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -16,6 +17,8 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
   const [color, setColor] = useState('#808080');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  const { addCategory } = useCategories();
 
   useEffect(() => {
     if (isOpen) {
@@ -38,11 +41,11 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
     setError('');
     
     try {
-      await onSubmit({
-        name,
-        kind,
-        color
-      });
+      if (onSubmit) {
+         await onSubmit({ name, kind, color });
+      } else {
+         await addCategory({ name, kind, color });
+      }
       onClose();
     } catch (err: any) {
       console.error(err);

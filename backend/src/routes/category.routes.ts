@@ -9,10 +9,19 @@ export default async function categoryRoutes(fastify: FastifyInstance) {
     onRequest: [fastify.authenticate]
   }, async (request: any, reply: any) => {
     const { householdId } = request.user;
+    const { updatedAfter } = request.query as any;
     
     try {
+        const where: any = { householdId };
+        
+        if (updatedAfter) {
+            where.updatedAt = {
+                gt: new Date(updatedAfter)
+            };
+        }
+
         const categories = await prisma.category.findMany({
-            where: { householdId },
+            where,
             orderBy: { name: 'asc' }
         });
         return categories;
@@ -30,6 +39,7 @@ export default async function categoryRoutes(fastify: FastifyInstance) {
             type: 'object',
             required: ['name', 'kind'],
             properties: {
+                id: { type: 'string' },
                 name: { type: 'string' },
                 kind: { type: 'string', enum: ['INCOME', 'EXPENSE'] },
                 color: { type: 'string' }
@@ -37,12 +47,13 @@ export default async function categoryRoutes(fastify: FastifyInstance) {
         }
     }
   }, async (request: any, reply: any) => {
-    const { name, kind, color } = request.body;
+    const { id, name, kind, color } = request.body;
     const { householdId } = request.user;
 
     try {
         const category = await prisma.category.create({
             data: {
+                id, // Use client ID
                 name,
                 kind, // 'INCOME' or 'EXPENSE'
                 color: color || '#808080',

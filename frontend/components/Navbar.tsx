@@ -5,13 +5,14 @@ import { usePathname } from 'next/navigation';
 import { 
     LayoutDashboard, ArrowRightLeft, Plus, BarChart2, User, 
     Wallet, CreditCard, Landmark, LogOut, ChevronDown, Menu, Target,
-    MoreHorizontal, Home, Settings
+    MoreHorizontal, Home, Settings, CloudOff, RefreshCw, CloudUpload
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import QuickActionSheet from './QuickActionSheet';
 import api from '../lib/api';
 import { motion } from 'framer-motion';
+import { useSyncStatus } from '../hooks/useSyncStatus';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -19,6 +20,12 @@ export default function Navbar() {
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [accounts, setAccounts] = useState([]);
+  const { isOnline, isSyncing, unsyncedCount, manualSync } = useSyncStatus();
+
+  const handleOpenQuickAction = useCallback(() => setIsQuickActionOpen(true), []);
+  const handleCloseQuickAction = useCallback(() => setIsQuickActionOpen(false), []);
+  const handleOpenMobileMenu = useCallback(() => setIsMobileMenuOpen(true), []);
+  const handleCloseMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
   
   // Fetch accounts only if needed for FAB (lazy load or on mount?)
   // Better to fetch on mount or Context. For now, fetch to pass to Sheet.
@@ -63,7 +70,24 @@ export default function Navbar() {
                  <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
                     Pocket
                  </span>
-              </Link>
+               </Link>
+               
+               {/* Status Indicator (Desktop) */}
+               <div className="ml-4">
+                 {!isOnline ? (
+                    <div className="px-2 py-1 rounded bg-red-500/20 text-red-500 text-xs font-bold flex items-center gap-1">
+                        <CloudOff className="w-3 h-3"/> Offline
+                    </div>
+                 ) : isSyncing ? (
+                    <div className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-500 text-xs font-bold flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3 animate-spin"/> Syncing...
+                    </div>
+                 ) : unsyncedCount > 0 ? (
+                    <button onClick={manualSync} className="px-2 py-1 rounded bg-blue-500/20 text-blue-500 text-xs font-bold flex items-center gap-1 hover:bg-blue-500/30 transition-colors">
+                        <CloudUpload className="w-3 h-3"/> {unsyncedCount} Pending
+                    </button>
+                 ) : null}
+               </div>
               
               {/* Desktop Links */}
               <div className="flex items-center gap-6">
@@ -117,7 +141,7 @@ export default function Navbar() {
             {/* Profile & Actions */}
             <div className="flex items-center gap-6">
                <button 
-                onClick={() => setIsQuickActionOpen(true)}
+                onClick={handleOpenQuickAction}
                 className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-purple-600/20"
                >
                    <Plus className="h-4 w-4" /> Add New
@@ -151,7 +175,20 @@ export default function Navbar() {
                  P
                  </div>
                  <span className="font-bold text-white text-lg">Pocket</span>
+                 <span className="font-bold text-white text-lg">Pocket</span>
            </Link>
+           
+            {/* Status Indicator (Mobile) */}
+            <div className="mr-auto ml-4">
+                 {!isOnline ? (
+                    <div className="px-2 py-1 rounded bg-red-500/20 text-red-500 text-xs font-bold flex items-center gap-1"><CloudOff className="w-3 h-3"/></div>
+                 ) : isSyncing ? (
+                    <div className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-500 text-xs font-bold flex items-center gap-1"><RefreshCw className="w-3 h-3 animate-spin"/></div>
+                 ) : unsyncedCount > 0 ? (
+                    <button onClick={manualSync} className="px-2 py-1 rounded bg-blue-500/20 text-blue-500 text-xs font-bold flex items-center gap-1"><CloudUpload className="w-3 h-3"/> {unsyncedCount}</button>
+                 ) : null}
+            </div>
+
            <Link href="/profile" className="text-gray-400">
                <User className="h-6 w-6" />
            </Link>
@@ -168,7 +205,7 @@ export default function Navbar() {
                      return (
                         <div key="fab" className="relative -top-5">
                             <motion.button 
-                                onClick={() => setIsQuickActionOpen(true)}
+                                onClick={handleOpenQuickAction}
                                 className="w-14 h-14 bg-gradient-to-tr from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-purple-600/40 border-4 border-gray-900"
                                 whileTap={{ scale: 0.9 }}
                                 whileHover={{ scale: 1.05 }}
@@ -184,7 +221,7 @@ export default function Navbar() {
                     return (
                         <button 
                             key="menu"
-                            onClick={() => setIsMobileMenuOpen(true)}
+                            onClick={handleOpenMobileMenu}
                             className={`relative flex flex-col items-center justify-center py-3 px-2 w-16 ${isMobileMenuOpen ? 'text-white' : 'text-gray-500'}`}
                         >
                             <Menu className="h-6 w-6 mb-1" />
@@ -221,7 +258,7 @@ export default function Navbar() {
       {/* Mobile Menu Drawer */}
        {isMobileMenuOpen && (
             <div className="fixed inset-0 z-50 md:hidden">
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseMobileMenu} />
                 <motion.div 
                     initial={{ y: '100%' }}
                     animate={{ y: 0 }}
@@ -230,31 +267,31 @@ export default function Navbar() {
                 >
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-xl font-bold">Menu</h3>
-                        <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 bg-gray-800 rounded-full">
+                        <button onClick={handleCloseMobileMenu} className="p-2 bg-gray-800 rounded-full">
                             <ChevronDown className="h-6 w-6" />
                         </button>
                     </div>
                     
                     <div className="grid grid-cols-4 gap-4">
-                        <Link href="/transactions" onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
+                        <Link href="/transactions" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
                              <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
                                  <ArrowRightLeft className="h-6 w-6" />
                              </div>
                              <span className="text-xs font-medium">Activity</span>
                         </Link>
-                         <Link href="/analytics" onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
+                         <Link href="/analytics" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
                              <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
                                  <BarChart2 className="h-6 w-6" />
                              </div>
                              <span className="text-xs font-medium">Insights</span>
                         </Link>
-                        <Link href="/household" onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
+                        <Link href="/household" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
                              <div className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-500">
                                  <Settings className="h-6 w-6" />
                              </div>
                              <span className="text-xs font-medium">Household</span>
                         </Link>
-                        <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
+                        <Link href="/profile" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
                              <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-gray-300">
                                  <User className="h-6 w-6" />
                              </div>
@@ -276,7 +313,7 @@ export default function Navbar() {
       {/* Global Quick Action Sheet */}
       <QuickActionSheet 
         isOpen={isQuickActionOpen} 
-        onClose={() => setIsQuickActionOpen(false)}
+        onClose={handleCloseQuickAction}
         accounts={accounts}
       />
     </>
