@@ -15,14 +15,8 @@ const fastify = Fastify({
 console.log("Starting server setup...");
 const start = async () => {
   try {
-    console.log("Registering CORS...");
-    await fastify.register(import('@fastify/cors'), { 
-      origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-      credentials: true
-    });
-    console.log("CORS registered");
+    // Security & CORS
+    await fastify.register(import('./plugins/security'));
 
     await fastify.register(swagger, {
         openapi: {
