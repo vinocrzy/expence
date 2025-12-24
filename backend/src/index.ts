@@ -120,6 +120,9 @@ const start = async () => {
     console.log("Routes registered");
     
     // Health check
+    fastify.get('/health', async (request: any, reply: any) => {
+      return { status: 'ok' };
+    });
     fastify.get('/healthz', async (request: any, reply: any) => {
       return { status: 'ok' };
     });
@@ -128,6 +131,17 @@ const start = async () => {
     console.log(`Attempting to listen on ${PORT}...`);
     await fastify.listen({ port: Number(PORT), host: '0.0.0.0' });
     console.log(`Server listening on ${PORT}`);
+
+    // Graceful shutdown
+    const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];
+    for (const signal of signals) {
+      process.on(signal, async () => {
+        console.log(`Received ${signal}, closing server...`);
+        await fastify.close();
+        console.log('Server closed');
+        process.exit(0);
+      });
+    }
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

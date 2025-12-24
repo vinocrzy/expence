@@ -28,27 +28,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-        if (process.env.NODE_ENV === 'development') {
-            // Speed up dev: always try to fetch current user with DEV_TOKEN
+        const token = localStorage.getItem('token');
+        if (token) {
             try {
-                const res = await api.get('/auth/me');
-                setUser(res.data);
-                // Also set a dummy token so other parts of app don't break
-                localStorage.setItem('token', 'DEV_TOKEN'); 
-            } catch (e) {
-                console.error('Dev auth failed', e);
-            }
-        } else {
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                const res = await api.get('/auth/me');
-                setUser(res.data);
-                } catch (error) {
-                console.error('Failed to fetch user', error);
-                localStorage.removeItem('token');
-                setUser(null);
-                }
+            const res = await api.get('/auth/me');
+            setUser(res.data);
+            } catch (error) {
+            console.error('Failed to fetch user', error);
+            localStorage.removeItem('token');
+            setUser(null);
             }
         }
       setLoading(false);

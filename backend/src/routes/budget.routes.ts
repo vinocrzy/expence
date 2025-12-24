@@ -310,7 +310,7 @@ export default async function budgetRoutes(fastify: FastifyInstance) {
         });
 
         // Fill in gaps if event has start/end dates
-        let timeline = [];
+        let timeline: { date: string; amount: any; }[] = [];
         if (budget.startDate && budget.endDate) {
             // Logic to fill dates later using a date library, for now, just sparse data
         }
@@ -340,7 +340,12 @@ export default async function budgetRoutes(fastify: FastifyInstance) {
         }));
 
         // 4. Smart Insights
-        const insights = [];
+        const insights: {
+            type: string;
+            title: string;
+            description: string;
+            severity: string;
+        }[] = [];
         
         // Insight: Highest Span Day
         if (timeline.length > 0) {

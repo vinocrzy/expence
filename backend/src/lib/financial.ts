@@ -23,7 +23,14 @@ export class FinancialCalculator {
     const monthlyRate = annualRate / 12 / 100;
     
     let balance = principal;
-    const schedule = [];
+    const schedule: {
+        emiNumber: number;
+        dueDate: Date;
+        principalComponent: number;
+        interestComponent: number;
+        totalAmount: number;
+        balance: number;
+    }[] = [];
     let currentDate = new Date(startDate);
 
     for (let i = 1; i <= tenureMonths; i++) {
