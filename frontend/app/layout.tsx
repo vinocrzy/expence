@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "../context/AuthContext";
+import SyncStatusIndicator from "@/components/ui/SyncStatus";
 
 export default function RootLayout({
   children,
@@ -38,6 +39,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           {children}
+          <SyncStatusIndicator />
         </AuthProvider>
       </body>
     </html>
