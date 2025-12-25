@@ -1,3 +1,4 @@
+/// <reference types="node" />
 // SQLite: Enums removed, using strings.
 
 import { PrismaClient } from '@prisma/client'
@@ -62,9 +63,9 @@ async function main() {
         principal: 5000000,
         interestRate: 8.5,
         startDate: new Date(),
-        termMonths: 240,
+        tenureMonths: 240,
         emiAmount: 45000,
-        outstanding: 4900000,
+        outstandingPrincipal: 4900000,
         lender: 'HDFC Home Loan'
     }
   })

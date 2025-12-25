@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import prisma from '../lib/prisma';
+import { aggregateMonth } from '../services/analytics.service';
 
 // @ts-ignore
 export default async function transactionRoutes(fastify: FastifyInstance) {
@@ -82,8 +83,7 @@ export default async function transactionRoutes(fastify: FastifyInstance) {
         let balanceChange = amount;
         if (type === 'EXPENSE') balanceChange = -Math.abs(amount);
         if (type === 'INCOME') balanceChange = Math.abs(amount);
-        // Transfer logic is complex (needs 'to' account), keeping simple for now or strictly single-entry
-
+        
         const transaction = await prisma.$transaction(async (tx: any) => {
             const t = await tx.transaction.create({
                 data: {
@@ -113,6 +113,12 @@ export default async function transactionRoutes(fastify: FastifyInstance) {
             return t;
         });
 
+        // Trigger Analytics Aggregation
+        // We catch errors so we don't block the response if analytics fails
+        aggregateMonth(householdId, new Date(date)).catch(err => {
+            request.log.error(err, 'Failed to update analytics');
+        });
+
         return transaction;
     } catch (e) {
         fastify.log.error(e);
@@ -137,6 +143,8 @@ export default async function transactionRoutes(fastify: FastifyInstance) {
             return reply.status(404).send({ error: 'Transaction not found' });
         }
 
+        const date = transaction.date;
+
         // Revert balance
         let balanceRevert = Number(transaction.amount);
         if (transaction.type === 'EXPENSE') balanceRevert = Math.abs(balanceRevert); // Add back expense
@@ -152,6 +160,11 @@ export default async function transactionRoutes(fastify: FastifyInstance) {
                 }
             });
             await tx.transaction.delete({ where: { id } });
+        });
+
+        // Trigger Analytics Aggregation
+        aggregateMonth(householdId, date).catch(err => {
+            request.log.error(err, 'Failed to update analytics');
         });
 
         return { message: 'Transaction deleted' };

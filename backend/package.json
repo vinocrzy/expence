@@ -5,9 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
+    "db:dev": "node scripts/db-setup.js dev",
+    "db:prod": "node scripts/db-setup.js prod",
+    "build": "npm run db:prod && tsc",
     "start": "node dist/index.js",
-    "dev": "npx nodemon --exec ts-node src/index.ts",
+    "dev": "npm run db:dev && npx nodemon --exec ts-node src/index.ts",
     "seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
