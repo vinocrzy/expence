@@ -2,8 +2,6 @@
   command = "npm run build"
   publish = ".next"
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
 
 [context.production]
   environment = { NODE_ENV = "production" }
@@ -16,9 +14,6 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
-    # CSP is tough with Next.js due to inline scripts. Next.js handles it better in next.config.js, 
-    # but Netlify headers add an extra layer. We skip strict CSP here to avoid breaking the app 
-    # unless using hashes/nonces.
 
 # Cache Control for Static Assets (Next.js hashed assets)
 [[headers]]
@@ -41,6 +36,3 @@
   for = "/manifest.json"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
-
-# Redirects for PWA/SPA fallback (handled by Next.js plugin usually, but good to have)
-# Netlify Next.js plugin handles redirects automatically. 

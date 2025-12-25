@@ -55,7 +55,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       - JWT_SECRET=${JWT_SECRET}
       # CORS: Trust the internal Nginx/Frontend
-      - CORS_ORIGIN=http://frontend:3000,http://localhost,http://127.0.0.1,https://pocket.vinocrazy.com
+      - CORS_ORIGIN=http://frontend:3000,http://localhost,http://127.0.0.1,https://pocket.vinocrazy.com,https://pockettogether.netlify.app
     depends_on:
       postgres:
         condition: service_healthy
