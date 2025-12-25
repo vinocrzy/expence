@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -46,6 +46,10 @@ model Household {
   budgetMode    String   @default("CALENDAR") // CALENDAR, SALARY, CASHFLOW
   budgetConfig  String?  // JSON string: { salaryDay: 1, incomeSources: [] }
   budgets       Budget[]
+  
+  analyticsMonthly AnalyticsMonthly[]
+  analyticsCategories AnalyticsCategory[]
+  analyticsAccounts AnalyticsAccount[]
 }
 
 // Enum AccountType removed, handled as String in application
@@ -70,6 +74,8 @@ model Account {
   recurringRules RecurringRule[]
   loans       Loan[]
   creditCard  CreditCard?
+  
+  analytics   AnalyticsAccount[]
 }
 
 // Enum TransactionType removed, handled as String
@@ -129,6 +135,8 @@ model Category {
   recurringRules RecurringRule[]
   budgets     Budget[]
   planItems   BudgetPlanItem[]
+  
+  analytics   AnalyticsCategory[]
 }
 
 model Loan {
@@ -360,3 +368,59 @@ model BudgetPlanItem {
   createdAt   DateTime @default(now())
 }
 
+
+model AnalyticsMonthly {
+  id          String   @id @default(uuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  year        Int
+  month       Int      // 1-12
+  
+  income      Decimal  @default(0)
+  expense     Decimal  @default(0)
+  netSavings  Decimal  @default(0)
+  
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([householdId, year, month])
+  @@index([householdId, year, month])
+}
+
+model AnalyticsCategory {
+  id          String   @id @default(uuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  year        Int
+  month       Int
+  
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  type        String    // INCOME or EXPENSE (Categories usually have one, but good to store)
+  
+  amount      Decimal   @default(0)
+  count       Int       @default(0)
+  
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([householdId, year, month, categoryId])
+}
+
+model AnalyticsAccount {
+  id          String   @id @default(uuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  year        Int
+  month       Int
+
+  accountId   String
+  account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  income      Decimal   @default(0)
+  expense     Decimal   @default(0)
+  transfersIn Decimal   @default(0)
+  transfersOut Decimal  @default(0)
+  
+  updatedAt   DateTime @updatedAt
+
+  @@unique([householdId, year, month, accountId])
+}

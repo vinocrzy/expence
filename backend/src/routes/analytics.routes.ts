@@ -1,124 +1,138 @@
 import { FastifyInstance } from 'fastify';
 import prisma from '../lib/prisma';
-import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
+import { rebuildAnalytics } from '../services/analytics.service';
 
 // @ts-ignore
 export default async function analyticsRoutes(fastify: FastifyInstance) {
   
-  // Monthly Summary (Last 6 Months)
+  // 1. Monthly Summary (History)
+  // Query: ?limit=6
   fastify.get('/analytics/monthly', {
     onRequest: [fastify.authenticate]
   }, async (request: any, reply: any) => {
     const { householdId } = request.user;
-    
+    const { limit = 6 } = request.query;
+
     try {
-        const today = new Date();
-        const sixMonthsAgo = subMonths(startOfMonth(today), 5);
-
-        const transactions = await prisma.transaction.findMany({
-            where: {
-                account: { householdId },
-                date: {
-                    gte: sixMonthsAgo
-                }
-            }
+        const data = await prisma.analyticsMonthly.findMany({
+            where: { householdId },
+            orderBy: [{ year: 'desc' }, { month: 'desc' }],
+            take: Number(limit)
         });
 
-        // Aggregate by Month
-        const monthlyData = new Map();
-
-        // Initialize last 6 months
-        for (let i = 0; i < 6; i++) {
-            const d = subMonths(today, i);
-            const key = format(d, 'yyyy-MM');
-            monthlyData.set(key, { 
-                month: format(d, 'MMM'), 
-                income: 0, 
-                expense: 0 
-            });
-        }
-
-        transactions.forEach(t => {
-            const key = format(new Date(t.date), 'yyyy-MM');
-            if (monthlyData.has(key)) {
-                const entry = monthlyData.get(key);
-                const amt = Number(t.amount);
-                if (t.type === 'INCOME') entry.income += amt;
-                if (t.type === 'EXPENSE') entry.expense += Math.abs(amt); // Assuming expenses stored as negative or positive based on logic, but let's stick to absolute for charts
-                // Wait, in my previous transaction logic: 
-                // "if (type === 'EXPENSE') balanceChange = -Math.abs(amount);"
-                // "if (type === 'INCOME') balanceChange = Math.abs(amount);"
-                // But the transaction record itself stores "amount" as absolute usually or signed?
-                // backend/src/routes/transaction.routes.ts says: "amount: { type: 'number' }, // Sent as number, stored as Decimal"
-                // It treats input as positive usually. Let's verify DB data.
-                // Assuming stored as Positive amount + Type.
-            }
-        });
-
-        // Convert to array and reverse (oldest first)
-        const result = Array.from(monthlyData.values()).reverse();
-        return result;
-
-    } catch (e) {
-        fastify.log.error(e);
-        reply.status(500).send({ error: 'Failed to fetch monthly analytics' });
-    }
-  });
-
-  // Category Breakdown (Current Cycle)
-  fastify.get('/analytics/categories', {
-    onRequest: [fastify.authenticate]
-  }, async (request: any, reply: any) => {
-    const { householdId } = request.user;
-    
-    try {
-        const household = await prisma.household.findUnique({ 
-            where: { id: householdId } 
-        });
-
-        if (!household) return reply.status(404).send({ error: 'Household not found' });
-
-        // Lazy import to avoid circular dep issues if any, or just import at top
-        const { getBudgetContext } = require('../lib/budget');
-        const { startDate, endDate, description } = getBudgetContext(new Date(), household.budgetMode, household.budgetConfig);
-
-        const transactions = await prisma.transaction.findMany({
-            where: {
-                account: { householdId },
-                date: {
-                    gte: startDate,
-                    lte: endDate
-                },
-                type: 'EXPENSE'
-            },
-            include: { category: true }
-        });
-
-        const categoryMap = new Map();
-
-        transactions.forEach(t => {
-            const catName = t.category?.name || 'Uncategorized';
-            const color = t.category?.color || '#808080';
-            const current = categoryMap.get(catName) || { name: catName, value: 0, color };
-            current.value += Number(t.amount);
-            categoryMap.set(catName, current);
-        });
-
-        // Return object-wrapped response to include context, or stick to array?
-        // Changing to object { data, context } is cleaner but requires FE change.
-        // Let's do it and fix FE.
+        // Return oldest to newest for charts
+        const sorted = data.reverse(); 
+        
         return {
-            data: Array.from(categoryMap.values()),
-            context: {
-                description,
-                startDate,
-                endDate
+            labels: sorted.map(d => `${d.year}-${String(d.month).padStart(2, '0')}`), // YYYY-MM
+            humanLabels: sorted.map(d => `${d.month}/${d.year}`), // MM/YYYY
+            data: sorted.map(d => ({
+                month: d.month,
+                year: d.year,
+                income: Number(d.income),
+                expense: Number(d.expense),
+                netSavings: Number(d.netSavings)
+            })),
+            totals: {
+                totalIncome: sorted.reduce((sum, d) => sum + Number(d.income), 0),
+                totalExpense: sorted.reduce((sum, d) => sum + Number(d.expense), 0)
             }
         };
 
     } catch (e) {
-        fastify.log.error(e);
+        request.log.error(e);
+        reply.status(500).send({ error: 'Failed to fetch monthly analytics' });
+    }
+  });
+
+  // 2. Category Breakdown (Specific Range or Month)
+  // Query: ?year=2024&month=12  OR defaults to current
+  fastify.get('/analytics/categories', {
+    onRequest: [fastify.authenticate]
+  }, async (request: any, reply: any) => {
+    const { householdId } = request.user;
+    let { year, month } = request.query;
+    
+    // Default to current month if not specified
+    if (!year || !month) {
+        const now = new Date();
+        year = now.getFullYear();
+        month = now.getMonth() + 1;
+    }
+
+    try {
+        const data = await prisma.analyticsCategory.findMany({
+            where: { 
+                householdId,
+                year: Number(year),
+                month: Number(month),
+                type: 'EXPENSE' // Usually interested in Expense breakdown
+            },
+            include: { category: true },
+            orderBy: { amount: 'desc' }
+        });
+
+        const total = data.reduce((sum, d) => sum + Number(d.amount), 0);
+
+        return {
+            period: { year, month },
+            totalExpense: total,
+            chartData: data.map(d => ({
+                id: d.categoryId,
+                label: d.category.name,
+                value: Number(d.amount),
+                color: d.category.color || '#888888',
+                percentage: total > 0 ? Math.round((Number(d.amount) / total) * 100) : 0
+            }))
+        };
+
+    } catch (e) {
+        request.log.error(e);
         reply.status(500).send({ error: 'Failed to fetch category analytics' });
     }
+  });
+
+  // 3. Account Breakdown (Current Month)
+  fastify.get('/analytics/accounts', {
+    onRequest: [fastify.authenticate]
+  }, async (request: any, reply: any) => {
+    const { householdId } = request.user;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+
+    try {
+        const data = await prisma.analyticsAccount.findMany({
+            where: { householdId, year, month },
+            include: { account: true }
+        });
+
+        return {
+            period: { year, month },
+            data: data.map(d => ({
+                accountId: d.accountId,
+                accountName: d.account.name,
+                currency: d.account.currency,
+                income: Number(d.income),
+                expense: Number(d.expense)
+            }))
+        };
+    } catch (e) {
+        reply.status(500).send({ error: 'Failed to fetch account analytics' });
+    }
+  });
+
+  // 4. Manual Rebuild Trigger
+  fastify.post('/analytics/rebuild', {
+    onRequest: [fastify.authenticate]
+  }, async (request: any, reply: any) => {
+    const { householdId } = request.user;
+    
+    // Async trigger
+    rebuildAnalytics(householdId).catch(err => {
+        request.log.error(err, 'Rebuild failed');
+    });
+
+    return { message: 'Analytics rebuild started', status: 'processing' };
   });
 }
