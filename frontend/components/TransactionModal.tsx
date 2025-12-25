@@ -50,6 +50,47 @@ function TransactionModal({
   const [error, setError] = useState('');
   const [activeEvents, setActiveEvents] = useState<any[]>([]);
   const [selectedEventId, setSelectedEventId] = useState('');
+  const [isSuggesting, setIsSuggesting] = useState(false);
+
+  const handleDescriptionBlur = async () => {
+    if (!description || categoryId) return; // Don't suggest if category already selected
+
+    setIsSuggesting(true);
+    try {
+        const res = await fetch('/api/suggest-category', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ description })
+        });
+        const data = await res.json();
+        
+        if (data.category) {
+            // Find category ID by name (case-insensitive)
+            // We search in 'categories' (all) not just filtered, but we should prioritize current type.
+            // Actually, if the suggestion is "Income" related strings, we might want to switch type? 
+            // For now let's just search in current available categories to be safe or all.
+            // Let's search in all categories and switch type if needed? 
+            // That might be too aggressive. Let's start with searching in *all* and if found, switch type + set category.
+            
+            const foundCategory = categories.find(c => c.name.toLowerCase() === data.category.toLowerCase());
+            
+            if (foundCategory) {
+                // If the found category type is different from current type, should we switch? 
+                // Ideally yes, but let's be careful.
+                // If I type "Salary" and I am in "Expense", it should probably switch to "Income".
+                
+                if (foundCategory.kind !== type) {
+                    setType(foundCategory.kind);
+                }
+                setCategoryId(foundCategory.id);
+            }
+        }
+    } catch (err) {
+        console.error('Failed to get suggestion', err);
+    } finally {
+        setIsSuggesting(false);
+    }
+  };
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -202,14 +243,18 @@ function TransactionModal({
           </div>
 
           <div className="space-y-2">
-             {/* ... Description ... */}
-            <label className="text-sm font-medium text-gray-300">Description</label>
+              {/* ... Description ... */}
+            <label className="text-sm font-medium text-gray-300 flex justify-between">
+                <span>Description</span>
+                {isSuggesting && <span className="text-xs text-purple-400 animate-pulse">✨ AI Suggesting...</span>}
+            </label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              onBlur={handleDescriptionBlur}
               className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-              placeholder="What is this for?"
+              placeholder="What is this for? (e.g. Uber, Netflix)"
             />
           </div>
 
