@@ -21,19 +21,35 @@ export default fp(async (fastify) => {
             cb(null, true);
             return;
         }
-        // In production, blocked unless we decide otherwise (e.g. mobile app)
-        // For PWA on Netlify, origin will be sent.
         cb(new Error("Not allowed: No Origin"), false);
         return;
       }
 
-      // Allow Netlify Preview Deployments (e.g. https://deploy-preview-123--site.netlify.app)
-      if (origin === ALLOWED_ORIGIN || origin.endsWith('.netlify.app')) { 
+      const allowedEnvOrigins = (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim());
+
+      // 1. Check against Environment Variable List
+      if (allowedEnvOrigins.includes(origin)) {
+          cb(null, true);
+          return;
+      }
+
+      // 2. Allow specific known production domains
+      const KNOWN_ORIGINS = [
+          ALLOWED_ORIGIN,
+          'https://pockettogether.netlify.app'
+      ];
+      if (KNOWN_ORIGINS.includes(origin)) {
+          cb(null, true);
+          return;
+      }
+
+      // 3. Allow Netlify Preview Deployments (wildcard)
+      if (origin.endsWith('.netlify.app')) { 
          cb(null, true);
          return;
       }
       
-      // Dev mode fallback
+      // 4. Dev mode fallback (localhost)
       if (process.env.NODE_ENV !== 'production' && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
         cb(null, true);
         return;
