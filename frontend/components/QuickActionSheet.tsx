@@ -48,79 +48,83 @@ function QuickActionSheet({ isOpen, onClose, accounts }: QuickActionSheetProps) 
   };
 
   return (
-    <AnimatePresence>
-        {isOpen && (
-            <>
-                {/* Backdrop */}
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={onClose}
-                    className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-                />
-                
-                {/* Sheet */}
-                <motion.div 
-                    initial={{ y: "100%" }}
-                    animate={{ y: 0 }}
-                    exit={{ y: "100%" }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    drag="y"
-                    dragConstraints={{ top: 0 }}
-                    dragElastic={0.2}
-                    onDragEnd={(_, info) => {
-                        if (info.offset.y > 100) onClose();
-                    }}
-                    className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 border-t border-gray-800 rounded-t-3xl shadow-2xl p-6 pb-safe"
-                >
-                    <div className="w-12 h-1 bg-gray-700 rounded-full mx-auto mb-6 cursor-grab active:cursor-grabbing"></div>
+    <>
+        <AnimatePresence>
+            {isOpen && (
+                <>
+                    {/* Backdrop */}
+                    <motion.div 
+                        key="backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+                    />
                     
-                    <h3 className="text-lg font-bold text-white mb-6 text-center">Quick Actions</h3>
-                    
-                    <div className="grid grid-cols-4 gap-4 mb-4">
-                        <ActionButton 
-                            icon={ArrowUpRight} 
-                            label="Expense" 
-                            color="red" 
-                            onClick={() => handleAction('EXPENSE')} 
-                        />
-                         <ActionButton 
-                            icon={ArrowDownLeft} 
-                            label="Income" 
-                            color="green" 
-                            onClick={() => handleAction('INCOME')} 
-                        />
-                         <ActionButton 
-                            icon={Send} 
-                            label="Transfer" 
-                            color="blue" 
-                            onClick={() => handleAction('TRANSFER')} 
-                        />
-                         <ActionButton 
-                            icon={Landmark} 
-                            label="Pay EMI" 
-                            color="orange" 
-                            onClick={() => handleAction('LOAN')} 
-                        />
-                         <ActionButton 
-                            icon={CreditCard} 
-                            label="Pay Card" 
-                            color="purple" 
-                            onClick={() => handleAction('CREDIT_CARD')} 
-                        />
-                    </div>
-                    
-                    <motion.button 
-                        whileTap={{ scale: 0.95 }}
-                        onClick={onClose} 
-                        className="w-full py-4 mt-2 text-sm font-bold text-gray-400 hover:text-white border-t border-gray-800"
+                    {/* Sheet */}
+                    <motion.div 
+                        key="sheet"
+                        initial={{ y: "100%" }}
+                        animate={{ y: 0 }}
+                        exit={{ y: "100%" }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        drag="y"
+                        dragConstraints={{ top: 0 }}
+                        dragElastic={0.2}
+                        onDragEnd={(_, info) => {
+                            if (info.offset.y > 100) onClose();
+                        }}
+                        className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 border-t border-gray-800 rounded-t-3xl shadow-2xl p-6 pb-safe"
                     >
-                        Cancel
-                    </motion.button>
-                </motion.div>
-            </>
-        )}
+                        <div className="w-12 h-1 bg-gray-700 rounded-full mx-auto mb-6 cursor-grab active:cursor-grabbing"></div>
+                        
+                        <h3 className="text-lg font-bold text-white mb-6 text-center">Quick Actions</h3>
+                        
+                        <div className="grid grid-cols-4 gap-4 mb-4">
+                            <ActionButton 
+                                icon={ArrowUpRight} 
+                                label="Expense" 
+                                color="red" 
+                                onClick={() => handleAction('EXPENSE')} 
+                            />
+                             <ActionButton 
+                                icon={ArrowDownLeft} 
+                                label="Income" 
+                                color="green" 
+                                onClick={() => handleAction('INCOME')} 
+                            />
+                             <ActionButton 
+                                icon={Send} 
+                                label="Transfer" 
+                                color="blue" 
+                                onClick={() => handleAction('TRANSFER')} 
+                            />
+                             <ActionButton 
+                                icon={Landmark} 
+                                label="Pay EMI" 
+                                color="orange" 
+                                onClick={() => handleAction('LOAN')} 
+                            />
+                             <ActionButton 
+                                icon={CreditCard} 
+                                label="Pay Card" 
+                                color="purple" 
+                                onClick={() => handleAction('CREDIT_CARD')} 
+                            />
+                        </div>
+                        
+                        <motion.button 
+                            whileTap={{ scale: 0.95 }}
+                            onClick={onClose} 
+                            className="w-full py-4 mt-2 text-sm font-bold text-gray-400 hover:text-white border-t border-gray-800"
+                        >
+                            Cancel
+                        </motion.button>
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
 
         {transactionModalOpen && (
              <TransactionModal
@@ -131,7 +135,7 @@ function QuickActionSheet({ isOpen, onClose, accounts }: QuickActionSheetProps) 
                 initialType={transactionType}
              />
         )}
-    </AnimatePresence>
+    </>
   );
 }
 
