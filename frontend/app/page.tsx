@@ -46,14 +46,14 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
         {/* Background Gradients */}
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-pink-600/20 rounded-full blur-[120px]" />
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[var(--color-vino-800)] rounded-full blur-[120px] opacity-50" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[var(--color-gold-600)] rounded-full blur-[120px] opacity-20" />
 
       <div className="w-full max-w-md p-8 relative z-10">
         <div className="mb-10 text-center">
-            <div className="inline-flex items-center justify-center p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-xl shadow-purple-500/20 mb-6">
+            <div className="inline-flex items-center justify-center p-3 bg-gradient-to-br from-[var(--color-gold-500)] to-[var(--color-gold-600)] rounded-2xl shadow-xl shadow-yellow-900/20 mb-6">
                 <Wallet className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">PocketTogether</h1>
@@ -66,13 +66,13 @@ export default function Home() {
                     <label className="text-sm font-medium text-gray-300 ml-1">Full Name</label>
                     <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <User className="h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
+                            <User className="h-5 w-5 text-gray-500 group-focus-within:text-[var(--color-gold-500)] transition-colors" />
                         </div>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="block w-full pl-10 pr-3 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all font-medium"
+                            className="block w-full pl-10 pr-3 py-3 bg-gray-900/50 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)] transition-all font-medium"
                             placeholder="John Doe"
                             required={isRegistering}
                         />
@@ -84,13 +84,13 @@ export default function Home() {
                 <label className="text-sm font-medium text-gray-300 ml-1">Email Address</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Mail className="h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
+                        <Mail className="h-5 w-5 text-gray-500 group-focus-within:text-[var(--color-gold-500)] transition-colors" />
                     </div>
                     <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all font-medium"
+                        className="block w-full pl-10 pr-3 py-3 bg-gray-900/50 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)] transition-all font-medium"
                         placeholder="you@example.com"
                         required
                     />
@@ -101,13 +101,13 @@ export default function Home() {
                 <label className="text-sm font-medium text-gray-300 ml-1">Password</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
+                        <Lock className="h-5 w-5 text-gray-500 group-focus-within:text-[var(--color-gold-500)] transition-colors" />
                     </div>
                     <input
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all font-medium"
+                        className="block w-full pl-10 pr-3 py-3 bg-gray-900/50 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)] transition-all font-medium"
                         placeholder="••••••••"
                         required
                     />
@@ -123,7 +123,7 @@ export default function Home() {
             <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full flex items-center justify-center py-3.5 px-4 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-purple-500 font-bold transition-all shadow-lg shadow-purple-500/25 disabled:opacity-70 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full flex items-center justify-center py-3.5 px-4 rounded-xl text-black bg-gradient-to-r from-[var(--color-gold-500)] to-[var(--color-gold-600)] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-[var(--color-gold-500)] font-bold transition-all shadow-lg shadow-yellow-900/25 disabled:opacity-70 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
             >
                 {authLoading ? 'Processing...' : (
                     <span className="flex items-center gap-2">
@@ -137,7 +137,7 @@ export default function Home() {
             {isRegistering ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button 
                 onClick={() => setIsRegistering(!isRegistering)}
-                className="font-medium text-purple-400 hover:text-purple-300 transition-colors focus:outline-none"
+                className="font-medium text-[var(--color-gold-500)] hover:text-[var(--color-gold-bright)] transition-colors focus:outline-none"
             >
                 {isRegistering ? 'Sign In' : 'Create one'}
             </button>

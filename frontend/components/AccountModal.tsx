@@ -60,13 +60,13 @@ export default function AccountModal({ isOpen, onClose, onSubmit, initialData }:
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-md shadow-xl animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-[var(--color-wine-surface)] border border-[var(--color-border-gold)] rounded-2xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--color-border-gold)]">
           <h2 className="text-xl font-bold text-white">
             {initialData ? 'Edit Account' : 'Add New Account'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -79,23 +79,23 @@ export default function AccountModal({ isOpen, onClose, onSubmit, initialData }:
             )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Account Name</label>
+            <label className="text-sm font-medium text-[var(--color-text-muted)]">Account Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+              className="block w-full px-4 py-2 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white placeholder-[var(--color-text-muted)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)]"
               placeholder="e.g. Main Chase Checking"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Account Type</label>
+            <label className="text-sm font-medium text-[var(--color-text-muted)]">Account Type</label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+              className="block w-full px-4 py-2 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)]"
             >
               <option value="BANK">Bank Account</option>
               <option value="CREDIT_CARD">Credit Card</option>
@@ -107,23 +107,23 @@ export default function AccountModal({ isOpen, onClose, onSubmit, initialData }:
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Balance</label>
+                <label className="text-sm font-medium text-[var(--color-text-muted)]">Balance</label>
                 <input
                 type="number"
                 step="0.01"
                 value={balance}
                 onChange={(e) => setBalance(e.target.value)}
-                className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                className="block w-full px-4 py-2 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white placeholder-[var(--color-text-muted)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)]"
                 placeholder="0.00"
                 required
                 />
             </div>
             <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Currency</label>
+                <label className="text-sm font-medium text-[var(--color-text-muted)]">Currency</label>
                 <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                className="block w-full px-4 py-2 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)]"
                 >
                 <option value="INR">INR (₹)</option>
                 <option value="USD">USD ($)</option>
@@ -137,14 +137,14 @@ export default function AccountModal({ isOpen, onClose, onSubmit, initialData }:
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--color-text-muted)] hover:text-white hover:bg-white/10 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 transition-all ml-auto"
+              className="px-4 py-2 rounded-lg text-sm font-bold text-black bg-gradient-to-r from-[var(--color-gold-500)] to-[var(--color-gold-600)] hover:brightness-110 disabled:opacity-50 transition-all ml-auto shadow-lg shadow-[var(--color-gold-500)]/20"
             >
               {loading ? 'Saving...' : (initialData ? 'Save Changes' : 'Create Account')}
             </button>
