@@ -83,7 +83,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
   const nextEmi = loan.emis.find((e: any) => e.status === 'PENDING');
   
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white pb-20">
+    <div className="min-h-screen theme-wine text-white font-sans selection:bg-[var(--color-gold-500)] selection:text-black pb-20">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -92,20 +92,20 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                 <h1 className="text-3xl font-bold text-white flex items-center gap-3">
                     {loan.name}
                     <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                        loan.status === 'ACTIVE' ? 'bg-green-500/10 border-green-500/50 text-green-400' : 'bg-gray-700 border-gray-600 text-gray-400'
+                        loan.status === 'ACTIVE' ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-[var(--color-wine-deep)] border-[var(--color-border-gold)] text-[var(--color-text-muted)]'
                     }`}>
                         {loan.status}
                     </span>
                 </h1>
-                <p className="text-gray-400 mt-1">{loan.lender} • {loan.type}</p>
+                <p className="text-[var(--color-text-muted)] mt-1">{loan.lender} • {loan.type}</p>
             </div>
             
             <div className="flex items-center gap-3">
                 <button 
                   onClick={() => setIsPrepaymentOpen(true)}
-                  className="px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-xl hover:bg-gray-700 transition-colors font-medium flex items-center gap-2"
+                  className="px-4 py-2 bg-[var(--color-wine-surface)] border border-[var(--color-border-gold)] text-white rounded-xl hover:bg-white/10 transition-colors font-medium flex items-center gap-2 shadow-lg"
                 >
-                    <TrendingDown className="h-4 w-4 text-purple-400" />
+                    <TrendingDown className="h-4 w-4 text-[var(--color-gold-500)]" />
                     Prepay
                 </button>
             </div>
@@ -113,27 +113,27 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
 
         {/* Top Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
-                <div className="text-gray-400 text-sm font-medium mb-1">Outstanding Balance</div>
-                <div className="text-2xl font-bold text-white">₹ {Number(loan.outstandingPrincipal).toLocaleString()}</div>
-                <div className="text-xs text-gray-500 mt-2">
+            <div className="bg-[var(--color-wine-surface)] border border-[var(--color-border-gold)] p-6 rounded-2xl shadow-xl backdrop-blur-sm">
+                <div className="text-[var(--color-text-muted)] text-sm font-medium mb-1">Outstanding Balance</div>
+                <div className="text-2xl font-bold text-[var(--color-gold-500)] font-mono">₹ {Number(loan.outstandingPrincipal).toLocaleString()}</div>
+                <div className="text-xs text-[var(--color-text-muted)] mt-2">
                     of ₹ {Number(loan.principal).toLocaleString()} Principal
                 </div>
             </div>
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
-                <div className="text-gray-400 text-sm font-medium mb-1">Interest Rate</div>
+             <div className="bg-[var(--color-wine-surface)] border border-[var(--color-border-gold)] p-6 rounded-2xl shadow-xl backdrop-blur-sm">
+                <div className="text-[var(--color-text-muted)] text-sm font-medium mb-1">Interest Rate</div>
                 <div className="text-2xl font-bold text-white mb-2">{loan.interestRate}%</div>
-                <div className="inline-block bg-purple-500/10 text-purple-400 text-xs px-2 py-1 rounded-md font-medium border border-purple-500/20">
+                <div className="inline-block bg-[var(--color-gold-500)]/10 text-[var(--color-gold-500)] text-xs px-2 py-1 rounded-md font-medium border border-[var(--color-gold-500)]/20">
                     {loan.interestType}
                 </div>
             </div>
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
-                <div className="text-gray-400 text-sm font-medium mb-1">Next EMI</div>
+             <div className="bg-[var(--color-wine-surface)] border border-[var(--color-border-gold)] p-6 rounded-2xl shadow-xl backdrop-blur-sm">
+                <div className="text-[var(--color-text-muted)] text-sm font-medium mb-1">Next EMI</div>
                 {nextEmi ? (
                      <>
-                        <div className="text-2xl font-bold text-white">₹ {Number(nextEmi.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div className="text-xs text-orange-400 mt-2 flex items-center gap-1 font-medium">
-                            <Clock className="h-3 w-3" /> Due {new Date(nextEmi.dueDate).toLocaleDateString()}
+                        <div className="text-2xl font-bold text-white font-mono">₹ {Number(nextEmi.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="text-xs text-[var(--color-text-muted)] mt-2 flex items-center gap-1 font-medium">
+                            <Clock className="h-3 w-3 text-[var(--color-gold-500)]" /> Due {new Date(nextEmi.dueDate).toLocaleDateString()}
                         </div>
                      </>
                 ) : (
@@ -142,14 +142,14 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                     </div>
                 )}
             </div>
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
-                <div className="text-gray-400 text-sm font-medium mb-1">Progress</div>
-                <div className="text-2xl font-bold text-white">
+             <div className="bg-[var(--color-wine-surface)] border border-[var(--color-border-gold)] p-6 rounded-2xl shadow-xl backdrop-blur-sm">
+                <div className="text-[var(--color-text-muted)] text-sm font-medium mb-1">Progress</div>
+                <div className="text-2xl font-bold text-[var(--color-gold-500)]">
                     {Math.round(((Number(loan.principal) - Number(loan.outstandingPrincipal)) / Number(loan.principal)) * 100)}%
                 </div>
-                <div className="h-2 bg-gray-700 rounded-full mt-3 overflow-hidden">
+                <div className="h-2 bg-white/10 rounded-full mt-3 overflow-hidden">
                     <div 
-                        className="h-full bg-gradient-to-r from-blue-500 to-green-500" 
+                        className="h-full bg-gradient-to-r from-[var(--color-gold-500)] to-[var(--color-gold-600)]" 
                         style={{ width: `${((Number(loan.principal) - Number(loan.outstandingPrincipal)) / Number(loan.principal)) * 100}%` }}
                     ></div>
                 </div>
@@ -158,7 +158,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             {/* Chart */}
-            <div className="lg:col-span-1 bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+            <div className="lg:col-span-1 bg-[var(--color-wine-surface)] border border-[var(--color-border-gold)] p-6 rounded-2xl shadow-xl backdrop-blur-sm">
                 <h3 className="text-lg font-bold text-white mb-4">Breakdown</h3>
                 <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -176,7 +176,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                                     <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                             </Pie>
-                            <Tooltip contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff' }} />
+                            <Tooltip contentStyle={{ backgroundColor: '#4A0E1C', borderColor: 'rgba(230, 179, 75, 0.2)', color: '#fff' }} itemStyle={{ color: '#E6E6E6' }} />
                             <Legend wrapperStyle={{ paddingTop: '20px' }} />
                         </PieChart>
                     </ResponsiveContainer>
@@ -184,12 +184,12 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
             </div>
             
             {/* Recent Prepayments */}
-            <div className="lg:col-span-2 bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+            <div className="lg:col-span-2 bg-[var(--color-wine-surface)] border border-[var(--color-border-gold)] p-6 rounded-2xl shadow-xl backdrop-blur-sm">
                 <h3 className="text-lg font-bold text-white mb-4">Loan Timeline & Schedule</h3>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="text-xs text-gray-400 uppercase border-b border-gray-700">
+                            <tr className="text-xs text-[var(--color-text-muted)] uppercase border-b border-[var(--color-border-gold)]">
                                 <th className="px-4 py-3">#</th>
                                 <th className="px-4 py-3">Due Date</th>
                                 <th className="px-4 py-3">Total</th>
@@ -199,15 +199,15 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                                 <th className="px-4 py-3">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-700/50">
+                        <tbody className="divide-y divide-[var(--color-border-gold)]/20">
                             {loan.emis.map((emi: any) => (
-                                <tr key={emi.id} className={`hover:bg-gray-700/20 transition-colors ${
-                                    emi.id === nextEmi?.id ? 'bg-purple-900/10' : ''
+                                <tr key={emi.id} className={`hover:bg-white/5 transition-colors ${
+                                    emi.id === nextEmi?.id ? 'bg-[var(--color-gold-500)]/10' : ''
                                 }`}>
-                                    <td className="px-4 py-3 text-sm font-mono text-gray-500">{emi.emiNumber}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-300">{new Date(emi.dueDate).toLocaleDateString()}</td>
+                                    <td className="px-4 py-3 text-sm font-mono text-[var(--color-text-muted)]">{emi.emiNumber}</td>
+                                    <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">{new Date(emi.dueDate).toLocaleDateString()}</td>
                                     <td className="px-4 py-3 text-sm font-bold text-white">₹{Number(emi.totalAmount).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-400 hidden sm:table-cell">₹{Number(emi.principalComponent).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                    <td className="px-4 py-3 text-sm text-[var(--color-text-muted)] hidden sm:table-cell">₹{Number(emi.principalComponent).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                     <td className="px-4 py-3 text-sm text-red-400 hidden sm:table-cell">₹{Number(emi.interestComponent).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                                     <td className="px-4 py-3">
                                         {emi.status === 'PAID' ? (
@@ -215,7 +215,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                                                 <CheckCircle className="h-3 w-3" /> Paid
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center gap-1 text-xs font-bold text-orange-400 bg-orange-900/20 px-2 py-1 rounded">
+                                            <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--color-gold-muted)] bg-[var(--color-gold-500)]/10 px-2 py-1 rounded">
                                                 <AlertCircle className="h-3 w-3" /> Pending
                                             </span>
                                         )}
@@ -225,7 +225,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                                             <button
                                                 onClick={() => handlePayEmi(emi.emiNumber)}
                                                 disabled={processingEmi === emi.emiNumber || (nextEmi && emi.emiNumber !== nextEmi.emiNumber)}
-                                                className="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                                className="text-xs px-3 py-1 bg-gradient-to-r from-[var(--color-gold-500)] to-[var(--color-gold-600)] hover:brightness-110 text-black rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-md shadow-[var(--color-gold-500)]/20"
                                             >
                                                 {processingEmi === emi.emiNumber ? 'Paying...' : 'Pay'}
                                             </button>

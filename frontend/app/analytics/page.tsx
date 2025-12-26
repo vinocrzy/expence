@@ -93,7 +93,7 @@ export default function AnalyticsPage() {
     const savingsRate = currentMonthStats.income > 0 ? (currentMonthStats.netSavings / currentMonthStats.income) * 100 : 0;
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
+        <div className="min-h-screen text-white font-sans pb-24">
             <Navbar />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -101,10 +101,10 @@ export default function AnalyticsPage() {
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h1 className="text-3xl font-bold flex items-center gap-3">
-                            <BarChart2 className="h-8 w-8 text-blue-500" />
+                            <BarChart2 className="h-8 w-8 text-[var(--color-gold-500)]" />
                             Analytics & Insights
                         </h1>
-                        <p className="text-gray-400 text-sm mt-1">
+                        <p className="text-[var(--color-text-muted)] text-sm mt-1">
                             {isOnline ? 'Live data from cloud' : 'Viewing offline cache'} 
                             {isSyncing && <span className="ml-2 text-yellow-500 text-xs">(Syncing...)</span>}
                         </p>
@@ -113,7 +113,7 @@ export default function AnalyticsPage() {
                         <select 
                             value={range} 
                             onChange={(e) => setRange(e.target.value as any)}
-                            className="bg-gray-800 border border-gray-700 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500"
+                            className="bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] text-[var(--color-text-muted)] rounded-lg px-3 py-2 outline-none focus:border-[var(--color-gold-500)]"
                         >
                             <option value="MONTH">This Month</option>
                             <option value="QUARTER">Last Quarter</option>
@@ -122,16 +122,16 @@ export default function AnalyticsPage() {
                         <button 
                             onClick={handleRebuild} 
                             disabled={rebuilding || !isOnline}
-                            className={`p-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:opacity-50 transition-all ${rebuilding ? 'animate-pulse' : ''}`}
+                            className={`p-2 rounded-lg bg-[var(--color-wine-deep)] hover:bg-white/5 border border-[var(--color-border-gold)] disabled:opacity-50 transition-all ${rebuilding ? 'animate-pulse' : ''}`}
                             title="Rebuild Analytics"
                         >
-                            {rebuilding ? <RefreshCw className="h-5 w-5 animate-spin text-blue-500" /> : <Database className="h-5 w-5 text-gray-400" />}
+                            {rebuilding ? <RefreshCw className="h-5 w-5 animate-spin text-[var(--color-gold-500)]" /> : <Database className="h-5 w-5 text-[var(--color-text-muted)]" />}
                         </button>
                     </div>
                 </div>
 
                 {loading && !monthlyData ? (
-                     <div className="flex justify-center py-20"><RefreshCw className="animate-spin h-8 w-8 text-gray-500" /></div>
+                     <div className="flex justify-center py-20"><RefreshCw className="animate-spin h-8 w-8 text-[var(--color-text-muted)]" /></div>
                 ) : (
                     <>
                         {/* Summary Cards */}
@@ -140,28 +140,28 @@ export default function AnalyticsPage() {
                                 title="Income" 
                                 value={currentMonthStats.income} 
                                 icon={TrendingUp} 
-                                color="text-green-500" 
-                                bg="bg-green-500/10" 
+                                color="text-green-400" 
+                                bg="bg-green-500/20" 
                             />
                             <SummaryCard 
                                 title="Expense" 
                                 value={currentMonthStats.expense} 
                                 icon={TrendingDown} 
-                                color="text-red-500" 
-                                bg="bg-red-500/10" 
+                                color="text-red-400" 
+                                bg="bg-red-500/20" 
                             />
                             <SummaryCard 
                                 title="Net Savings" 
                                 value={currentMonthStats.netSavings} 
                                 icon={Layers} 
-                                color={currentMonthStats.netSavings >= 0 ? "text-blue-500" : "text-orange-500"} 
-                                bg={currentMonthStats.netSavings >= 0 ? "bg-blue-500/10" : "bg-orange-500/10"} 
+                                color={currentMonthStats.netSavings >= 0 ? "text-[var(--color-gold-500)]" : "text-orange-500"} 
+                                bg={currentMonthStats.netSavings >= 0 ? "bg-[var(--color-gold-500)]/20" : "bg-orange-500/10"} 
                             />
-                            <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700/50 flex flex-col justify-between">
-                                <span className="text-gray-400 text-sm font-medium">Savings Rate</span>
+                            <div className="bg-[var(--color-wine-surface)] rounded-2xl p-5 border border-[var(--color-border-gold)] flex flex-col justify-between backdrop-blur-sm shadow-lg">
+                                <span className="text-[var(--color-text-muted)] text-sm font-medium">Savings Rate</span>
                                 <div className="flex items-end justify-between mt-2">
-                                     <span className="text-2xl font-bold text-purple-400">{savingsRate.toFixed(1)}%</span>
-                                     <Activity className="h-6 w-6 text-purple-500/50" />
+                                     <span className="text-2xl font-bold text-white">{savingsRate.toFixed(1)}%</span>
+                                     <Activity className="h-6 w-6 text-[var(--color-gold-500)]" />
                                 </div>
                             </div>
                         </div>
@@ -170,9 +170,9 @@ export default function AnalyticsPage() {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
                             
                             {/* Expense Breakdown (Pie) */}
-                            <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50 min-h-[400px]">
-                                <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-                                    <PieIcon className="h-5 w-5 text-pink-500" /> Expense Breakdown
+                            <div className="bg-[var(--color-wine-surface)] rounded-2xl p-6 border border-[var(--color-border-gold)] min-h-[400px] backdrop-blur-sm shadow-lg">
+                                <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-white">
+                                    <PieIcon className="h-5 w-5 text-[var(--color-gold-500)]" /> Expense Breakdown
                                 </h3>
                                 {categoryData?.chartData?.length > 0 ? (
                                     <ResponsiveContainer width="100%" height={300}>
@@ -185,18 +185,18 @@ export default function AnalyticsPage() {
                                                 outerRadius={100}
                                                 paddingAngle={5}
                                                 dataKey="value"
+                                                stroke="none"
                                             >
                                                 {categoryData.chartData.map((entry: any, index: number) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0.2)" />
+                                                    <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                                                 ))}
                                             </Pie>
                                             <Tooltip 
-                                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '8px' }}
-                                                itemStyle={{ color: '#fff' }}
+                                                contentStyle={{ backgroundColor: '#4A0E1C', borderColor: 'rgba(230, 179, 75, 0.2)', borderRadius: '8px', color: '#fff' }}
+                                                itemStyle={{ color: '#E6E6E6' }}
                                                 formatter={(value: number | undefined) => `₹${value?.toLocaleString() ?? 0}`}
-
                                             />
-                                            <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                            <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ color: '#E6E6E6' }} />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 ) : (
@@ -205,23 +205,24 @@ export default function AnalyticsPage() {
                             </div>
 
                             {/* Monthly Trends (Bar + Line) */}
-                            <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50 min-h-[400px]">
-                                <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-                                    <Activity className="h-5 w-5 text-blue-500" /> Income vs Expense Trend
+                            <div className="bg-[var(--color-wine-surface)] rounded-2xl p-6 border border-[var(--color-border-gold)] min-h-[400px] backdrop-blur-sm shadow-lg">
+                                <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-white">
+                                    <Activity className="h-5 w-5 text-[var(--color-gold-500)]" /> Income vs Expense Trend
                                 </h3>
                                 {monthlyData?.data?.length > 0 ? (
                                     <ResponsiveContainer width="100%" height={300}>
                                         <BarChart data={monthlyData.data}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
-                                            <XAxis dataKey="month" stroke="#9ca3af" tickFormatter={(val) => val} />
-                                            <YAxis stroke="#9ca3af" tickFormatter={(val) => `₹${val/1000}k`} />
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#8884d8" opacity={0.2} vertical={false} />
+                                            <XAxis dataKey="month" stroke="#E6B34B" tickFormatter={(val) => val} />
+                                            <YAxis stroke="#E6B34B" tickFormatter={(val) => `₹${val/1000}k`} />
                                             <Tooltip 
-                                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '8px' }}
+                                                cursor={{ fill: 'rgba(230, 179, 75, 0.05)' }}
+                                                contentStyle={{ backgroundColor: '#4A0E1C', borderColor: 'rgba(230, 179, 75, 0.2)', borderRadius: '8px', color: '#fff' }}
+                                                itemStyle={{ color: '#E6E6E6' }}
                                             />
-                                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                            <Legend wrapperStyle={{ paddingTop: '20px', color: '#E6E6E6' }} />
                                             <Bar dataKey="income" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                                            <Bar dataKey="expense" name="Expense" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                                            <Bar dataKey="expense" name="Expense" fill="#991B1B" radius={[4, 4, 0, 0]} maxBarSize={40} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 ) : (
@@ -238,8 +239,8 @@ export default function AnalyticsPage() {
 
 function SummaryCard({ title, value, icon: Icon, color, bg }: any) {
     return (
-        <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700/50 flex flex-col justify-between hover:border-gray-600 transition-colors">
-            <span className="text-gray-400 text-sm font-medium flex items-center gap-2">
+        <div className="bg-[var(--color-wine-surface)] rounded-2xl p-5 border border-[var(--color-border-gold)] flex flex-col justify-between hover:border-[var(--color-gold-500)]/50 transition-colors backdrop-blur-sm shadow-lg">
+            <span className="text-[var(--color-text-muted)] text-sm font-medium flex items-center gap-2">
                 <Icon className={`h-4 w-4 ${color}`} /> {title}
             </span>
             <div className="mt-3">
@@ -247,8 +248,8 @@ function SummaryCard({ title, value, icon: Icon, color, bg }: any) {
                     ₹{value?.toLocaleString() || '0'}
                  </span>
             </div>
-            <div className={`mt-2 h-1 w-full rounded-full bg-gray-700 overflow-hidden`}>
-                <div className={`h-full ${bg.replace('/10', '')}`} style={{ width: '100%' }}></div>
+            <div className={`mt-2 h-1 w-full rounded-full bg-white/10 overflow-hidden`}>
+                <div className={`h-full ${bg.replace('/10', '').replace('/20', '')}`} style={{ width: '100%' }}></div>
             </div>
         </div>
     );
@@ -256,7 +257,7 @@ function SummaryCard({ title, value, icon: Icon, color, bg }: any) {
 
 function EmptyState({ text }: { text: string }) {
     return (
-        <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-3">
+        <div className="flex flex-col items-center justify-center h-full text-[var(--color-text-muted)] gap-3">
             <AlertCircle className="h-8 w-8 opacity-50" />
             <p className="text-sm">{text}</p>
         </div>

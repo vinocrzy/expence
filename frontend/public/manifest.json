@@ -4,14 +4,15 @@
   "description": "Shared finance tracking for households",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#111827",
-  "theme_color": "#111827",
+  "background_color": "#2D0812",
+  "theme_color": "#2D0812",
   "orientation": "portrait",
   "icons": [
     {
       "src": "/icon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
