@@ -1,66 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  /* Core Palette - Digital Cellar */
-  --color-wine-deep: #2D0812;      /* App Background */
-  --color-wine-surface: #4A0E1C;   /* Cards/Surfaces */
-  --color-gold-primary: #E6B34B;   /* Primary Actions */
-  --color-gold-muted: #B3862B;     /* Secondary Text/Meta */
-  --color-border-subtle: rgba(230, 179, 75, 0.2); /* Low opacity gold */
-  
-  /* Text */
-  --color-text-main: #FFFFFF;
-  --color-text-muted: #B3862B;
-
-  /* Functional */
-  --background: var(--color-wine-deep);
-  --foreground: var(--color-text-main);
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
-/* Tailwind CSS v4 Theme Configuration - Ignore 'Unknown at rule' warnings */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  
-  /* Semantic Colors */
-  --color-wine-950: var(--color-wine-deep);
-  --color-wine-900: var(--color-wine-surface);
-  --color-gold-500: var(--color-gold-primary);
-  --color-gold-600: var(--color-gold-muted);
-  --color-border-gold: var(--color-border-subtle);
-  
-  /* Text Utilities */
-  --color-text-primary: var(--color-text-main);
-  --color-text-secondary: var(--color-text-muted);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: var(--color-wine-deep);
-    --foreground: var(--color-text-main);
+    --background: #0a0a0a;
+    --foreground: #ededed;
   }
 }
 
 body {
-  background-color: var(--color-wine-deep);
-  background-image: radial-gradient(circle at 50% 0%, #4A0E1C 0%, #2D0812 80%);
-  background-attachment: fixed;
+  background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  min-height: 100vh;
-}
-
-/* Global Utility Overrides for Glassmorphism */
-.glass-panel {
-  background: rgba(74, 14, 28, 0.6); /* Wine surface with opacity */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--color-border-subtle);
-}
-
-.glass-card {
-  background: var(--color-wine-surface);
-  border: 1px solid var(--color-border-subtle);
 }

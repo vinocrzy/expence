@@ -49,7 +49,7 @@ export default function Profile() {
 
     try {
       await api.put('/auth/me', { name, email });
-      if (user && user.householdId) {
+      if (user.householdId) {
           await api.patch('/household', {
               budgetMode,
               budgetConfig: { salaryDay }
@@ -71,70 +71,70 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen theme-wine text-white font-sans selection:bg-[var(--color-gold-500)] selection:text-black">
+    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-3xl font-bold text-white mb-8">Profile Settings</h1>
 
-        <div className="bg-[var(--color-wine-surface)] backdrop-blur-md p-8 rounded-2xl border border-[var(--color-border-gold)] shadow-xl">
+        <div className="bg-gray-800/50 backdrop-blur-md p-8 rounded-2xl border border-gray-700/50">
           <form onSubmit={handleUpdate} className="space-y-6">
             
             <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--color-text-muted)] ml-1">Full Name</label>
+                <label className="text-sm font-medium text-gray-300 ml-1">Full Name</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="h-5 w-5 text-gray-500 group-focus-within:text-[var(--color-gold-500)] transition-colors" />
+                        <User className="h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
                     </div>
                     <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-3 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)] transition-all font-medium"
+                        className="block w-full pl-10 pr-3 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all font-medium"
                         required
                     />
                 </div>
             </div>
 
             <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--color-text-muted)] ml-1">Email Address</label>
+                <label className="text-sm font-medium text-gray-300 ml-1">Email Address</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Mail className="h-5 w-5 text-gray-500 group-focus-within:text-[var(--color-gold-500)] transition-colors" />
+                        <Mail className="h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
                     </div>
                     <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-3 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)] transition-all font-medium"
+                        className="block w-full pl-10 pr-3 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all font-medium"
                         required
                     />
                 </div>
             </div>
 
-            <div className="pt-4 border-t border-[var(--color-border-gold)]/30">
-                <p className="text-sm text-[var(--color-text-muted)] mb-2">Household ID</p>
-                <code className="block w-full p-3 bg-[var(--color-wine-deep)] rounded-lg text-sm text-[var(--color-gold-500)] font-mono break-all select-all border border-[var(--color-border-gold)]/20">
+            <div className="pt-4 border-t border-gray-700/50">
+                <p className="text-sm text-gray-500 mb-2">Household ID</p>
+                <code className="block w-full p-3 bg-gray-900/50 rounded-lg text-sm text-purple-300 font-mono break-all select-all">
                     {user.householdId || 'No active household'}
                 </code>
             </div>
 
             {/* Budget Settings */}
-            <div className="pt-8 border-t border-[var(--color-border-gold)]/30">
+            <div className="pt-8 border-t border-gray-700/50">
                 <h2 className="text-xl font-bold text-white mb-6">Budget Settings</h2>
                 <div className="space-y-6">
                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-[var(--color-text-muted)] ml-1">Budget Mode</label>
+                        <label className="text-sm font-medium text-gray-300 ml-1">Budget Mode</label>
                         <select 
                             value={budgetMode}
                             onChange={(e) => setBudgetMode(e.target.value)}
-                            className="block w-full px-4 py-3 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)]"
+                            className="block w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                         >
                             <option value="CALENDAR">Calendar Month (Default)</option>
                             <option value="SALARY">Salary Cycle</option>
                             <option value="CASHFLOW">Cashflow Window</option>
                         </select>
-                        <p className="text-xs text-[var(--color-text-muted)] ml-1">
+                        <p className="text-xs text-gray-500 ml-1">
                             {budgetMode === 'CALENDAR' && 'Budgets run from 1st to last day of each month.'}
                             {budgetMode === 'SALARY' && 'Budgets run from your payday to the day before next payday.'}
                             {budgetMode === 'CASHFLOW' && 'Budgets track available cash until next expected income.'}
@@ -143,14 +143,14 @@ export default function Profile() {
 
                     {budgetMode === 'SALARY' && (
                          <div className="space-y-2">
-                            <label className="text-sm font-medium text-[var(--color-text-muted)] ml-1">Salary Day of Month</label>
+                            <label className="text-sm font-medium text-gray-300 ml-1">Salary Day of Month</label>
                             <input
                                 type="number"
                                 min="1"
                                 max="31"
                                 value={salaryDay}
                                 onChange={(e) => setSalaryDay(parseInt(e.target.value))}
-                                className="block w-full px-4 py-3 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)]"
+                                className="block w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                             />
                         </div>
                     )}
@@ -168,7 +168,7 @@ export default function Profile() {
                 <button
                     type="submit"
                     disabled={isSaving}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-black bg-gradient-to-r from-[var(--color-gold-500)] to-[var(--color-gold-600)] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--color-wine-deep)] focus:ring-[var(--color-gold-500)] font-bold transition-all shadow-lg shadow-[var(--color-gold-500)]/20 disabled:opacity-70 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-purple-500 font-bold transition-all shadow-lg shadow-purple-500/25 disabled:opacity-70 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
                 >
                     {isSaving ? 'Saving...' : (
                         <>

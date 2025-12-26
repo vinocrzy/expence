@@ -169,25 +169,28 @@ function TransactionModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[var(--color-wine-surface)] border border-[var(--color-border-gold)] rounded-2xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-[var(--color-border-gold)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-md shadow-xl animate-in fade-in zoom-in duration-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+        // ... header ...
           <h2 className="text-xl font-bold text-white">
             {initialData ? 'Edit Transaction' : 'Add Transaction'}
           </h2>
-          <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-white transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {/* ... Error ... */}
             {error && (
                 <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">
                     {error}
                 </div>
             )}
 
-            <div className="flex gap-2 p-1 bg-[var(--color-wine-deep)]/50 rounded-xl border border-[var(--color-border-gold)] mb-4">
+            {/* ... Type Toggle ... */}
+            <div className="flex gap-2 p-1 bg-gray-900/50 rounded-xl border border-gray-700/50 mb-4">
                 {['EXPENSE', 'INCOME', 'TRANSFER'].map((t) => (
                     <button
                         key={t}
@@ -196,7 +199,7 @@ function TransactionModal({
                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
                             type === t 
                             ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400' : t === 'EXPENSE' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400')
-                            : 'text-[var(--color-text-muted)] hover:text-white hover:bg-white/5'
+                            : 'text-gray-400 hover:text-white hover:bg-gray-700'
                         }`}
                     >
                         {t}
@@ -204,10 +207,11 @@ function TransactionModal({
                 ))}
             </div>
 
+          {/* ... Amount ... */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[var(--color-text-muted)]">Amount</label>
+            <label className="text-sm font-medium text-gray-300">Amount</label>
             <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] font-bold">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
                     {accounts.find(a => a.id === accountId)?.currency === 'USD' ? '$' : 
                      accounts.find(a => a.id === accountId)?.currency === 'EUR' ? '€' :
                      accounts.find(a => a.id === accountId)?.currency === 'GBP' ? '£' : '₹'}
@@ -217,7 +221,7 @@ function TransactionModal({
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="block w-full pl-8 pr-4 py-3 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white placeholder-[var(--color-text-muted)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)] font-mono text-lg"
+                className="block w-full pl-8 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono text-lg"
                 placeholder="0.00"
                 required
                 />
@@ -225,11 +229,11 @@ function TransactionModal({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[var(--color-text-muted)]">Category</label>
+            <label className="text-sm font-medium text-gray-300">Category</label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="block w-full px-4 py-2 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)]"
+              className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
             >
               <option value="">Uncategorized</option>
               {filteredCategories.map(cat => (
@@ -239,27 +243,29 @@ function TransactionModal({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[var(--color-text-muted)] flex justify-between">
+              {/* ... Description ... */}
+            <label className="text-sm font-medium text-gray-300 flex justify-between">
                 <span>Description</span>
-                {isSuggesting && <span className="text-xs text-[var(--color-gold-500)] animate-pulse">✨ AI Suggesting...</span>}
+                {isSuggesting && <span className="text-xs text-purple-400 animate-pulse">✨ AI Suggesting...</span>}
             </label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               onBlur={handleDescriptionBlur}
-              className="block w-full px-4 py-2 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white placeholder-[var(--color-text-muted)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)]"
+              className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
               placeholder="What is this for? (e.g. Uber, Netflix)"
             />
           </div>
 
+          {/* Event Budget Tag */}
           {activeEvents.length > 0 && (
              <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--color-text-muted)]">Tag Event (Optional)</label>
+                <label className="text-sm font-medium text-gray-300">Tag Event (Optional)</label>
                 <select
                     value={selectedEventId}
                     onChange={(e) => setSelectedEventId(e.target.value)}
-                    className="block w-full px-4 py-2 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)]"
+                    className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                 >
                     <option value="">None (Regular Budget)</option>
                     {activeEvents.map(evt => (
@@ -270,12 +276,13 @@ function TransactionModal({
           )}
 
           <div className="grid grid-cols-2 gap-4">
+             {/* ... Account & Date ... */}
             <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--color-text-muted)]">Account</label>
+                <label className="text-sm font-medium text-gray-300">Account</label>
                 <select
                 value={accountId}
                 onChange={(e) => setAccountId(e.target.value)}
-                className="block w-full px-4 py-2 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)]"
+                className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                 required
                 >
                 <option value="" disabled>Select Account</option>
@@ -286,12 +293,12 @@ function TransactionModal({
             </div>
             
             <div className="space-y-2">
-                <label className="text-sm font-medium text-[var(--color-text-muted)]">Date</label>
+                <label className="text-sm font-medium text-gray-300">Date</label>
                 <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="block w-full px-4 py-2 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white placeholder-[var(--color-text-muted)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 focus:border-[var(--color-gold-500)]"
+                className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                 required
                 />
             </div>
@@ -301,14 +308,14 @@ function TransactionModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--color-text-muted)] hover:text-white hover:bg-white/10 transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 rounded-lg text-sm font-bold text-black bg-gradient-to-r from-[var(--color-gold-500)] to-[var(--color-gold-600)] hover:brightness-110 disabled:opacity-50 transition-all ml-auto shadow-lg shadow-[var(--color-gold-500)]/20"
+              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 transition-all ml-auto"
             >
               {loading ? 'Saving...' : (initialData ? 'Save Changes' : 'Save Transaction')}
             </button>
