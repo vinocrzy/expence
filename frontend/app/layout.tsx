@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from "../context/AuthContext";
 import SyncStatusIndicator from "@/components/ui/SyncStatus";
+import IOSInstallPrompt from "@/components/IOSInstallPrompt";
 
 export default function RootLayout({
   children,
@@ -40,6 +41,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <SyncStatusIndicator />
+          <IOSInstallPrompt />
         </AuthProvider>
       </body>
     </html>
