@@ -16,18 +16,12 @@ export const metadata: Metadata = {
   title: "PocketTogether - Shared Finance",
   description: "Track finances together",
   manifest: "/manifest.json",
+  themeColor: "#111827",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "PocketTogether",
   },
-};
-
-export const viewport = {
-  themeColor: "#2D0812",
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
 };
 
 import { AuthProvider } from "../context/AuthContext";

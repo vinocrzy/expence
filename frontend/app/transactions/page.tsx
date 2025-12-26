@@ -56,7 +56,7 @@ export default function TransactionsPage() {
   });
 
   return (
-    <div className="min-h-screen text-white font-sans selection:bg-[var(--color-gold-500)] selection:text-black">
+    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -67,7 +67,7 @@ export default function TransactionsPage() {
           </div>
           <button
             onClick={handleCreate}
-            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-black bg-gradient-to-r from-[var(--color-gold-500)] to-[var(--color-gold-600)] hover:brightness-110 transition-all font-bold shadow-lg shadow-yellow-900/25"
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all font-bold shadow-lg shadow-purple-500/25"
           >
             <Plus className="h-5 w-5" />
             Add Transaction
@@ -79,10 +79,10 @@ export default function TransactionsPage() {
                 <button
                     key={ft}
                     onClick={() => setFilterType(ft)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border ${
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                         filterType === ft 
-                        ? 'bg-[var(--color-gold-500)] text-black border-[var(--color-gold-500)]' 
-                        : 'bg-[var(--color-wine-surface)] text-[var(--color-text-muted)] border-[var(--color-border-gold)] hover:bg-white/10 hover:text-white'
+                        ? 'bg-purple-500 text-white' 
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
                     }`}
                 >
                     {ft}
@@ -91,33 +91,33 @@ export default function TransactionsPage() {
         </div>
 
         {loading ? (
-           <div className="text-center text-[var(--color-text-muted)] py-12">Loading transactions...</div>
+           <div className="text-center text-gray-400 py-12">Loading transactions...</div>
         ) : (
-          <div className="bg-[var(--color-wine-surface)] backdrop-blur-md rounded-2xl border border-[var(--color-border-gold)] overflow-hidden shadow-lg">
+          <div className="bg-gray-800/50 backdrop-blur-md rounded-2xl border border-gray-700/50 overflow-hidden">
              
              {filteredTransactions.length === 0 ? (
-                <div className="p-12 text-center text-[var(--color-text-muted)]">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 mb-4">
-                        <Search className="h-6 w-6 text-gray-400" />
+                <div className="p-12 text-center text-gray-500">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 mb-4">
+                        <Search className="h-6 w-6 text-gray-600" />
                     </div>
                     <p>No transactions found.</p>
                 </div>
              ) : (
-                <div className="divide-y divide-[var(--color-border-gold)]">
+                <div className="divide-y divide-gray-800">
                     {filteredTransactions.map((t) => (
-                        <div key={t.id} className="p-4 hover:bg-white/5 transition-colors flex items-center justify-between group">
+                        <div key={t.id} className="p-4 hover:bg-gray-800/50 transition-colors flex items-center justify-between group">
                             <div className="flex items-center gap-4">
                                 <div className={clsx(
                                     "p-3 rounded-xl",
-                                    t.type === 'INCOME' && "bg-green-500/10 text-green-500",
-                                    t.type === 'EXPENSE' && "bg-red-500/10 text-red-500",
-                                    t.type === 'TRANSFER' && "bg-blue-500/10 text-blue-500"
+                                    t.type === 'INCOME' && "bg-green-500/10",
+                                    t.type === 'EXPENSE' && "bg-red-500/10",
+                                    t.type === 'TRANSFER' && "bg-blue-500/10"
                                 )}>
                                     {getIcon(t.type)}
                                 </div>
                                 <div>
                                     <div className="font-bold text-white mb-0.5">{t.description || 'No description'}</div>
-                                    <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+                                    <div className="flex items-center gap-2 text-xs text-gray-400">
                                         <span className="flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
                                             {format(new Date(t.date), 'MMM d, yyyy')}
@@ -140,7 +140,7 @@ export default function TransactionsPage() {
                                 </div>
                                 <button
                                     onClick={() => handleDelete(t.id)}
-                                    className="p-2 text-[var(--color-text-muted)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                    className="p-2 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                                     title="Delete Transaction"
                                 >
                                     <Trash2 className="h-4 w-4" />

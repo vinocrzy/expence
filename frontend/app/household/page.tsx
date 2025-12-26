@@ -62,73 +62,73 @@ export default function HouseholdPage() {
   };
 
   return (
-    <div className="min-h-screen theme-wine text-white font-sans selection:bg-[var(--color-gold-500)] selection:text-black">
+    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-white mb-2">Household Settings</h1>
-        <p className="text-[var(--color-text-muted)] mb-8">Manage your shared finance space</p>
+        <p className="text-gray-400 mb-8">Manage your shared finance space</p>
 
         {loading ? (
-             <div className="text-center text-[var(--color-text-muted)] py-12">Loading...</div>
+             <div className="text-center text-gray-400 py-12">Loading...</div>
         ) : (
             <div className="space-y-8">
                 {/* Current Household Info */}
-                <div className="bg-[var(--color-wine-surface)] rounded-2xl p-6 border border-[var(--color-border-gold)] backdrop-blur-sm shadow-xl">
+                <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50">
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 bg-[var(--color-gold-500)]/10 rounded-xl text-[var(--color-gold-500)]">
+                        <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400">
                             <Users className="h-6 w-6" />
                         </div>
                         <div>
                             <h2 className="text-xl font-bold text-white">{household?.name}</h2>
-                            <p className="text-sm text-[var(--color-text-muted)]">Created on {new Date(household?.createdAt).toLocaleDateString()}</p>
+                            <p className="text-sm text-gray-400">Created on {new Date(household?.createdAt).toLocaleDateString()}</p>
                         </div>
                     </div>
 
-                    <div className="bg-[var(--color-wine-deep)] rounded-xl p-4 border border-[var(--color-border-gold)] flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700/50 flex flex-col md:flex-row items-center justify-between gap-4">
                         <div>
-                            <div className="text-sm font-medium text-[var(--color-text-muted)] mb-1">Invite Code</div>
+                            <div className="text-sm font-medium text-gray-400 mb-1">Invite Code</div>
                             <div className="text-lg font-mono font-bold text-white tracking-wider">
                                 {household?.inviteCode || 'No Code'}
                             </div>
                         </div>
                         <button 
                             onClick={copyCode}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--color-wine-surface)] hover:bg-white/5 text-white transition-colors border border-[var(--color-border-gold)] shadow-md"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors border border-gray-600"
                         >
-                            {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4 text-[var(--color-gold-500)]" />}
+                            {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                             {copied ? 'Copied!' : 'Copy Code'}
                         </button>
                     </div>
                 </div>
 
                 {/* Members List */}
-                <div className="bg-[var(--color-wine-surface)] rounded-2xl p-6 border border-[var(--color-border-gold)] backdrop-blur-sm shadow-xl">
+                <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50">
                     <h3 className="text-lg font-bold text-white mb-4">Members</h3>
                     <div className="space-y-4">
                         {household?.users?.map((user: any) => (
-                            <div key={user.id} className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-xl transition-colors border border-transparent hover:border-[var(--color-gold-500)]/20">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-gold-500)] to-[var(--color-gold-600)] flex items-center justify-center text-black font-bold shadow-lg shadow-[var(--color-gold-500)]/20">
+                            <div key={user.id} className="flex items-center gap-4 p-3 hover:bg-gray-700/30 rounded-xl transition-colors">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
                                     {user.name?.[0]?.toUpperCase() || 'U'}
                                 </div>
                                 <div>
                                     <div className="font-bold text-white">{user.name}</div>
-                                    <div className="text-sm text-[var(--color-text-muted)]">{user.email}</div>
+                                    <div className="text-sm text-gray-400">{user.email}</div>
                                 </div>
                             </div>
-                        )) || <div className="text-[var(--color-text-muted)]">No members found</div>}
+                        )) || <div className="text-gray-500">No members found</div>}
                     </div>
                 </div>
 
                 {/* Join Another Household */}
-                <div className="bg-[var(--color-wine-surface)] rounded-2xl p-6 border border-[var(--color-border-gold)] backdrop-blur-sm shadow-xl">
+                <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50">
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 bg-[var(--color-gold-500)]/10 rounded-xl text-[var(--color-gold-500)]">
+                        <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400">
                             <UserPlus className="h-6 w-6" />
                         </div>
                         <div>
                             <h2 className="text-xl font-bold text-white">Join Another Household</h2>
-                            <p className="text-sm text-[var(--color-text-muted)]">Enter an invite code to switch households</p>
+                            <p className="text-sm text-gray-400">Enter an invite code to switch households</p>
                         </div>
                     </div>
 
@@ -138,12 +138,12 @@ export default function HouseholdPage() {
                             value={joinCode}
                             onChange={(e) => setJoinCode(e.target.value)}
                             placeholder="Enter Invite Code"
-                            className="flex-1 px-4 py-3 bg-[var(--color-wine-deep)] border border-[var(--color-border-gold)] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-gold-500)]/50 font-mono"
+                            className="flex-1 px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-mono"
                         />
                         <button
                             type="submit"
                             disabled={joining || !joinCode}
-                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-[var(--color-gold-500)] to-[var(--color-gold-600)] hover:brightness-110 text-black font-bold disabled:opacity-50 transition-all shadow-lg shadow-[var(--color-gold-500)]/20"
+                            className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold disabled:opacity-50 transition-colors"
                         >
                             {joining ? 'Joining...' : 'Join Household'}
                         </button>
