@@ -70,6 +70,9 @@ export default function Navbar() {
                  <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
                     Pocket
                  </span>
+                 <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                    Together
+                 </span>
                </Link>
                
                {/* Status Indicator (Desktop) */}
@@ -175,7 +178,7 @@ export default function Navbar() {
                  P
                  </div>
                  <span className="font-bold text-white text-lg">Pocket</span>
-                 <span className="font-bold text-white text-lg">Pocket</span>
+                 <span className="font-bold text-white text-lg">Together</span>
            </Link>
            
             {/* Status Indicator (Mobile) */}
