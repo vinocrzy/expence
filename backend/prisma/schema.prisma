@@ -129,6 +129,7 @@ model Category {
   name        String
   kind        String       // Was CategoryKind
   color       String?
+  isActive    Boolean      @default(true)
   updatedAt   DateTime     @default(now()) @updatedAt
   
   transactions Transaction[]
