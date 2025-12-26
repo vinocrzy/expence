@@ -224,8 +224,8 @@ export default function Navbar() {
                             onClick={handleOpenMobileMenu}
                             className={`relative flex flex-col items-center justify-center py-3 px-2 w-16 ${isMobileMenuOpen ? 'text-white' : 'text-gray-500'}`}
                         >
-                            <Menu className="h-6 w-6 mb-1" />
-                            <span className="text-[10px] font-medium">Menu</span>
+                            <MoreHorizontal className="h-6 w-6 mb-1" />
+                            <span className="text-[10px] font-medium">More</span>
                         </button>
                     )
                 }
@@ -266,37 +266,48 @@ export default function Navbar() {
                     className="absolute bottom-0 left-0 right-0 bg-gray-900 rounded-t-3xl border-t border-gray-800 p-6 pb-24"
                 >
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xl font-bold">Menu</h3>
+                        <h3 className="text-xl font-bold">More & & Insights</h3>
                         <button onClick={handleCloseMobileMenu} className="p-2 bg-gray-800 rounded-full">
                             <ChevronDown className="h-6 w-6" />
                         </button>
                     </div>
                     
                     <div className="grid grid-cols-4 gap-4">
+                         <Link href="/analytics" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700 col-span-2 flex-row justify-center">
+                             <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
+                                 <BarChart2 className="h-5 w-5" />
+                             </div>
+                             <span className="text-sm font-medium">Analytics & Insights</span>
+                        </Link>
+                         <Link href="/settings/categories" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700 col-span-2 flex-row justify-center">
+                             <div className="w-10 h-10 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-500">
+                                 <Target className="h-5 w-5" />
+                             </div>
+                             <span className="text-sm font-medium">Categories</span>
+                        </Link>
+
                         <Link href="/transactions" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
-                             <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
-                                 <ArrowRightLeft className="h-6 w-6" />
+                             <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                 <ArrowRightLeft className="h-5 w-5" />
                              </div>
                              <span className="text-xs font-medium">Activity</span>
                         </Link>
-                         <Link href="/analytics" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
-                             <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
-                                 <BarChart2 className="h-6 w-6" />
-                             </div>
-                             <span className="text-xs font-medium">Insights</span>
-                        </Link>
+                        
                         <Link href="/household" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
-                             <div className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-500">
-                                 <Settings className="h-6 w-6" />
+                             <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
+                                 <Home className="h-5 w-5" />
                              </div>
                              <span className="text-xs font-medium">Household</span>
                         </Link>
                         <Link href="/profile" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
-                             <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-gray-300">
-                                 <User className="h-6 w-6" />
+                             <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-300">
+                                 <User className="h-5 w-5" />
                              </div>
                              <span className="text-xs font-medium">Profile</span>
                         </Link>
+                         <div className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 opacity-50">
+                           {/* Placeholder for symmetry or remove */}
+                        </div>
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-gray-800">

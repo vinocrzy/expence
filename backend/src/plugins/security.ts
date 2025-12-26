@@ -15,13 +15,9 @@ export default fp(async (fastify) => {
   // 1. CORS Configuration
   await fastify.register(cors, {
     origin: (origin, cb) => {
-      // Allow requests with no origin (like mobile apps or curl requests) in Development
+      // Allow requests with no origin (like mobile apps, curl requests, or same-origin)
       if (!origin) {
-        if (process.env.NODE_ENV !== 'production') {
-            cb(null, true);
-            return;
-        }
-        cb(new Error("Not allowed: No Origin"), false);
+        cb(null, true);
         return;
       }
 
@@ -36,7 +32,8 @@ export default fp(async (fastify) => {
       // 2. Allow specific known production domains
       const KNOWN_ORIGINS = [
           ALLOWED_ORIGIN,
-          'https://pockettogether.netlify.app'
+          'https://pockettogether.netlify.app',
+          'https://pocket.vinocrazy.com'
       ];
       if (KNOWN_ORIGINS.includes(origin)) {
           cb(null, true);
