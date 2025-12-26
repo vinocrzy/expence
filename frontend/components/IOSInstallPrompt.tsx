@@ -11,10 +11,14 @@ export default function IOSInstallPrompt() {
     const [showInstructions, setShowInstructions] = useState(false);
 
     useEffect(() => {
-        // Detect iOS
+        // Detect iOS (more robust check including iPad Pro with MacOS-like UserAgent)
         const userAgent = window.navigator.userAgent.toLowerCase();
-        const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
-        setIsIOS(isIosDevice);
+        const isIosDevice = 
+            /iphone|ipad|ipod/.test(userAgent) || 
+            (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /macintosh/.test(userAgent)); // iPad Pro
+        
+        console.log('[InstallPrompt] UserAgent:', userAgent, 'isIOS:', isIosDevice);
+        setIsIOS(!!isIosDevice);
 
         // Detect Standalone (Installed)
         const isStandaloneMode = 
@@ -93,7 +97,7 @@ export default function IOSInstallPrompt() {
                             animate={{ y: 0 }}
                             exit={{ y: '100%' }}
                             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                            className="bg-gray-900 border-t border-gray-800 w-full max-w-md p-6 rounded-t-3xl pointer-events-auto pb-10 sm:rounded-2xl sm:border sm:m-4"
+                            className="bg-gray-900 border-t z-[9999] border-gray-800 w-full max-w-md p-6 rounded-t-3xl pointer-events-auto pb-10 sm:rounded-2xl sm:border sm:m-4"
                         >
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-xl font-bold text-white">Install for iOS</h2>
