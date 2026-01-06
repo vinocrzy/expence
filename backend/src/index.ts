@@ -111,6 +111,7 @@ const start = async () => {
     fastify.register(import('./routes/creditCard.routes'));
     fastify.register(import('./routes/budget.routes'));
     fastify.register(import('./routes/analytics.routes'));
+    fastify.register(import('./routes/report.routes'));
     console.log("Routes registered");
     
     // Health check
