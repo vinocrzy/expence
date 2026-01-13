@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { 
     LayoutDashboard, ArrowRightLeft, Plus, BarChart2, User, 
     Wallet, CreditCard, Landmark, LogOut, ChevronDown, Menu, Target,
-    MoreHorizontal, Home, Settings, CloudOff, RefreshCw, CloudUpload
+    MoreHorizontal, Home, Settings, CloudOff, RefreshCw, CloudUpload, FileDown
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect, useCallback } from 'react';
@@ -137,6 +137,12 @@ export default function Navbar() {
                     className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/analytics' ? 'text-white' : 'text-gray-400'}`}
                 >
                     Insights
+                </Link>
+                <Link 
+                    href="/reports" 
+                    className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/reports' ? 'text-white' : 'text-gray-400'}`}
+                >
+                    Reports
                 </Link>
               </div>
             </div>
@@ -282,6 +288,12 @@ export default function Navbar() {
                              </div>
                              <span className="text-sm font-medium">Analytics & Insights</span>
                         </Link>
+                         <Link href="/reports" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700 col-span-2 flex-row justify-center">
+                             <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-500">
+                                 <FileDown className="h-5 w-5" />
+                             </div>
+                             <span className="text-sm font-medium">Reports</span>
+                        </Link>
                          <Link href="/settings/categories" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700 col-span-2 flex-row justify-center">
                              <div className="w-10 h-10 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-500">
                                  <Target className="h-5 w-5" />
@@ -308,9 +320,12 @@ export default function Navbar() {
                              </div>
                              <span className="text-xs font-medium">Profile</span>
                         </Link>
-                         <div className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 opacity-50">
-                           {/* Placeholder for symmetry or remove */}
-                        </div>
+                         <Link href="/reports" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
+                             <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-500">
+                                 <FileDown className="h-5 w-5" />
+                             </div>
+                             <span className="text-xs font-medium">Reports</span>
+                        </Link>
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-gray-800">
