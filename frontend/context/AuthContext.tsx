@@ -29,15 +29,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initAuth = async () => {
         const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user_data');
+
+        // 1. Optimistic UI: Load from storage immediately
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {
+                console.error("Failed to parse stored user", e);
+            }
+        }
+
         if (token) {
             try {
-            const res = await api.get('/auth/me');
-            setUser(res.data);
-            } catch (error) {
-            console.error('Failed to fetch user', error);
-            localStorage.removeItem('token');
-            setUser(null);
+                const res = await api.get('/auth/me');
+                const freshUser = res.data;
+                setUser(freshUser);
+                // Update storage with fresh data
+                localStorage.setItem('user_data', JSON.stringify(freshUser));
+            } catch (error: any) {
+                console.error('Failed to fetch user', error);
+                
+                // If unauthorized, clear everything
+                if (error.response?.status === 401 || error.response?.status === 403) {
+                     localStorage.removeItem('token');
+                     localStorage.removeItem('user_data');
+                     setUser(null);
+                }
+                // If offline/network error, we KEEP the storedUser (if any) set above.
+                // No action needed effectively.
             }
+        } else {
+            // No token, ensure clean state
+            setUser(null);
+            localStorage.removeItem('user_data');
         }
       setLoading(false);
     };
@@ -47,12 +72,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (token: string, newUser: User) => {
     localStorage.setItem('token', token);
+    localStorage.setItem('user_data', JSON.stringify(newUser));
     setUser(newUser);
     router.push('/dashboard');
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user_data');
     setUser(null);
     router.push('/');
   };
@@ -60,9 +87,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     try {
       const res = await api.get('/auth/me');
-      setUser(res.data);
+      const freshUser = res.data;
+      setUser(freshUser);
+      localStorage.setItem('user_data', JSON.stringify(freshUser));
     } catch (error) {
       console.error('Failed to refresh user', error);
+      // We don't automatically logout on failed refresh (could be offline),
+      // unless we want strict security. For offline-first, we can just warn.
     }
   };
 
