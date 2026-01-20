@@ -1,40 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Navbar from '../../components/Navbar';
 import LoanModal from '../../components/LoanModal';
-import api from '../../lib/api';
+import { useLoans, useAccounts } from '../../hooks/useLocalData';
 import { Plus, Percent, Calendar, Landmark } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoansPage() {
-  const [loans, setLoans] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const { loans, loading: loansLoading, addLoan } = useLoans();
+  const { accounts, loading: accountsLoading } = useAccounts();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [loansRes, accountsRes] = await Promise.all([
-        api.get('/loans'),
-        api.get('/accounts')
-      ]);
-      setLoans(loansRes.data);
-      setAccounts(accountsRes.data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = loansLoading || accountsLoading;
 
   const handleCreate = async (data: any) => {
-      await api.post('/loans', data);
-      fetchData();
+      await addLoan(data);
   };
 
   return (

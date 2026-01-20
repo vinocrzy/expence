@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Navbar from '../../components/Navbar';
-import api from '../../lib/api';
+import { useBudgets } from '../../hooks/useLocalData';
+import { budgetService } from '../../lib/localdb-services';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { Plus, Target, Calendar, TrendingUp, AlertTriangle, CheckCircle2, Trash2, Archive, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -13,8 +14,7 @@ import { useRouter } from 'next/navigation';
 
 export default function BudgetsPage() {
   const router = useRouter();
-  const [budgets, setBudgets] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { budgets, loading, updateBudget, deleteBudget, refresh } = useBudgets();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState('ACTIVE'); // ACTIVE, PLANNING
   
@@ -27,25 +27,9 @@ export default function BudgetsPage() {
     confirmText: 'Confirm'
   });
 
-  useEffect(() => {
-    fetchBudgets();
-  }, []);
-
-  const fetchBudgets = async () => {
-    try {
-      const res = await api.get('/budgets');
-      setBudgets(res.data);
-    } catch (e) {
-        console.error(e);
-    } finally {
-        setLoading(false);
-    }
-  };
-
   const convertBudget = async (id: string) => {
       try {
-          await api.post(`/budgets/${id}/convert`);
-          fetchBudgets();
+          await updateBudget(id, { status: 'ACTIVE' });
       } catch(e) {
           console.error(e);
       }
@@ -284,7 +268,7 @@ export default function BudgetsPage() {
       </main>
 
       {showCreateModal && (
-          <CreateBudgetModal onClose={() => setShowCreateModal(false)} onSuccess={fetchBudgets} initialStatus={activeTab} />
+          <CreateBudgetModal onClose={() => setShowCreateModal(false)} onSuccess={refresh} initialStatus={activeTab} />
       )}
       
       <ConfirmationModal
@@ -363,7 +347,7 @@ function CreateBudgetModal({ onClose, onSuccess, initialStatus }: any) {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/budgets', {
+            await budgetService.create({
                 name, type, amount: parseFloat(amount), startDate, endDate, status
             });
             onClose(); // Close first

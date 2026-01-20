@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Navbar from '../../components/Navbar';
-import api from '../../lib/api';
+import { useAnalytics } from '../../hooks/useLocalData';
 import { 
     BarChart2, Calendar, TrendingUp, TrendingDown, 
     RefreshCw, Layers, PieChart as PieIcon, Activity,
@@ -14,83 +14,48 @@ import {
 } from 'recharts';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import { useSyncStatus } from '../../hooks/useSyncStatus';
 
 // Colors for charts
 const COLORS = ['#8b5cf6', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1', '#14b8a6'];
 
 export default function AnalyticsPage() {
-    const { isOnline, isSyncing } = useSyncStatus();
-    const [loading, setLoading] = useState(true);
     const [range, setRange] = useState<'MONTH' | 'QUARTER' | 'YEAR'>('MONTH');
-    const [monthlyData, setMonthlyData] = useState<any>(null);
-    const [categoryData, setCategoryData] = useState<any>(null);
+    const months = range === 'YEAR' ? 12 : range === 'QUARTER' ? 3 : 1;
+    const { monthlyData, categoryData, loading, refresh } = useAnalytics(months);
     const [rebuilding, setRebuilding] = useState(false);
-
-    useEffect(() => {
-        loadData();
-    }, [range]);
-
-    const loadData = async () => {
-        setLoading(true);
-        // Try load from cache first
-        const cachedMonthly = localStorage.getItem(`analytics_monthly_${range}`);
-        const cachedCategory = localStorage.getItem(`analytics_category_${range}`);
-        
-        if (cachedMonthly) setMonthlyData(JSON.parse(cachedMonthly));
-        if (cachedCategory) setCategoryData(JSON.parse(cachedCategory));
-
-        if (!cachedMonthly) setLoading(true); // Show loading if no cache
-        else setLoading(false); // Show cache immediately
-
-        try {
-            // Fetch fresh data
-            // Monthly Trend (History)
-            const limit = range === 'YEAR' ? 12 : range === 'QUARTER' ? 3 : 1; 
-            // Actually 'MONTH' implies detailed breakdown for current month, 'YEAR' implies trend over year.
-            // Let's adjust logic:
-            // "Summary cards" always show current month or selected range total?
-            // "MoM Trend" needs history.
-            
-            // 1. Fetch History (last 12 months for trend)
-            const resMonthly = await api.get('/analytics/monthly?limit=12');
-            setMonthlyData(resMonthly.data);
-            localStorage.setItem(`analytics_monthly_${range}`, JSON.stringify(resMonthly.data));
-
-            // 2. Fetch Category Breakdown (Current month or aggregates?)
-            // For simplicity, let's fetch current month categories
-            const now = new Date();
-            const resCat = await api.get(`/analytics/categories?year=${now.getFullYear()}&month=${now.getMonth() + 1}`);
-            setCategoryData(resCat.data);
-            localStorage.setItem(`analytics_category_${range}`, JSON.stringify(resCat.data));
-
-        } catch (error) {
-            console.error("Analytics fetch error", error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleRebuild = async () => {
         if (!confirm('Recalculate all analytics from raw transactions? This may take a moment.')) return;
         setRebuilding(true);
         try {
-            await api.post('/analytics/rebuild');
-            // Poll or wait? The backend says "async trigger". 
-            // We'll show a toast or message and assume it finishes in a few seconds, then reload.
-            setTimeout(() => {
-                loadData();
-                setRebuilding(false);
-            }, 3000);
+            await refresh();
         } catch (error) {
             console.error(error);
+        } finally {
             setRebuilding(false);
         }
     };
 
-    // Derived Stats (Mental Model: MonthlyData is history array, CategoryData is specific month)
-    const currentMonthStats = monthlyData?.data?.[monthlyData.data.length - 1] || { income: 0, expense: 0, netSavings: 0 };
-    const savingsRate = currentMonthStats.income > 0 ? (currentMonthStats.netSavings / currentMonthStats.income) * 100 : 0;
+    // Derived Stats
+    const currentMonthStats = monthlyData[monthlyData.length - 1] || { income: 0, expense: 0, net: 0 };
+    const savingsRate = currentMonthStats.income > 0 ? (currentMonthStats.net / currentMonthStats.income) * 100 : 0;
+
+    // Format data for charts
+    const chartMonthlyData = {
+        data: monthlyData.map(m => ({
+            month: m.month,
+            income: m.income,
+            expense: m.expense,
+        }))
+    };
+
+    const chartCategoryData = {
+        chartData: categoryData.map((c, i) => ({
+            name: c.categoryName,
+            value: c.amount,
+            color: COLORS[i % COLORS.length]
+        }))
+    };
 
     return (
         <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
@@ -152,10 +117,10 @@ export default function AnalyticsPage() {
                             />
                             <SummaryCard 
                                 title="Net Savings" 
-                                value={currentMonthStats.netSavings} 
+                                value={currentMonthStats.net} 
                                 icon={Layers} 
-                                color={currentMonthStats.netSavings >= 0 ? "text-blue-500" : "text-orange-500"} 
-                                bg={currentMonthStats.netSavings >= 0 ? "bg-blue-500/10" : "bg-orange-500/10"} 
+                                color={currentMonthStats.net >= 0 ? "text-blue-500" : "text-orange-500"} 
+                                bg={currentMonthStats.net >= 0 ? "bg-blue-500/10" : "bg-orange-500/10"} 
                             />
                             <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700/50 flex flex-col justify-between">
                                 <span className="text-gray-400 text-sm font-medium">Savings Rate</span>
@@ -174,11 +139,11 @@ export default function AnalyticsPage() {
                                 <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                                     <PieIcon className="h-5 w-5 text-pink-500" /> Expense Breakdown
                                 </h3>
-                                {categoryData?.chartData?.length > 0 ? (
+                                {chartCategoryData?.chartData?.length > 0 ? (
                                     <ResponsiveContainer width="100%" height={300}>
                                         <PieChart>
                                             <Pie
-                                                data={categoryData.chartData}
+                                                data={chartCategoryData.chartData}
                                                 cx="50%"
                                                 cy="50%"
                                                 innerRadius={60}
@@ -186,7 +151,7 @@ export default function AnalyticsPage() {
                                                 paddingAngle={5}
                                                 dataKey="value"
                                             >
-                                                {categoryData.chartData.map((entry: any, index: number) => (
+                                                {chartCategoryData.chartData.map((entry: any, index: number) => (
                                                     <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0.2)" />
                                                 ))}
                                             </Pie>
@@ -209,9 +174,9 @@ export default function AnalyticsPage() {
                                 <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                                     <Activity className="h-5 w-5 text-blue-500" /> Income vs Expense Trend
                                 </h3>
-                                {monthlyData?.data?.length > 0 ? (
+                                {chartMonthlyData?.data?.length > 0 ? (
                                     <ResponsiveContainer width="100%" height={300}>
-                                        <BarChart data={monthlyData.data}>
+                                        <BarChart data={chartMonthlyData.data}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                                             <XAxis dataKey="month" stroke="#9ca3af" tickFormatter={(val) => val} />
                                             <YAxis stroke="#9ca3af" tickFormatter={(val) => `₹${val/1000}k`} />

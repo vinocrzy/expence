@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import TransactionModal from '../../components/TransactionModal';
-import { useTransactions, useAccounts } from '../../hooks/useOfflineData';
+import { useTransactions, useAccounts } from '../../hooks/useLocalData';
 import { Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Trash2, Calendar, Search } from 'lucide-react';
 import clsx from 'clsx';
 import { format } from 'date-fns';

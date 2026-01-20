@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Navbar from '../../components/Navbar';
 import AccountModal from '../../components/AccountModal';
-import api from '../../lib/api';
+import { useAccounts } from '../../hooks/useLocalData';
+import { accountService } from '../../lib/localdb-services';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { Wallet, Plus, Pencil, Trash2, CreditCard, Banknote, Landmark, TrendingUp, Archive } from 'lucide-react';
 
 export default function AccountsPage() {
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const { accounts, loading, updateAccount, deleteAccount, refresh } = useAccounts();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -21,21 +21,6 @@ export default function AccountsPage() {
     isDangerous: false,
     confirmText: 'Confirm'
   });
-
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  const fetchAccounts = async () => {
-    try {
-      const res = await api.get('/accounts');
-      setAccounts(res.data);
-    } catch (error) {
-      console.error('Failed to fetch accounts', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreate = () => {
     setEditingAccount(null);
@@ -71,8 +56,7 @@ export default function AccountsPage() {
 
   const handleArchive = async (id: string) => {
     try {
-        await api.post(`/accounts/${id}/archive`);
-        fetchAccounts();
+        await updateAccount(id, { isArchived: true });
     } catch (e) {
         console.error(e);
         alert('Failed to archive account');
@@ -81,38 +65,36 @@ export default function AccountsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/accounts/${id}`);
-      fetchAccounts();
-    } catch (error: any) {
-      if (error.response?.status === 409 && error.response?.data?.code === 'HAS_TRANSACTIONS') {
-           // Close current modal first if open (though handleDelete is called after confirm)
-           // Logic check: handleDelete is the *action* of the first modal.
-           // We need to show *another* modal suggesting archive.
-           setTimeout(() => {
-               setConfirmModal({
-                   isOpen: true,
-                   title: 'Cannot Delete Account',
-                   message: 'This account has linked transactions and cannot be permanently deleted to preserve history. Would you like to ARCHIVE it instead?',
-                   isDangerous: false,
-                   confirmText: 'Archive Instead',
-                   onConfirm: () => handleArchive(id)
-               });
-           }, 200);
+      // Check if account has transactions
+      const hasTransactions = await accountService.hasTransactions(id);
+      if (hasTransactions) {
+        setTimeout(() => {
+          setConfirmModal({
+            isOpen: true,
+            title: 'Cannot Delete Account',
+            message: 'This account has linked transactions and cannot be permanently deleted to preserve history. Would you like to ARCHIVE it instead?',
+            isDangerous: false,
+            confirmText: 'Archive Instead',
+            onConfirm: () => handleArchive(id)
+          });
+        }, 200);
       } else {
-          console.error('Failed to delete account', error);
-          alert('Failed to delete account');
+        await deleteAccount(id);
       }
+    } catch (error: any) {
+      console.error('Failed to delete account', error);
+      alert('Failed to delete account');
     }
   };
 
   const handleSubmit = async (data: any) => {
     try {
       if (editingAccount) {
-        await api.put(`/accounts/${editingAccount.id}`, data);
+        await updateAccount(editingAccount.id, data);
       } else {
-        await api.post('/accounts', data);
+        await accountService.create(data);
+        await refresh();
       }
-      fetchAccounts();
       setIsModalOpen(false);
     } catch (error) {
       console.error('Failed to save account', error);

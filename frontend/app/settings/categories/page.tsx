@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Navbar from '../../../components/Navbar';
 import CategoryModal from '../../../components/CategoryModal';
-import api from '../../../lib/api';
+import { useCategories } from '../../../hooks/useLocalData';
 import { Plus, Tag, Trash2, Edit2, ArrowDownCircle, ArrowUpCircle, RefreshCw, EyeOff, CheckCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,26 +19,10 @@ type Category = {
 };
 
 export default function CategoriesSettingsPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { categories, loading, addCategory, updateCategory, refresh } = useCategories();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [filter, setFilter] = useState<'ALL' | 'EXPENSE' | 'INCOME'>('ALL');
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const res = await api.get('/categories');
-      setCategories(res.data);
-    } catch (error) {
-      console.error('Failed to fetch categories', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreate = () => {
     setEditingCategory(null);
@@ -53,29 +37,18 @@ export default function CategoriesSettingsPage() {
   const handleSubmit = async (data: any) => {
     try {
       if (editingCategory) {
-        // Optimistic update
-        setCategories(prev => prev.map(c => c.id === editingCategory.id ? { ...c, ...data } : c));
-        
-        await api.put(`/categories/${editingCategory.id}`, data);
+        await updateCategory(editingCategory.id, data);
       } else {
-        const res = await api.post('/categories', data);
-        setCategories(prev => [...prev, res.data]);
+        await addCategory(data);
       }
-      fetchData(); // Refresh to ensure sync
     } catch (error) {
        console.error(error);
-       fetchData(); // Revert on error
     }
   };
 
   const toggleStatus = async (category: Category) => {
-      // Toggle logic
-      const newStatus = !category.isActive;
-      // Optimistic
-      setCategories(prev => prev.map(c => c.id === category.id ? { ...c, isActive: newStatus } : c));
-      
       try {
-          await api.put(`/categories/${category.id}`, { isActive: newStatus });
+          await updateCategory(category.id, { isActive: !category.isActive });
       } catch (error) {
           console.error('Failed to toggle status', error);
           fetchData();

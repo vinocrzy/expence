@@ -98,9 +98,17 @@ function TransactionModal({
         // Categories handled by hook
         
       if (process.env.NEXT_PUBLIC_ENABLE_EVENT_BUDGETS !== 'false') {
-          api.get('/budgets/events/active')
-            .then(res => setActiveEvents(res.data))
-            .catch(() => setActiveEvents([]));
+          // Load active budgets from local database
+          import('@/lib/localdb-services').then(({ budgetService }) => {
+            budgetService.getActiveEventBudgets().then(budgets => {
+              setActiveEvents(budgets.map(b => ({ 
+                id: b.id, 
+                name: b.name, 
+                type: b.type,
+                status: b.status 
+              })));
+            }).catch(() => setActiveEvents([]));
+          });
       }
     }
   }, [isOpen]);
