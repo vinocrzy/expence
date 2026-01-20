@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "../context/AuthContext";
+import { LocalFirstProvider } from "../context/LocalFirstContext";
 import SyncStatusIndicator from "@/components/ui/SyncStatus";
 import IOSInstallPrompt from "@/components/IOSInstallPrompt";
 
@@ -38,11 +39,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          {children}
-          <SyncStatusIndicator />
-          <IOSInstallPrompt />
-        </AuthProvider>
+        <LocalFirstProvider>
+          <AuthProvider>
+            {children}
+            <SyncStatusIndicator />
+            <IOSInstallPrompt />
+          </AuthProvider>
+        </LocalFirstProvider>
       </body>
     </html>
   );

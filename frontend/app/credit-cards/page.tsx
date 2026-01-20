@@ -1,35 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Navbar from '../../components/Navbar';
 import CreditCardModal from '../../components/CreditCardModal';
-import api from '../../lib/api';
+import { useCreditCards } from '../../hooks/useLocalData';
+import { creditCardService } from '../../lib/localdb-services';
 import { Plus, CreditCard, Calendar, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CreditCardsPage() {
-  const [cards, setCards] = useState<any[]>([]);
+  const { creditCards: cards, loading, refresh } = useCreditCards();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchCards();
-  }, []);
-
-  const fetchCards = async () => {
-    try {
-      const res = await api.get('/credit-cards');
-      setCards(res.data); // Expecting list of Accounts with embedded CreditCard info
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreate = async (data: any) => {
-      await api.post('/credit-cards', data);
-      fetchCards();
+      await creditCardService.create(data);
+      await refresh();
   };
   
   // Calculate utilization color

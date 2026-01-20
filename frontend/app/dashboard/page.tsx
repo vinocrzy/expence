@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
-// import api from '../../lib/api'; // Removed direct API usage for analytics
 import { useAuth } from '../../context/AuthContext';
-import { useAccounts } from '../../hooks/useOfflineData';
-import { useAnalytics } from '../../hooks/useAnalytics';
+import { useAccounts, useAnalytics } from '../../hooks/useLocalData';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend
@@ -14,7 +12,7 @@ import {
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const { accounts, loading: accLoading } = useAccounts();
-  const { monthly, categories, loading: analyticsLoading } = useAnalytics();
+  const { monthlyData, categoryData, loading: analyticsLoading } = useAnalytics(6);
   
   const loading = authLoading || accLoading || analyticsLoading;
 
@@ -25,8 +23,8 @@ export default function DashboardPage() {
   // Prepare data object for existing render logic
   const data = {
       accounts: accounts || [],
-      monthly: monthly || [],
-      categories: categories || [],
+      monthly: monthlyData.map(m => ({ month: m.month, income: m.income, expense: m.expense })) || [],
+      categories: categoryData.map(c => ({ name: c.categoryName, value: c.amount })) || [],
       context: { description: 'This Month' }
   };
 

@@ -99,13 +99,21 @@ export default function ReportBuilderModal({ isOpen, onClose, onExport }: Report
 
   const fetchMetadata = async () => {
     try {
-      const response = await fetch('/api/reports/metadata');
-      if (response.ok) {
-        const data = await response.json();
-        setAccounts(data.accounts || []);
-        setCategories(data.categories || []);
-        setAvailableTags(data.tags || []);
-      }
+      const { accountService, categoryService } = await import('@/lib/localdb-services');
+      const { userService } = await import('@/lib/localdb-services');
+      
+      const user = await userService.getCurrent();
+      if (!user?.householdId) return;
+      
+      const [accountsData, categoriesData] = await Promise.all([
+        accountService.getAll(user.householdId),
+        categoryService.getAll(user.householdId)
+      ]);
+      
+      setAccounts(accountsData || []);
+      setCategories(categoriesData || []);
+      // Tags can be extracted from transactions if needed
+      setAvailableTags([]);
     } catch (err) {
       console.error('Failed to fetch metadata:', err);
     }
