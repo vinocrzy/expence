@@ -44,15 +44,18 @@ export default function BudgetsPage() {
             : "Are you sure you want to archive this active budget? It will be removed from your active list, but all transaction history will be preserved.",
         isDangerous: isDraft, // Deleting is dangerous, Archiving is safer
         confirmText: isDraft ? 'Delete Draft' : 'Archive Budget',
-        onConfirm: () => deleteBudget(id, isDraft)
+        onConfirm: () => handleDeleteBudget(id, isDraft)
     });
   };
 
-  const deleteBudget = async (id: string, isDraft: boolean) => {
+  const handleDeleteBudget = async (id: string, isDraft: boolean) => {
       const action = isDraft ? 'delete' : 'archive';
       try {
-          await api.delete(`/budgets/${id}`);
-          fetchBudgets();
+          if (isDraft) {
+              await deleteBudget(id);
+          } else {
+              await updateBudget(id, { isArchived: true });
+          }
       } catch (e) {
           console.error(e);
           alert(`Failed to ${action} budget`);
