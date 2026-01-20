@@ -10,6 +10,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect, useCallback } from 'react';
 import QuickActionSheet from './QuickActionSheet';
+import BackupStatusIndicator from './BackupStatusIndicator';
 import api from '../lib/api';
 import { motion } from 'framer-motion';
 import { useSyncStatus } from '../hooks/useSyncStatus';
@@ -75,22 +76,8 @@ export default function Navbar() {
                  </span>
                </Link>
                
-               {/* Status Indicator (Desktop) */}
-               <div className="ml-4">
-                 {!isOnline ? (
-                    <div className="px-2 py-1 rounded bg-red-500/20 text-red-500 text-xs font-bold flex items-center gap-1">
-                        <CloudOff className="w-3 h-3"/> Offline
-                    </div>
-                 ) : isSyncing ? (
-                    <div className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-500 text-xs font-bold flex items-center gap-1">
-                        <RefreshCw className="w-3 h-3 animate-spin"/> Syncing...
-                    </div>
-                 ) : unsyncedCount > 0 ? (
-                    <button onClick={manualSync} className="px-2 py-1 rounded bg-blue-500/20 text-blue-500 text-xs font-bold flex items-center gap-1 hover:bg-blue-500/30 transition-colors">
-                        <CloudUpload className="w-3 h-3"/> {unsyncedCount} Pending
-                    </button>
-                 ) : null}
-               </div>
+               {/* Status Indicator (Desktop) - LocalBackup Status */}
+               <BackupStatusIndicator />
               
               {/* Desktop Links */}
               <div className="flex items-center gap-6">

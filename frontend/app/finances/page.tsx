@@ -1,52 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import Navbar from '../../components/Navbar';
-import api from '../../lib/api';
+import { useAccounts, useLoans, useCreditCards } from '../../hooks/useLocalData';
 import Link from 'next/link';
 import { Wallet, CreditCard, Landmark, ChevronRight, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '../../lib/motion';
 
 export default function FinancesPage() {
-  const [data, setData] = useState<{
-      accounts: any[];
-      loans: any[];
-      creditCards: any[];
-  }>({ accounts: [], loans: [], creditCards: [] });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [accountsRes, loansRes, cardsRes] = await Promise.all([
-        api.get('/accounts'),
-        api.get('/loans'),
-        api.get('/credit-cards')
-      ]);
-      
-      const allAccounts = accountsRes.data;
-      const bankAccounts = allAccounts.filter((a: any) => a.type !== 'CREDIT_CARD');
-      const ccAccounts = cardsRes.data; 
-      
-      setData({
-          accounts: bankAccounts,
-          loans: loansRes.data,
-          creditCards: ccAccounts
-      });
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { accounts: allAccounts, loading: accountsLoading } = useAccounts();
+  const { loans, loading: loansLoading } = useLoans();
+  const { creditCards, loading: cardsLoading } = useCreditCards();
+  
+  const loading = accountsLoading || loansLoading || cardsLoading;
+  
+  const data = useMemo(() => {
+    const bankAccounts = allAccounts.filter((a: any) => a.type !== 'CREDIT_CARD');
+    return {
+      accounts: bankAccounts,
+      loans: loans,
+      creditCards: creditCards
+    };
+  }, [allAccounts, loans, creditCards]);
 
   const totalBankBalance = data.accounts.reduce((sum, a) => sum + Number(a.balance), 0);
   const totalLoanOutstanding = data.loans.reduce((sum, l) => sum + Number(l.outstandingPrincipal), 0);
-  const totalCcOutstanding = data.creditCards.reduce((sum, c) => sum + Number(c.creditCard?.outstandingAmount || 0), 0);
+  const totalCcOutstanding = data.creditCards.reduce((sum, c) => sum + Number(c.outstandingAmount || 0), 0);
 
   if (loading) {
       return (
