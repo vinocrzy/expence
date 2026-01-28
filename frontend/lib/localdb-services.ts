@@ -59,7 +59,6 @@ export const accountService = {
         householdId: { $eq: householdId }
       }
     });
-    console.log({result});
     
     return result.docs as unknown as Account[];
   },
@@ -71,7 +70,6 @@ export const accountService = {
         isArchived: { $ne: true }
       }
     });
-    console.log({result});
     
     return result.docs as unknown as Account[];
   },
@@ -94,7 +92,6 @@ export const accountService = {
     // PouchDB requires _id
     const docToSave = { ...account, _id: id };
     const response = await accountsDB.put(docToSave);
-    console.log({response});
     
     return { ...account, _rev: response.rev };
   },
@@ -109,7 +106,6 @@ export const accountService = {
       _rev: doc._rev
     };
     const response = await accountsDB.put(updatedDoc);
-    console.log({response});
     
     return { ...updatedDoc, _rev: response.rev };
   },
@@ -118,8 +114,6 @@ export const accountService = {
     try {
       const doc = await accountsDB.get(id);
       await accountsDB.remove(doc);
-      console.log({doc});
-      
     } catch (err: any) {
       if (err.status !== 404) throw err;
     }
