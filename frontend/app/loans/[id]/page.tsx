@@ -27,16 +27,49 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
   const fetchLoan = async () => {
     try {
       const data = await loanService.getById(id);
-      // Mock emis if not in data (schema didn't have emis array, so likely missing)
-      if (data && !(data as any).emis) {
-          (data as any).emis = []; // Populate with dummy schedule?
+      if (data) {
+          // Generate EMI schedule if missing
+          const fullLoan: any = { ...data };
+          if (!fullLoan.emis || fullLoan.emis.length === 0) {
+              fullLoan.emis = generateEmiSchedule(data);
+          }
+          setLoan(fullLoan);
       }
-      setLoan(data);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateEmiSchedule = (loan: any) => {
+      const emis = [];
+      const p = loan.principal;
+      const r = loan.interestRate / 12 / 100;
+      const n = loan.tenureMonths;
+      const emiAmount = loan.emiAmount || (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      
+      let outstanding = p;
+      const startDate = new Date(loan.startDate);
+
+      for (let i = 1; i <= n; i++) {
+        const interest = outstanding * r;
+        const principalComponent = emiAmount - interest;
+        const dueDate = new Date(startDate);
+        dueDate.setMonth(startDate.getMonth() + i);
+        
+        emis.push({
+            id: `emi_${i}`,
+            emiNumber: i,
+            dueDate: dueDate.toISOString(),
+            totalAmount: emiAmount,
+            principalComponent,
+            interestComponent: interest,
+            status: i <= (loan.paidEmis || 0) ? 'PAID' : 'PENDING' // Assuming simple paid count or default pending
+        });
+        outstanding -= principalComponent;
+      }
+      return emis;
   };
 
   const handlePayEmi = async (emiNumber: number) => {

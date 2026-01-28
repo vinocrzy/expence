@@ -58,13 +58,16 @@ export interface CreditCard {
 export interface Loan {
   id: string;
   name: string;
-  lenderName?: string;
-  principalAmount: number;
-  interestRate?: number;
-  tenure?: number;
-  startDate?: string;
+  lender?: string;
+  type?: string; 
+  principal: number;
+  interestRate: number;
+  tenureMonths: number;
+  startDate: string;
   emiAmount?: number;
-  remainingBalance?: number;
+  outstandingPrincipal: number;
+  status?: 'ACTIVE' | 'CLOSED';
+  linkedAccountId?: string;
   isArchived?: boolean;
   householdId: string;
   createdAt?: string;

@@ -495,14 +495,29 @@ export const loanService = {
     const householdId = await getHouseholdId();
     const now = new Date().toISOString();
     const id = generateId();
-    const loan = {
+    
+    // Calculate EMI if not provided
+    let emiAmount = data.emiAmount;
+    if (!emiAmount && data.principal && data.interestRate && data.tenureMonths) {
+        // Simple EMI calculation
+        const p = data.principal;
+        const r = data.interestRate / 12 / 100;
+        const n = data.tenureMonths;
+        emiAmount = (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+        emiAmount = Math.round(emiAmount * 100) / 100;
+    }
+
+    const loan: Loan = {
        ...data,
        id,
        householdId,
+       outstandingPrincipal: data.outstandingPrincipal ?? data.principal, // Initialize with principal
+       status: data.status ?? 'ACTIVE',
+       emiAmount,
        createdAt: now,
        updatedAt: now,
        startDate: typeof data.startDate === 'string' ? data.startDate : (data.startDate as any) instanceof Date ? (data.startDate as any).toISOString() : undefined
-    };
+    } as Loan;
     const docToSave = { ...loan, _id: id };
     const response = await loansDB.put(docToSave);
     return { ...loan, _rev: response.rev };
