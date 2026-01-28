@@ -23,6 +23,10 @@ export default function AnalyticsPage() {
     const months = range === 'YEAR' ? 12 : range === 'QUARTER' ? 3 : 1;
     const { monthlyData, categoryData, loading, refresh } = useAnalytics(months);
     const [rebuilding, setRebuilding] = useState(false);
+    
+    // Placeholder network status
+    const isOnline = false;
+    const isSyncing = false;
 
     const handleRebuild = async () => {
         if (!confirm('Recalculate all analytics from raw transactions? This may take a moment.')) return;
