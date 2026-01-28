@@ -14,9 +14,10 @@ export const syncState$ = new BehaviorSubject<{
 
 export const initializeReplication = async (db: ExpenseDatabase, getToken: () => Promise<string | null>) => {
   const couchURL = process.env.NEXT_PUBLIC_COUCHDB_URL;
+  const isReplicationDisabled = process.env.NEXT_PUBLIC_REPLICATION_DISSABLED === 'true';
   
-  if (!couchURL || true) { // Force disabled for now
-    console.warn('CouchDB Sync is temporarily disabled.');
+  if (!couchURL || isReplicationDisabled) {
+    console.warn('CouchDB Sync is disabled.');
     return;
   }
 
