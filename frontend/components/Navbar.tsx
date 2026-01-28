@@ -14,6 +14,7 @@ import QuickActionSheet from './QuickActionSheet';
 import { motion } from 'framer-motion';
 import { useSyncStatus } from '../hooks/useSyncStatus';
 import { useAccounts } from '../hooks/useLocalData';
+import SyncStatusIndicator from './ui/SyncStatus';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -125,6 +126,8 @@ export default function Navbar() {
 
             {/* Profile & Actions */}
             <div className="flex items-center gap-6">
+               <SyncStatusIndicator />
+               
                <button 
                 onClick={handleOpenQuickAction}
                 className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-purple-600/20"
@@ -165,13 +168,7 @@ export default function Navbar() {
            
             {/* Status Indicator (Mobile) */}
             <div className="mr-auto ml-4">
-                 {!isOnline ? (
-                    <div className="px-2 py-1 rounded bg-red-500/20 text-red-500 text-xs font-bold flex items-center gap-1"><CloudOff className="w-3 h-3"/></div>
-                 ) : isSyncing ? (
-                    <div className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-500 text-xs font-bold flex items-center gap-1"><RefreshCw className="w-3 h-3 animate-spin"/></div>
-                 ) : unsyncedCount > 0 ? (
-                    <button onClick={manualSync} className="px-2 py-1 rounded bg-blue-500/20 text-blue-500 text-xs font-bold flex items-center gap-1"><CloudUpload className="w-3 h-3"/> {unsyncedCount}</button>
-                 ) : null}
+                 <SyncStatusIndicator />
             </div>
 
            <Link href="/profile" className="text-gray-400">

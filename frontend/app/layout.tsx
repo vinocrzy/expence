@@ -48,7 +48,7 @@ export default function RootLayout({
             {/* Keeping AuthProvider for now if it provides custom logic, but wrapping with Clerk */}
             <AuthProvider>
               {children}
-              <SyncStatusIndicator />
+              {/* <SyncStatusIndicator /> - Moved to Navbar */}
               <IOSInstallPrompt />
             </AuthProvider>
           </LocalFirstProvider>
