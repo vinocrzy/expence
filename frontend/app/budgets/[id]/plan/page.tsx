@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '../../../../components/Navbar';
-import api from '../../../../lib/api';
 import { ArrowLeft, Trash2, Plus, CheckCircle2, AlertTriangle, Calculator, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { budgetService } from '../../../../lib/localdb-services';
 
 export default function BudgetPlannerPage() {
   const { id } = useParams();
@@ -26,20 +26,10 @@ export default function BudgetPlannerPage() {
 
   const fetchBudget = async () => {
     try {
-      const res = await api.get(`/budgets`);
-      // We need to find the specific budget from the list or implement a singular GET endpoint.
-      // For now, let's filter from the list as we haven't made a singular GET w/ plan items yet, 
-      // but wait, we need plan items. 
-      // Actually, let's assume GET /budgets was updated or we use the breakdown endpoint which might have them?
-      // No, breakdown logic is specific. 
-      // Let's rely on the list for budget details, but we need a way to fetch items.
-      // Ah, the previous step added 'planItems' to the include of GET /budgets.
-      
-      const allBudgets = res.data;
-      const b = allBudgets.find((b: any) => b.id === id);
+      const b = await budgetService.getById(id as string);
       if (b) {
           setBudget(b);
-          setItems(b.planItems || []);
+          setItems((b as any).planItems || []);
       }
     } catch (e) {
       console.error(e);
@@ -52,12 +42,13 @@ export default function BudgetPlannerPage() {
       e.preventDefault();
       setAdding(true);
       try {
-          const res = await api.post(`/budgets/${id}/plan`, {
+          const newItem = await budgetService.addPlanItem(id as string, {
               name: itemName,
+              totalAmount: parseFloat(itemAmount) * itemQty, // simplified
               unitAmount: parseFloat(itemAmount),
               quantity: itemQty
           });
-          setItems([...items, res.data]);
+          setItems([...items, newItem]);
           setItemName('');
           setItemAmount('');
           setItemQty(1);
@@ -70,18 +61,18 @@ export default function BudgetPlannerPage() {
 
   const handleRemoveItem = async (itemId: string) => {
       try {
-          setItems(items.filter(i => i.id !== itemId)); // Optimistic update
-          await api.delete(`/budgets/plan/${itemId}`);
+          setItems(items.filter(i => i.id !== itemId)); 
+          await budgetService.removePlanItem(id as string, itemId);
       } catch(e) {
           console.error(e);
-          fetchBudget(); // Revert on fail
+          fetchBudget();
       }
   };
 
   const handleActivate = async () => {
      if (!confirm('Are you sure? This will lock the plan and create an active budget.')) return;
       try {
-          await api.post(`/budgets/${id}/convert`);
+          await budgetService.activate(id as string);
           router.push('/budgets');
       } catch (e) {
           console.error(e);

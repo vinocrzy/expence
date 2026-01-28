@@ -1,26 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-
-type ReportType = 
-  | 'EXPENSE' 
-  | 'INCOME' 
-  | 'ACCOUNT_SUMMARY' 
-  | 'LOAN' 
-  | 'CREDIT_CARD' 
-  | 'BUDGET_VS_ACTUAL' 
-  | 'TRIP_EVENT' 
-  | 'YEARLY_SUMMARY';
-
-type ReportFormat = 'EXCEL' | 'PDF';
-
-interface ReportFilters {
-  startDate: string;
-  endDate: string;
-  accountIds?: string[];
-  categoryIds?: string[];
-  tags?: string[];
-}
+import { exportReport, ReportType, ReportFormat, ReportFilters } from '@/lib/reports';
 
 interface UseReportExportReturn {
   exportReport: (type: ReportType, format: ReportFormat, filters: ReportFilters) => Promise<void>;
@@ -33,7 +14,7 @@ export function useReportExport(): UseReportExportReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const exportReport = async (
+  const handleExport = async (
     type: ReportType,
     format: ReportFormat,
     filters: ReportFilters
@@ -42,41 +23,11 @@ export function useReportExport(): UseReportExportReturn {
     setError(null);
 
     try {
-      // Get token from localStorage
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      // Generate the report locally
+      const blob = await exportReport(type, format, filters);
       
-      const response = await fetch('/api/reports/export', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify({
-          type,
-          format,
-          filters
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Export failed: ${response.statusText}`);
-      }
-
-      // Get the blob
-      const blob = await response.blob();
+      const filename = `${type.toLowerCase()}-report.${format === 'EXCEL' ? 'xlsx' : 'pdf'}`;
       
-      // Generate filename from response header or default
-      const contentDisposition = response.headers.get('Content-Disposition');
-      let filename = `${type.toLowerCase()}-report.${format === 'EXCEL' ? 'xlsx' : 'pdf'}`;
-      
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-        if (filenameMatch) {
-          filename = filenameMatch[1];
-        }
-      }
-
       // Download the file
       downloadBlob(blob, filename);
       
@@ -115,7 +66,7 @@ export function useReportExport(): UseReportExportReturn {
   };
 
   return {
-    exportReport,
+    exportReport: handleExport,
     isLoading,
     error,
     shareReport

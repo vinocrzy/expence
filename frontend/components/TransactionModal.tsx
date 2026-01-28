@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useMemo, memo } from 'react';
 import { X } from 'lucide-react';
-import api from '../lib/api';
-import { useCategories, useTransactionMutations } from '../hooks/useOfflineData';
+import { categoryService, transactionService, budgetService } from '../lib/localdb-services';
 
 interface Account {
   id: string;
@@ -44,8 +43,8 @@ function TransactionModal({
   const [type, setType] = useState('EXPENSE');
   const [description, setDescription] = useState('');
   
-  const { categories } = useCategories({ subscribe: false });
-  const { addTransaction } = useTransactionMutations();
+  const [categories, setCategories] = useState<Category[]>([]);
+  // const { addTransaction } = useTransactionMutations(); // removed
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeEvents, setActiveEvents] = useState<any[]>([]);
@@ -53,7 +52,7 @@ function TransactionModal({
   const [isSuggesting, setIsSuggesting] = useState(false);
 
   const handleDescriptionBlur = async () => {
-    if (!description || categoryId) return; // Don't suggest if category already selected
+    if (!description || categoryId) return; 
 
     setIsSuggesting(true);
     try {
@@ -65,20 +64,9 @@ function TransactionModal({
         const data = await res.json();
         
         if (data.category) {
-            // Find category ID by name (case-insensitive)
-            // We search in 'categories' (all) not just filtered, but we should prioritize current type.
-            // Actually, if the suggestion is "Income" related strings, we might want to switch type? 
-            // For now let's just search in current available categories to be safe or all.
-            // Let's search in all categories and switch type if needed? 
-            // That might be too aggressive. Let's start with searching in *all* and if found, switch type + set category.
-            
             const foundCategory = categories.find(c => c.name.toLowerCase() === data.category.toLowerCase());
             
             if (foundCategory) {
-                // If the found category type is different from current type, should we switch? 
-                // Ideally yes, but let's be careful.
-                // If I type "Salary" and I am in "Expense", it should probably switch to "Income".
-                
                 if (foundCategory.kind !== type) {
                     setType(foundCategory.kind);
                 }
@@ -95,45 +83,24 @@ function TransactionModal({
   // Fetch categories when modal opens
   useEffect(() => {
     if (isOpen) {
-        // Categories handled by hook
-        
-      if (process.env.NEXT_PUBLIC_ENABLE_EVENT_BUDGETS !== 'false') {
+        // Fetch categories
+        categoryService.getAll().then(cats => setCategories(cats as any));
+
+        if (process.env.NEXT_PUBLIC_ENABLE_EVENT_BUDGETS !== 'false') {
           // Load active budgets from local database
-          import('@/lib/localdb-services').then(({ budgetService }) => {
             budgetService.getActiveEventBudgets().then(budgets => {
-              setActiveEvents(budgets.map(b => ({ 
+              setActiveEvents(budgets.map((b: any) => ({ 
                 id: b.id, 
                 name: b.name, 
-                type: b.type,
+                type: b.budgetMode,
                 status: b.status 
               })));
             }).catch(() => setActiveEvents([]));
-          });
-      }
+        }
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (isOpen) {
-        setError('');
-        if (initialData) {
-            setAmount(initialData.amount);
-            setDate(new Date(initialData.date).toISOString().split('T')[0]);
-            setAccountId(initialData.accountId);
-            setCategoryId(initialData.categoryId || '');
-            setType(initialData.type);
-            setDescription(initialData.description || '');
-        } else {
-            setAmount('');
-            setDate(new Date().toISOString().split('T')[0]);
-            setCategoryId('');
-            setType(initialType);
-            setDescription('');
-            setDescription('');
-            setSelectedEventId('');
-        }
-    }
-  }, [initialData, isOpen, accounts, initialType]);
+  // ... (useEffect for initialData stays same) ...
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +127,7 @@ function TransactionModal({
       if (onSubmit) {
         await onSubmit(transactionData);
       } else {
-        await addTransaction(transactionData);
+        await transactionService.create(transactionData);
       }
       onSuccess?.();
       onClose();

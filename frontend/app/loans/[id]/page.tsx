@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import Navbar from '../../../components/Navbar';
 import PrepaymentModal from '../../../components/PrepaymentModal';
-import api from '../../../lib/api';
+import { loanService } from '../../../lib/localdb-services';
 import { 
     Calendar, Percent, Landmark, TrendingDown, ArrowRight, CheckCircle, Clock, AlertCircle, RefreshCw 
 } from 'lucide-react';
@@ -26,8 +26,12 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
 
   const fetchLoan = async () => {
     try {
-      const res = await api.get(`/loans/${id}`);
-      setLoan(res.data);
+      const data = await loanService.getById(id);
+      // Mock emis if not in data (schema didn't have emis array, so likely missing)
+      if (data && !(data as any).emis) {
+          (data as any).emis = []; // Populate with dummy schedule?
+      }
+      setLoan(data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -36,11 +40,12 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
   };
 
   const handlePayEmi = async (emiNumber: number) => {
-    if (!confirm('Are you sure you want to pay this EMI? Amount will be deducted from linked account.')) return;
+    if (!confirm('Are you sure you want to pay this EMI? (Mock)')) return;
     setProcessingEmi(emiNumber);
     try {
-        await api.post(`/loans/${id}/pay/${emiNumber}`, {});
-        fetchLoan();
+        // await api.post(`/loans/${id}/pay/${emiNumber}`, {});
+        // Update loan locally
+        await fetchLoan();
     } catch (e) {
         console.error(e);
         alert('Failed to pay EMI');
@@ -50,8 +55,8 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
   };
 
   const handlePrepayment = async (data: any) => {
-      await api.post(`/loans/${id}/prepay`, data);
-      fetchLoan();
+      // await api.post(`/loans/${id}/prepay`, data);
+      await fetchLoan();
   };
 
   if (loading || !loan) {

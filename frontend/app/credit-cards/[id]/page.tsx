@@ -3,18 +3,17 @@
 import { useState, useEffect, use } from 'react';
 import Navbar from '../../../components/Navbar';
 import CreditCardPaymentModal from '../../../components/CreditCardPaymentModal';
-import api from '../../../lib/api';
+import { creditCardService, transactionService, accountService } from '../../../lib/localdb-services';
 import { 
     CreditCard as CreditCardIcon, Calendar, Upload, AlertCircle, TrendingUp, DollarSign, List 
 } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, AreaChart, Area } from 'recharts';
 
 export default function CreditCardDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
   
   const [card, setCard] = useState<any>(null);
-  const [accounts, setAccounts] = useState<any[]>([]); // For payment source
+  const [accounts, setAccounts] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -26,23 +25,16 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [cardRes, accountsRes, txRes] = await Promise.all([
-        api.get(`/credit-cards/${id}`),
-        api.get('/accounts'),
-        api.get('/transactions') // We should filter by accountId, but API typically returns all. 
-        // We will filter client side or implement filtered API.
-        // Assuming /transactions returns *all* user transactions.
-        // Better: implement /accounts/:id/transactions in future.
-        // For now, filter client side if list is small, or use what ever we have.
-      ]);
+      const cardData = await creditCardService.getById(id);
+      const allAccounts = await accountService.getAll('household_1');
+      const allTx = await transactionService.getAll('household_1');
+
+      setCard(cardData);
+      setAccounts(allAccounts.filter((a: any) => a.type !== 'CREDIT_CARD'));
       
-      setCard(cardRes.data);
-      // Filter out Credit Cards from payment sources
-      setAccounts(accountsRes.data.filter((a: any) => a.type !== 'CREDIT_CARD'));
-      
-      // Filter transactions for this card
-      const myTx = txRes.data.filter((t: any) => t.accountId === id || t.accountId === cardRes.data.accountId);
-      setTransactions(myTx.slice(0, 20)); // Last 20
+      // Filter transactions for this card (assuming accountId matches card's linked account or card id itself)
+      const myTx = allTx.filter((t: any) => t.accountId === id);
+      setTransactions(myTx.slice(0, 20));
       
     } catch (e) {
       console.error(e);
@@ -52,34 +44,28 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
   };
 
   const handlePayment = async (data: any) => {
-      await api.post(`/credit-cards/${card.id}/payment`, data);
-      fetchData();
+      // Mock payment logic
+      // create transaction?
+      await fetchData();
   };
   
   const handleGenerateStatement = async () => {
-      if(confirm('Generate statement for previous cycle?')) {
-          await api.post(`/credit-cards/${card.id}/generate-statement`, {});
-          fetchData();
+      if(confirm('Generate statement? (Mock)')) {
+          await fetchData();
       }
   };
 
   const handleSimulateCharge = async () => {
       const amount = prompt('Enter charge amount:');
       if (amount) {
-          await api.post(`/credit-cards/${card.id}/charge`, {
+          await transactionService.create({
               amount: parseFloat(amount),
               description: 'Simulated Charge',
-              categoryId: 'default', // Make sure this exists or logic handles it?
-              // Need a valid Category ID.
-              // We'll skip categoryId and let backend handle it or fetch categories?
-              // Backend logic: required categoryId.
-              // Let's hardcode a known one or pick first?
-              // We didn't fetch categories.
-              // Let's rely on backend optionality or fetch them.
-              // Wait, simplified:
-              date: new Date().toISOString()
-          }).catch(err => {
-              alert('Failed: ' + (err.response?.data?.error || err.message));
+              type: 'EXPENSE',
+              date: new Date().toISOString(),
+              accountId: id,
+              categoryId: 'uncategorized', // ensure id exists or handle
+              householdId: 'household_1'
           });
           fetchData();
       }
