@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { X, Calculator } from 'lucide-react';
-import api from '../lib/api';
 
 interface LoanModalProps {
   isOpen: boolean;

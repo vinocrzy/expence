@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
-import api from '../../lib/api';
+import { householdService } from '../../lib/localdb-services';
 import { Users, Copy, Check, UserPlus } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '@clerk/nextjs';
 
 export default function HouseholdPage() {
-  const { refreshUser } = useAuth();
+  // const { refreshUser } = useAuth(); // Not available in Clerk useAuth
+  const { userId } = useAuth();
   const [household, setHousehold] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -21,11 +22,14 @@ export default function HouseholdPage() {
 
   const fetchHousehold = async () => {
     try {
-      const res = await api.get('/household');
-      setHousehold(res.data);
+      const data = await householdService.getCurrent();
+      setHousehold({
+          ...data,
+          inviteCode: 'LOCAL-1234', // Mock code
+          users: [{ id: 'user_1', name: 'You', email: 'you@example.com' }] // Mock users
+      });
     } catch (error) {
       console.error('Failed to fetch household', error);
-      // If 404, maybe user not in household? But our schema enforces it mostly.
     } finally {
       setLoading(false);
     }
@@ -47,15 +51,14 @@ export default function HouseholdPage() {
     setError('');
     
     try {
-        await api.post('/household/join', { inviteCode: joinCode });
-        // Refresh everything
-        await refreshUser();
+        // Mock join
+        await new Promise(r => setTimeout(r, 1000));
         await fetchHousehold();
         setJoinCode('');
-        alert('Joined household successfully!');
+        alert('Joined household successfully (Mock)!');
     } catch (err: any) {
         console.error(err);
-        setError(err.response?.data?.error || 'Failed to join household');
+        setError('Failed to join household');
     } finally {
         setJoining(false);
     }

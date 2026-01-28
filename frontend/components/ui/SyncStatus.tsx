@@ -1,64 +1,90 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { syncEngine, SyncStatus } from '@/lib/sync';
-import { Cloud, RefreshCw, AlertTriangle, CheckCircle, WifiOff } from 'lucide-react';
+import React, { useState } from 'react';
+import { useSyncStatus } from '@/hooks/useSyncStatus';
+import { Cloud, RefreshCw, AlertTriangle, CheckCircle, WifiOff, Settings2, Play, Pause } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const SyncStatusIndicator = () => {
-    const [status, setStatus] = useState<SyncStatus>('COMPLETED');
-    const [showCompleted, setShowCompleted] = useState(false);
+    const { isOnline, isSyncing, error, isConnected, manualSync } = useSyncStatus();
+    const [isOpen, setIsOpen] = useState(false);
+    const [isAutoSync, setIsAutoSync] = useState(true); // Mock state for now
 
-    useEffect(() => {
-        // Subscribe to sync status changes
-        const unsubscribe = syncEngine.subscribe((s) => {
-            if (s === 'COMPLETED') {
-                setShowCompleted(true);
-                setTimeout(() => setShowCompleted(false), 3000);
-            }
-            setStatus(s);
-        });
-        return unsubscribe;
-    }, []);
-
-    const handleSync = () => {
-        if (status !== 'SYNCING') {
-            syncEngine.syncNow();
-        }
-    };
-
-    // If completed and timeout passed, hide.
-    if (status === 'COMPLETED' && !showCompleted) return null;
+    // Determine status
+    let status = 'COMPLETED';
+    if (!isOnline) status = 'OFFLINE';
+    else if (error) status = 'ERROR';
+    else if (isSyncing) status = 'SYNCING';
+    else if (isConnected) status = 'COMPLETED';
 
     const config = {
-        'SAVED_LOCALLY': { icon: Cloud, text: 'Saved to device', color: 'bg-zinc-100/90 backdrop-blur-sm text-zinc-600 border-zinc-200' },
-        'SYNCING': { icon: RefreshCw, text: 'Syncing...', color: 'bg-blue-50/90 backdrop-blur-sm text-blue-600 border-blue-100', animate: true },
-        'ERROR': { icon: AlertTriangle, text: 'Server unavailable (Data safe)', color: 'bg-amber-50/90 backdrop-blur-sm text-amber-600 border-amber-200' },
-        'OFFLINE': { icon: WifiOff, text: 'Offline Mode', color: 'bg-zinc-100/90 backdrop-blur-sm text-zinc-500 border-zinc-200' },
-        'COMPLETED': { icon: CheckCircle, text: 'Synced', color: 'bg-green-50/90 backdrop-blur-sm text-green-600 border-green-100' }
-    }[status];
-
-    if (!config) return null;
+        'SYNCING': { icon: RefreshCw, text: 'Syncing...', color: 'text-blue-500', bg: 'bg-blue-500/10 border-blue-500/20', animate: true },
+        'ERROR': { icon: AlertTriangle, text: 'Sync Error', color: 'text-amber-500', bg: 'bg-amber-500/10 border-amber-500/20' },
+        'OFFLINE': { icon: WifiOff, text: 'Offline', color: 'text-gray-500', bg: 'bg-gray-500/10 border-gray-500/20' },
+        'COMPLETED': { icon: CheckCircle, text: 'Synced', color: 'text-green-500', bg: 'bg-green-500/10 border-green-500/20' }
+    }[status] || { icon: Cloud, text: 'Unknown', color: 'text-gray-500', bg: 'bg-gray-500/10' };
 
     const Icon = config.icon;
 
     return (
-        <AnimatePresence>
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="fixed bottom-6 right-6 z-50 pointer-events-auto"
-            >
-                <button 
-                    onClick={handleSync}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full border shadow-lg text-sm font-medium transition-colors ${config.color}`}
+        <>
+            <AnimatePresence>
+                <motion.div 
+                    layout
+                    className={`fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2`}
                 >
-                    <Icon className={`w-4 h-4 ${config.animate ? 'animate-spin' : ''}`} />
-                    <span>{config.text}</span>
-                </button>
-            </motion.div>
-        </AnimatePresence>
+                    {isOpen && (
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                            className="bg-gray-900 border border-gray-800 rounded-2xl p-4 shadow-2xl w-64 mb-2"
+                        >
+                            <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+                                <Cloud className="w-4 h-4 text-purple-500" /> Sync Settings
+                            </h3>
+                            
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between text-sm text-gray-300">
+                                    <span>Status</span>
+                                    <span className={`font-medium ${config.color}`}>{config.text}</span>
+                                </div>
+                                
+                                <div className="h-px bg-gray-800" />
+
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-300">Auto-Sync</span>
+                                    <button 
+                                        onClick={() => setIsAutoSync(!isAutoSync)}
+                                        className={`w-10 h-6 rounded-full p-1 transition-colors ${isAutoSync ? 'bg-green-500' : 'bg-gray-700'}`}
+                                    >
+                                        <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${isAutoSync ? 'translate-x-4' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+
+                                <button 
+                                    onClick={manualSync}
+                                    disabled={!isOnline || isSyncing}
+                                    className="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                                    Sync Now
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    <motion.button 
+                        onClick={() => setIsOpen(!isOpen)}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-full border shadow-lg backdrop-blur-md transition-all hover:scale-105 active:scale-95 ${config.bg} ${config.color}`}
+                    >
+                        <Icon className={`w-4 h-4 ${config.animate ? 'animate-spin' : ''}`} />
+                        <span className="text-sm font-bold">{config.text}</span>
+                        <Settings2 className="w-3 h-3 ml-1 opacity-50" />
+                    </motion.button>
+                </motion.div>
+            </AnimatePresence>
+        </>
     );
 };
 

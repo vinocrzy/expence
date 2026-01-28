@@ -8,33 +8,25 @@ import {
     MoreHorizontal, Home, Settings, CloudOff, RefreshCw, CloudUpload, FileDown
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import QuickActionSheet from './QuickActionSheet';
-import BackupStatusIndicator from './BackupStatusIndicator';
-import api from '../lib/api';
+// import BackupStatusIndicator from './BackupStatusIndicator'; // Removed legacy
 import { motion } from 'framer-motion';
 import { useSyncStatus } from '../hooks/useSyncStatus';
+import { useAccounts } from '../hooks/useLocalData';
 
 export default function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [accounts, setAccounts] = useState([]);
+  const { accounts } = useAccounts(); // Use local hook
   const { isOnline, isSyncing, unsyncedCount, manualSync } = useSyncStatus();
 
   const handleOpenQuickAction = useCallback(() => setIsQuickActionOpen(true), []);
   const handleCloseQuickAction = useCallback(() => setIsQuickActionOpen(false), []);
   const handleOpenMobileMenu = useCallback(() => setIsMobileMenuOpen(true), []);
   const handleCloseMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
-  
-  // Fetch accounts only if needed for FAB (lazy load or on mount?)
-  // Better to fetch on mount or Context. For now, fetch to pass to Sheet.
-  useEffect(() => {
-     if(user) {
-         api.get('/accounts').then(res => setAccounts(res.data)).catch(err => console.error(err));
-     }
-  }, [user]);
   
   if (!user) return null;
 
@@ -75,9 +67,6 @@ export default function Navbar() {
                     Together
                  </span>
                </Link>
-               
-               {/* Status Indicator (Desktop) - LocalBackup Status */}
-               <BackupStatusIndicator />
               
               {/* Desktop Links */}
               <div className="flex items-center gap-6">
@@ -151,7 +140,7 @@ export default function Navbar() {
                     </Link>
                     <Link href="/profile" className="flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white">
                         <User className="h-5 w-5" />
-                        <span className="hidden lg:inline">{user.name}</span>
+                        <span className="hidden lg:inline">{user?.name}</span>
                     </Link>
                     <button onClick={logout} className="text-gray-500 hover:text-white">
                         <LogOut className="h-5 w-5" />
