@@ -4,19 +4,10 @@ import { useState } from 'react';
 import Navbar from '../../../components/Navbar';
 import CategoryModal from '../../../components/CategoryModal';
 import { useCategories } from '../../../hooks/useLocalData';
+import { Category } from '../../../lib/db-types';
 import { Plus, Tag, Trash2, Edit2, ArrowDownCircle, ArrowUpCircle, RefreshCw, EyeOff, CheckCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Types
-type Category = {
-    id: string;
-    name: string;
-    kind: 'EXPENSE' | 'INCOME';
-    color: string;
-    isActive: boolean;
-    usageCount?: number; // Optional context
-};
 
 export default function CategoriesSettingsPage() {
   const { categories, loading, addCategory, updateCategory, refresh } = useCategories();
@@ -51,15 +42,15 @@ export default function CategoriesSettingsPage() {
           await updateCategory(category.id, { isActive: !category.isActive });
       } catch (error) {
           console.error('Failed to toggle status', error);
-          fetchData();
+          refresh();
       }
   };
 
-  const filteredCategories = categories.filter(c => filter === 'ALL' || c.kind === filter);
+  const filteredCategories = categories.filter(c => filter === 'ALL' || c.type === filter);
   
-  // Group by kind for display if filter is ALL, or just list
-  const expenseCategories = filteredCategories.filter(c => c.kind === 'EXPENSE');
-  const incomeCategories = filteredCategories.filter(c => c.kind === 'INCOME');
+  // Group by type for display if filter is ALL, or just list
+  const expenseCategories = filteredCategories.filter(c => c.type === 'EXPENSE');
+  const incomeCategories = filteredCategories.filter(c => c.type === 'INCOME');
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
