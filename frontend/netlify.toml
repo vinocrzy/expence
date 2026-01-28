@@ -1,6 +1,6 @@
 [build]
   command = "npm run build"
-  publish = ".next"
+  # publish = ".next" # Fixed: Let Netlify Runtime handle this to ensure public/ assets are served correctly
 
 [build.environment]
   NPM_FLAGS = "--legacy-peer-deps"

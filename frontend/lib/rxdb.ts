@@ -62,7 +62,7 @@ const createDatabase = async (): Promise<ExpenseDatabase> => {
   
   // Create database
   const db = await createRxDatabase<ExpenseDatabaseCollections>({
-    name: 'expensedb_rx',
+    name: 'expensedb', // Fixed: Remove underscore to avoid DB9 error
     storage,
     multiInstance: true,
     eventReduce: true,
