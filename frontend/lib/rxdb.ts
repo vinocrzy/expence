@@ -33,9 +33,9 @@ addRxPlugin(RxDBQueryBuilderPlugin);
 addRxPlugin(RxDBLeaderElectionPlugin);
 addRxPlugin(RxDBMigrationSchemaPlugin);
 
-if (process.env.NODE_ENV === 'development') {
-  addRxPlugin(RxDBDevModePlugin);
-}
+// if (process.env.NODE_ENV === 'development') {
+   addRxPlugin(RxDBDevModePlugin);
+// }
 
 export type ExpenseDatabaseCollections = {
   accounts: RxCollection<AccountDocType>;
