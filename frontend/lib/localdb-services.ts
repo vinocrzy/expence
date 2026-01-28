@@ -59,6 +59,8 @@ export const accountService = {
         householdId: { $eq: householdId }
       }
     });
+    console.log({result});
+    
     return result.docs as unknown as Account[];
   },
 
@@ -69,6 +71,8 @@ export const accountService = {
         isArchived: { $ne: true }
       }
     });
+    console.log({result});
+    
     return result.docs as unknown as Account[];
   },
 
@@ -76,18 +80,22 @@ export const accountService = {
     return safeGet<Account>(accountsDB, id);
   },
 
-  async create(data: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>): Promise<Account> {
+  async create(data: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<Account> {
+    const householdId = await getHouseholdId();
     const now = new Date().toISOString();
     const id = generateId();
     const account: Account = {
       ...data,
       id,
+      householdId,
       createdAt: now,
       updatedAt: now,
     };
     // PouchDB requires _id
     const docToSave = { ...account, _id: id };
     const response = await accountsDB.put(docToSave);
+    console.log({response});
+    
     return { ...account, _rev: response.rev };
   },
 
@@ -101,6 +109,8 @@ export const accountService = {
       _rev: doc._rev
     };
     const response = await accountsDB.put(updatedDoc);
+    console.log({response});
+    
     return { ...updatedDoc, _rev: response.rev };
   },
 
@@ -108,14 +118,28 @@ export const accountService = {
     try {
       const doc = await accountsDB.get(id);
       await accountsDB.remove(doc);
+      console.log({doc});
+      
     } catch (err: any) {
       if (err.status !== 404) throw err;
     }
   },
 
+
   async archive(id: string): Promise<Account> {
     return this.update(id, { isArchived: true });
   },
+
+  async hasTransactions(id: string): Promise<boolean> {
+    const result = await transactionsDB.find({
+      selector: {
+        accountId: { $eq: id }
+      },
+      limit: 1
+    });
+    return result.docs.length > 0;
+  },
+
 
   async calculateTotalBalance(householdId: string): Promise<number> {
     const accounts = await this.getAllActive(householdId);
@@ -200,7 +224,8 @@ export const transactionService = {
   async getAll(householdId: string): Promise<Transaction[]> {
     const result = await transactionsDB.find({
       selector: {
-        householdId: { $eq: householdId }
+        householdId: { $eq: householdId },
+        date: { $gt: null }
       },
       sort: [{ date: 'desc' }]
     });
@@ -415,12 +440,14 @@ export const creditCardService = {
     return safeGet<CreditCard>(creditcardsDB, id);
   },
 
-  async create(data: Omit<CreditCard, 'id' | 'createdAt' | 'updatedAt'>): Promise<CreditCard> {
+  async create(data: Omit<CreditCard, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<CreditCard> {
+    const householdId = await getHouseholdId();
     const now = new Date().toISOString();
     const id = generateId();
     const card = {
       ...data,
       id,
+      householdId,
       createdAt: now,
       updatedAt: now,
     };
@@ -470,12 +497,14 @@ export const loanService = {
     return safeGet<Loan>(loansDB, id);
   },
 
-  async create(data: Omit<Loan, 'id' | 'createdAt' | 'updatedAt'>): Promise<Loan> {
+  async create(data: Omit<Loan, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<Loan> {
+    const householdId = await getHouseholdId();
     const now = new Date().toISOString();
     const id = generateId();
     const loan = {
        ...data,
        id,
+       householdId,
        createdAt: now,
        updatedAt: now,
        startDate: typeof data.startDate === 'string' ? data.startDate : (data.startDate as any) instanceof Date ? (data.startDate as any).toISOString() : undefined
@@ -528,13 +557,15 @@ export const budgetService = {
     return safeGet<Budget>(budgetsDB, id);
   },
 
-  async create(data: Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>): Promise<Budget> {
+  async create(data: Omit<Budget, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<Budget> {
+    const householdId = await getHouseholdId();
     const now = new Date().toISOString();
     const id = generateId();
     const budget: Budget = {
       ...data,
       planItems: data.planItems as any[],
       id,
+      householdId,
       createdAt: now,
       updatedAt: now,
     };

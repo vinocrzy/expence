@@ -46,6 +46,10 @@ export const initDB = async () => {
     await transactionsDB.createIndex({
       index: { fields: ['categoryId'] }
     });
+
+    await transactionsDB.createIndex({
+      index: { fields: ['householdId', 'date'] }
+    });
     
     // Additional indexes can be added here based on schema.ts needs
     // Account indexes

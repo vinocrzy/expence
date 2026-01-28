@@ -92,6 +92,8 @@ export default function AccountsPage() {
       if (editingAccount) {
         await updateAccount(editingAccount.id, data);
       } else {
+        console.log("Creating account");
+        
         await accountService.create(data);
         await refresh();
       }
@@ -168,8 +170,8 @@ export default function AccountsPage() {
                 <div className="relative z-10">
                     <div className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-medium">{account.type.replace('_', ' ')}</div>
                     <div className="text-xl font-bold text-white mb-1 truncate">{account.name}</div>
-                    <div className={`text-2xl font-mono ${account.balance < 0 ? 'text-red-400' : 'text-green-400'}`}>
-                        {account.currency} {account.balance.toLocaleString()}
+                    <div className={`text-2xl font-mono ${(account.balance || 0) < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                        {account.currency} {(account.balance || 0).toLocaleString()}
                     </div>
                 </div>
               </div>
