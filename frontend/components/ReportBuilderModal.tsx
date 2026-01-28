@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { X, FileDown, FileSpreadsheet, FileText, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { Category, Account } from '@/lib/db-types';
+
 type ReportType = 
   | 'EXPENSE' 
   | 'INCOME' 
@@ -22,19 +24,6 @@ interface ReportFilters {
   accountIds: string[];
   categoryIds: string[];
   tags: string[];
-}
-
-interface Account {
-  id: string;
-  name: string;
-  type: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  kind: string;
-  color?: string;
 }
 
 interface ReportBuilderModalProps {
