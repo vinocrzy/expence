@@ -41,7 +41,7 @@ export type ExpenseDatabaseCollections = {
   accounts: RxCollection<AccountDocType>;
   transactions: RxCollection<TransactionDocType>;
   categories: RxCollection<CategoryDocType>;
-  creditCards: RxCollection<CreditCardDocType>;
+  creditcards: RxCollection<CreditCardDocType>;
   loans: RxCollection<LoanDocType>;
   budgets: RxCollection<BudgetDocType>;
 };
@@ -62,7 +62,7 @@ const createDatabase = async (): Promise<ExpenseDatabase> => {
   
   // Create database
   const db = await createRxDatabase<ExpenseDatabaseCollections>({
-    name: 'expensedb', // Fixed: Remove underscore to avoid DB9 error
+    name: 'pockettogether',
     storage,
     multiInstance: true,
     eventReduce: true,
@@ -87,7 +87,7 @@ const createDatabase = async (): Promise<ExpenseDatabase> => {
       }
     },
     categories: { schema: categorySchema },
-    creditCards: { schema: creditCardSchema },
+    creditcards: { schema: creditCardSchema },
     loans: { schema: loanSchema },
     budgets: { schema: budgetSchema },
   });

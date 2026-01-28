@@ -350,7 +350,7 @@ export const transactionService = {
 export const creditCardService = {
   async getAll(householdId: string): Promise<CreditCard[]> {
     const db = await getDatabase();
-    const docs = await db.creditCards.find({
+    const docs = await db.creditcards.find({
       selector: { householdId: { $eq: householdId } }
     }).exec();
     return docs.map((d: any) => d.toJSON());
@@ -358,7 +358,7 @@ export const creditCardService = {
 
   async getAllActive(householdId: string): Promise<CreditCard[]> {
     const db = await getDatabase();
-    const docs = await db.creditCards.find({
+    const docs = await db.creditcards.find({
       selector: { 
         householdId: { $eq: householdId },
         isArchived: { $ne: true }
@@ -369,14 +369,14 @@ export const creditCardService = {
 
   async getById(id: string): Promise<CreditCard | undefined> {
     const db = await getDatabase();
-    const doc = await db.creditCards.findOne(id).exec();
+    const doc = await db.creditcards.findOne(id).exec();
     return doc?.toJSON();
   },
 
   async create(data: Omit<CreditCard, 'id' | 'createdAt' | 'updatedAt'>): Promise<CreditCard> {
     const db = await getDatabase();
     const now = new Date().toISOString();
-    const result = await db.creditCards.insert({
+    const result = await db.creditcards.insert({
       ...data,
       id: generateId(),
       createdAt: now,
@@ -387,7 +387,7 @@ export const creditCardService = {
 
   async update(id: string, data: Partial<CreditCard>): Promise<CreditCard> {
     const db = await getDatabase();
-    const doc = await db.creditCards.findOne(id).exec();
+    const doc = await db.creditcards.findOne(id).exec();
     if (!doc) throw new Error('Card not found');
     const res = await doc.patch({ ...data, updatedAt: new Date().toISOString() });
     return res.toJSON();
@@ -395,7 +395,7 @@ export const creditCardService = {
 
   async delete(id: string): Promise<void> {
     const db = await getDatabase();
-    const doc = await db.creditCards.findOne(id).exec();
+    const doc = await db.creditcards.findOne(id).exec();
     if (doc) await doc.remove();
   },
 

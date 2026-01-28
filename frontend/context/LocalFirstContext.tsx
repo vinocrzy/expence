@@ -31,9 +31,9 @@ export function LocalFirstProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const initializeLocalFirst = async () => {
-    // Run migration V2 (Dexie -> RxDB)
-    const { runMigration } = await import('@/lib/migration-runner');
-    await runMigration();
+    // Run migration V2 (Dexie -> RxDB) - DISABLED/REMOVED
+    // const { runMigration } = await import('@/lib/migration-runner');
+    // await runMigration();
     
     // Initialize Replication
     const { getDatabase } = await import('@/lib/rxdb');

@@ -22,7 +22,7 @@ export const initializeReplication = async (db: ExpenseDatabase, getToken: () =>
   }
 
   // Define collections to sync
-  const collections = ['accounts', 'transactions', 'categories', 'creditCards', 'loans', 'budgets'];
+  const collections = ['accounts', 'transactions', 'categories', 'creditcards', 'loans', 'budgets'];
   
   const replicationStates: any[] = [];
 
@@ -32,7 +32,7 @@ export const initializeReplication = async (db: ExpenseDatabase, getToken: () =>
      if (collection) {
         const replicationState = replicateCouchDB({
             replicationIdentifier: `sync_${name}_v1`,
-            collection,
+            collection: name === 'creditCards' ? db.creditcards : collection,
             url: `${couchURL}/${name}`, 
             live: true,
             pull: {
