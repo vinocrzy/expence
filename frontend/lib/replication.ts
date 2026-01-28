@@ -1,6 +1,13 @@
-import { ExpenseDatabase } from './rxdb';
-import { replicateCouchDB } from 'rxdb/plugins/replication-couchdb';
+import { 
+  accountsDB, 
+  transactionsDB, 
+  categoriesDB, 
+  creditcardsDB, 
+  loansDB, 
+  budgetsDB 
+} from './pouchdb';
 import { BehaviorSubject } from 'rxjs';
+import PouchDB from 'pouchdb';
 
 export const syncState$ = new BehaviorSubject<{
   status: 'ACTIVE' | 'PAUSED' | 'ERROR';
@@ -12,64 +19,94 @@ export const syncState$ = new BehaviorSubject<{
   connected: false,
 });
 
-export const initializeReplication = async (db: ExpenseDatabase, getToken: () => Promise<string | null>) => {
+export const initializeReplication = async (getToken: () => Promise<string | null>) => {
   const couchURL = process.env.NEXT_PUBLIC_COUCHDB_URL;
   const isReplicationDisabled = process.env.NEXT_PUBLIC_REPLICATION_DISSABLED === 'true';
   
   if (!couchURL || isReplicationDisabled) {
     console.warn('CouchDB Sync is disabled.');
-    return;
+    syncState$.next({ ...syncState$.getValue(), status: 'PAUSED', connected: false });
+    return [];
   }
 
-  // Define collections to sync
-  const collections = ['accounts', 'transactions', 'categories', 'creditcards', 'loans', 'budgets'];
+  const collections = [
+    { name: 'accounts', db: accountsDB },
+    { name: 'transactions', db: transactionsDB },
+    { name: 'categories', db: categoriesDB },
+    { name: 'creditcards', db: creditcardsDB },
+    { name: 'loans', db: loansDB },
+    { name: 'budgets', db: budgetsDB },
+  ];
   
+  const token = await getToken();
+  const ajaxOptions = token ? {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  } : {};
+
   const replicationStates: any[] = [];
 
-  for (const name of collections) {
-     // @ts-ignore
-     const collection = db[name];
-     if (collection) {
-        const replicationState = replicateCouchDB({
-            replicationIdentifier: `sync_${name}_v1`,
-            collection: name === 'creditCards' ? db.creditcards : collection,
-            url: `${couchURL}/${name}`, 
-            live: true,
-            pull: {
-                batchSize: 60,
-                modifier: (doc) => doc,
-                heartbeat: 60000,
-            },
-            push: {
-                batchSize: 60,
-                modifier: (doc) => doc,
-            },
-            // Custom fetch to inject Authorization header
-            fetch: async (url, options) => {
-                const token = await getToken();
-                const headers = new Headers(options?.headers);
-                if (token) {
-                    headers.set('Authorization', `Bearer ${token}`);
-                }
-                return fetch(url, { ...options, headers });
-            }
-        });
-        
-        replicationState.error$.subscribe(err => {
-            console.error(`Sync error on ${name}:`, err);
-            syncState$.next({ ...syncState$.getValue(), status: 'ERROR', error: err, connected: false });
+  for (const { name, db } of collections) {
+      const remoteURL = `${couchURL}/${name}`;
+      
+      const syncHandler = db.sync(remoteURL, {
+        live: true,
+        retry: true,
+        batch_size: 60,
+        ajax: ajaxOptions
+      } as any);
+
+      syncHandler
+        .on('change', (info) => {
+           // handle change
+           syncState$.next({ 
+             ...syncState$.getValue(), 
+             status: 'ACTIVE', 
+             connected: true,
+             lastSync: new Date()
+           });
+        })
+        .on('paused', (err) => {
+           // replication paused (e.g. replication up to date, user went offline)
+           syncState$.next({ 
+             ...syncState$.getValue(), 
+             status: 'PAUSED', // or ACTIVE if just waiting? usually PAUSED means idle
+             connected: true
+           });
+        })
+        .on('active', () => {
+           // replicate resumed (e.g. new changes replicating)
+           syncState$.next({ 
+             ...syncState$.getValue(), 
+             status: 'ACTIVE', 
+             connected: true 
+           });
+        })
+        .on('denied', (err) => {
+           // a document failed to replicate (e.g. due to permissions)
+           console.error(`Sync denied on ${name}:`, err);
+        })
+        .on('complete', (info) => {
+           // handle complete
+           syncState$.next({ 
+               ...syncState$.getValue(), 
+               status: 'PAUSED', 
+               connected: false 
+            });
+        })
+        .on('error', (err) => {
+           // handle error
+           console.error(`Sync error on ${name}:`, err);
+           syncState$.next({ 
+               ...syncState$.getValue(), 
+               status: 'ERROR', 
+               error: err, 
+               connected: false 
+           });
         });
 
-        replicationState.active$.subscribe(active => {
-             syncState$.next({ 
-                 ...syncState$.getValue(), 
-                 status: active ? 'ACTIVE' : 'PAUSED',
-                 connected: !active 
-             });
-        });
-
-        replicationStates.push(replicationState);
-     }
+      replicationStates.push(syncHandler);
   }
   
   // Set initial connected state

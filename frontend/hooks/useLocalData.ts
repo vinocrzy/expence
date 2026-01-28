@@ -22,13 +22,13 @@ import {
   type CategoryBreakdown,
 } from '@/lib/analytics';
 import type { 
-  TransactionDocType as Transaction, 
-  AccountDocType as Account, 
-  CategoryDocType as Category,
-  CreditCardDocType as CreditCard,
-  LoanDocType as Loan,
-  BudgetDocType as Budget,
-} from '@/lib/schema';
+  Transaction, 
+  Account, 
+  Category,
+  CreditCard,
+  Loan,
+  Budget,
+} from '@/lib/db-types';
 
 // Helper to get householdId from local storage or user
 async function getHouseholdId(): Promise<string> {
@@ -65,9 +65,9 @@ export function useTransactions() {
     loadTransactions();
   }, [loadTransactions]);
 
-  const addTransaction = useCallback(async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const transaction = await transactionService.create({ ...data, householdId });
+  const addTransaction = useCallback(async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    // householdId is handled by the service internally
+    const transaction = await transactionService.create(data);
     await loadTransactions();
     return transaction;
   }, [loadTransactions]);
@@ -116,9 +116,9 @@ export function useAccounts() {
     loadAccounts();
   }, [loadAccounts]);
 
-  const addAccount = useCallback(async (data: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const account = await accountService.create({ ...data, householdId });
+  const addAccount = useCallback(async (data: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    // householdId is handled by the service internally
+    const account = await accountService.create(data);
     await loadAccounts();
     return account;
   }, [loadAccounts]);
@@ -167,9 +167,9 @@ export function useCategories() {
     loadCategories();
   }, [loadCategories]);
 
-  const addCategory = useCallback(async (data: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const category = await categoryService.create({ ...data, householdId });
+  const addCategory = useCallback(async (data: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    // householdId is handled by the service internally
+    const category = await categoryService.create(data);
     await loadCategories();
     return category;
   }, [loadCategories]);
@@ -218,9 +218,9 @@ export function useCreditCards() {
     loadCreditCards();
   }, [loadCreditCards]);
 
-  const addCreditCard = useCallback(async (data: Omit<CreditCard, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const creditCard = await creditCardService.create({ ...data, householdId });
+  const addCreditCard = useCallback(async (data: Omit<CreditCard, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    // householdId is handled by the service internally
+    const creditCard = await creditCardService.create(data);
     await loadCreditCards();
     return creditCard;
   }, [loadCreditCards]);
@@ -269,9 +269,9 @@ export function useLoans() {
     loadLoans();
   }, [loadLoans]);
 
-  const addLoan = useCallback(async (data: Omit<Loan, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const loan = await loanService.create({ ...data, householdId });
+  const addLoan = useCallback(async (data: Omit<Loan, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    // householdId is handled by the service internally
+    const loan = await loanService.create(data);
     await loadLoans();
     return loan;
   }, [loadLoans]);
@@ -320,9 +320,9 @@ export function useBudgets() {
     loadBudgets();
   }, [loadBudgets]);
 
-  const addBudget = useCallback(async (data: Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const budget = await budgetService.create({ ...data, householdId });
+  const addBudget = useCallback(async (data: Omit<Budget, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    // householdId is handled by the service internally
+    const budget = await budgetService.create(data);
     await loadBudgets();
     return budget;
   }, [loadBudgets]);

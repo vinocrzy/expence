@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
-import { getDatabase } from '@/lib/rxdb';
+import { accountsDB, transactionsDB, categoriesDB, budgetsDB } from '@/lib/pouchdb';
 import Navbar from '@/components/Navbar';
 import { CheckCircle, XCircle, AlertTriangle, Database, Cloud, Lock, Server } from 'lucide-react';
 
@@ -25,16 +25,20 @@ export default function DebugPage() {
     // Check DB
     const checkDB = async () => {
         try {
-            const db = await getDatabase();
             setDbStatus('OK');
             
             const counts: Record<string, number> = {};
-            const collections = ['accounts', 'transactions', 'categories', 'budgets'];
             
-            for (const col of collections) {
-                // @ts-ignore
-                const count = await db[col].count().exec();
-                counts[col] = count;
+            const collections = [
+                { name: 'accounts', db: accountsDB },
+                { name: 'transactions', db: transactionsDB },
+                { name: 'categories', db: categoriesDB },
+                { name: 'budgets', db: budgetsDB }
+            ];
+            
+            for (const { name, db } of collections) {
+                const info = await db.info();
+                counts[name] = info.doc_count;
             }
             setDocCount(counts);
 
@@ -85,7 +89,7 @@ export default function DebugPage() {
 
                 <StatusRow 
                     icon={Database}
-                    label="Local Database (RxDB)"
+                    label="Local Database (PouchDB)"
                     status={dbStatus}
                     detail={dbStatus === 'OK' ? `${Object.values(docCount).reduce((a,b) => a+b, 0)} docs` : 'Failed'}
                 />

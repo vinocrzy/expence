@@ -36,12 +36,14 @@ export function LocalFirstProvider({ children }: { children: ReactNode }) {
     // await runMigration();
     
     // Initialize Replication
-    const { getDatabase } = await import('@/lib/rxdb');
+    const { initDB } = await import('@/lib/pouchdb');
     const { initializeReplication } = await import('@/lib/replication');
-    const db = await getDatabase();
+    
+    // Ensure indexes are created
+    await initDB();
     
     // Pass token getter
-    await initializeReplication(db, async () => {
+    await initializeReplication(async () => {
         return await getToken();
     });
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import TransactionModal from '../../components/TransactionModal';
 import { useTransactions, useAccounts } from '../../hooks/useLocalData';
@@ -12,6 +12,14 @@ export default function TransactionsPage() {
   const { transactions, loading: txLoading, addTransaction, deleteTransaction } = useTransactions();
   const { accounts, loading: accLoading } = useAccounts();
   const loading = txLoading || accLoading;
+
+  const accountMap = useMemo(() => {
+    const map: Record<string, any> = {};
+    accounts.forEach(acc => {
+      map[acc.id] = acc;
+    });
+    return map;
+  }, [accounts]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -123,7 +131,7 @@ export default function TransactionsPage() {
                                             {format(new Date(t.date), 'MMM d, yyyy')}
                                         </span>
                                         <span>•</span>
-                                        <span>{t.account?.name}</span>
+                                        <span>{accountMap[t.accountId]?.name}</span>
                                     </div>
                                 </div>
                             </div>
@@ -136,7 +144,7 @@ export default function TransactionsPage() {
                                     t.type === 'TRANSFER' && "text-blue-400"
                                 )}>
                                     {t.type === 'EXPENSE' ? '-' : '+'}
-                                    {t.account?.currency} {Number(t.amount).toLocaleString()}
+                                    {accountMap[t.accountId]?.currency} {Number(t.amount).toLocaleString()}
                                 </div>
                                 <button
                                     onClick={() => handleDelete(t.id)}
