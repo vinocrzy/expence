@@ -55,10 +55,10 @@ const createDatabase = async (): Promise<ExpenseDatabase> => {
   
   let storage: RxStorage<any, any> = getRxStorageDexie();
   
-  // In development, wrap storage with validation
-  if (process.env.NODE_ENV === 'development') {
+  // In development (or debugging), wrap storage with validation
+  // if (process.env.NODE_ENV === 'development') {
     storage = wrappedValidateAjvStorage({ storage });
-  }
+  // }
   
   // Create database
   const db = await createRxDatabase<ExpenseDatabaseCollections>({
