@@ -32,6 +32,7 @@ export interface Category {
   type?: string; // INCOME, EXPENSE
   icon?: string;
   color?: string;
+  isActive?: boolean; // Default true
   householdId: string;
   createdAt?: string;
   updatedAt?: string;
