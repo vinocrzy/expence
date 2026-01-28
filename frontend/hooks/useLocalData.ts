@@ -11,13 +11,9 @@ import {
   accountService,
   categoryService,
   creditCardService,
-  creditCardTransactionService,
   loanService,
-  loanPaymentService,
   budgetService,
-  budgetPlanItemService,
   userService,
-  householdService,
 } from '@/lib/localdb-services';
 import {
   calculateMonthlyStats,
@@ -26,22 +22,21 @@ import {
   type CategoryBreakdown,
 } from '@/lib/analytics';
 import type { 
-  Transaction, 
-  Account, 
-  Category,
-  CreditCard,
-  CreditCardTransaction,
-  Loan,
-  LoanPayment,
-  Budget,
-  BudgetPlanItem,
-} from '@/lib/localdb';
+  TransactionDocType as Transaction, 
+  AccountDocType as Account, 
+  CategoryDocType as Category,
+  CreditCardDocType as CreditCard,
+  LoanDocType as Loan,
+  BudgetDocType as Budget,
+} from '@/lib/schema';
 
 // Helper to get householdId from local storage or user
 async function getHouseholdId(): Promise<string> {
+  // userService.getCurrent() is a stub for now, update when Auth is fully integrated
   const user = await userService.getCurrent();
   if (!user?.householdId) {
-    throw new Error('No household found. Please complete setup.');
+     return 'household_1'; // Failover for development until Auth is ready
+    // throw new Error('No household found. Please complete setup.');
   }
   return user.householdId;
 }

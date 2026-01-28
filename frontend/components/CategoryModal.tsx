@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { useCategories } from '../hooks/useOfflineData';
+import { categoryService } from '../lib/localdb-services';
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -13,23 +13,24 @@ interface CategoryModalProps {
 
 export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }: CategoryModalProps) {
   const [name, setName] = useState('');
-  const [kind, setKind] = useState('EXPENSE');
+  const [type, setType] = useState('EXPENSE');
   const [color, setColor] = useState('#808080');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { addCategory } = useCategories();
-
+  // const { addCategory } = useCategories(); 
+  
   useEffect(() => {
     if (isOpen) {
         setError('');
         if (initialData) {
             setName(initialData.name);
-            setKind(initialData.kind);
+            setName(initialData.name);
+            setType(initialData.type);
             setColor(initialData.color);
         } else {
             setName('');
-            setKind('EXPENSE');
+            setType('EXPENSE');
             setColor('#808080'); // Default Gray
         }
     }
@@ -42,14 +43,15 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
     
     try {
       if (onSubmit) {
-         await onSubmit({ name, kind, color });
+         await onSubmit({ name, type, color });
       } else {
-         await addCategory({ name, kind, color });
+         await categoryService.create({ name, type, color });
       }
       onClose();
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.error || 'Failed to save category');
+      console.error(err);
+      setError(err.message || 'Failed to save category');
     } finally {
       setLoading(false);
     }
@@ -85,9 +87,9 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
                     <button
                         key={t}
                         type="button"
-                        onClick={() => setKind(t)}
+                        onClick={() => setType(t)}
                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
-                            kind === t 
+                            type === t 
                             ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400')
                             : 'text-gray-400 hover:text-white hover:bg-gray-700'
                         }`}

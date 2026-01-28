@@ -6,17 +6,16 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { checkMigrationStatus, type MigrationStatus } from '@/lib/migration';
-import MigrationWizard from '@/components/MigrationWizard';
+// import { checkMigrationStatus, type MigrationStatus } from '@/lib/migration'; // Removed legacy
+// import MigrationWizard from '@/components/MigrationWizard'; // Removed legacy
+import { useAuth } from '@clerk/nextjs';
 
 interface LocalFirstContextValue {
   isReady: boolean;
-  migrationStatus: MigrationStatus | null;
 }
 
 const LocalFirstContext = createContext<LocalFirstContextValue>({
   isReady: false,
-  migrationStatus: null,
 });
 
 export function useLocalFirst() {
@@ -25,23 +24,30 @@ export function useLocalFirst() {
 
 export function LocalFirstProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
-  const [migrationStatus, setMigrationStatus] = useState<MigrationStatus | null>(null);
+  const { getToken } = useAuth(); // Clerk Auth
 
   useEffect(() => {
     initializeLocalFirst();
   }, []);
 
   const initializeLocalFirst = async () => {
-    const status = await checkMigrationStatus();
-    setMigrationStatus(status);
-    setIsReady(status.isComplete);
+    // Run migration V2 (Dexie -> RxDB)
+    const { runMigration } = await import('@/lib/migration-runner');
+    await runMigration();
+    
+    // Initialize Replication
+    const { getDatabase } = await import('@/lib/rxdb');
+    const { initializeReplication } = await import('@/lib/replication');
+    const db = await getDatabase();
+    
+    // Pass token getter
+    await initializeReplication(db, async () => {
+        return await getToken();
+    });
+
+    setIsReady(true);
   };
-
-  // Show migration wizard if not ready
-  if (!isReady && migrationStatus && !migrationStatus.isComplete) {
-    return <MigrationWizard />;
-  }
-
+  
   // Show loading while checking
   if (!isReady) {
     return (
@@ -55,7 +61,7 @@ export function LocalFirstProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <LocalFirstContext.Provider value={{ isReady, migrationStatus }}>
+    <LocalFirstContext.Provider value={{ isReady }}>
       {children}
     </LocalFirstContext.Provider>
   );

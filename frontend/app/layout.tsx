@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -16,7 +16,6 @@ export const metadata: Metadata = {
   title: "PocketTogether - Shared Finance",
   description: "Track finances together",
   manifest: "/manifest.json",
-  themeColor: "#111827",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -24,6 +23,11 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#111827",
+};
+
+import { ClerkProvider } from '@clerk/nextjs';
 import { AuthProvider } from "../context/AuthContext";
 import { LocalFirstProvider } from "../context/LocalFirstContext";
 import SyncStatusIndicator from "@/components/ui/SyncStatus";
@@ -35,18 +39,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <LocalFirstProvider>
-          <AuthProvider>
-            {children}
-            <SyncStatusIndicator />
-            <IOSInstallPrompt />
-          </AuthProvider>
-        </LocalFirstProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          <LocalFirstProvider>
+            {/* Keeping AuthProvider for now if it provides custom logic, but wrapping with Clerk */}
+            <AuthProvider>
+              {children}
+              <SyncStatusIndicator />
+              <IOSInstallPrompt />
+            </AuthProvider>
+          </LocalFirstProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
