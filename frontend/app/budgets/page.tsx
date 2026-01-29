@@ -1,20 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import { useBudgets } from '../../hooks/useLocalData';
-import { budgetService } from '../../lib/localdb-services';
+import { budgetService, transactionService } from '../../lib/localdb-services';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { Plus, Target, Calendar, TrendingUp, AlertTriangle, CheckCircle2, Trash2, Archive, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '../../lib/motion';
-
-// ... (imports)
 import { useRouter } from 'next/navigation';
 
 export default function BudgetsPage() {
   const router = useRouter();
-  const { budgets, loading, updateBudget, deleteBudget, refresh } = useBudgets();
+  const { budgets, loading: budgetsLoading, updateBudget, deleteBudget, refresh } = useBudgets();
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [txLoading, setTxLoading] = useState(true);
+  
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState('ACTIVE'); // ACTIVE, PLANNING
   
@@ -25,6 +26,53 @@ export default function BudgetsPage() {
     onConfirm: () => {},
     isDangerous: false,
     confirmText: 'Confirm'
+  });
+
+  useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  const loadTransactions = async () => {
+      try {
+          const txs = await transactionService.getAll('household_1');
+          setTransactions(txs);
+      } catch (e) {
+          console.error('Failed to load transactions', e);
+      } finally {
+          setTxLoading(false);
+      }
+  };
+
+  const loading = budgetsLoading || txLoading;
+
+  // Calculate spent amounts
+  const budgetsWithSpent = budgets.map(b => {
+      let spent = 0;
+      const now = new Date();
+      let start = new Date(0); // Beginning of time
+      let end = new Date(8640000000000000); // End of time
+
+      if (b.budgetMode === 'EVENT' || (b as any).type === 'EVENT') {
+          if (b.startDate) start = new Date(b.startDate);
+          if (b.endDate) end = new Date(b.endDate);
+          start.setHours(0,0,0,0);
+          end.setHours(23,59,59,999);
+      } else if (b.budgetMode === 'RECURRING' || (b as any).type === 'RECURRING') {
+          // Current Month
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          end.setHours(23,59,59,999);
+      }
+
+      spent = transactions
+        .filter(t => t.type === 'EXPENSE')
+        .filter(t => {
+            const tDate = new Date(t.date);
+            return tDate >= start && tDate <= end;
+        })
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      return { ...b, totalSpent: spent };
   });
 
   const convertBudget = async (id: string) => {
@@ -69,9 +117,9 @@ export default function BudgetsPage() {
       }
   };
 
-  const activeEvents = budgets.filter(b => (b.budgetMode === 'EVENT' || (b as any).type === 'EVENT') && !b.isArchived && b.status === 'ACTIVE');
-  const recurringBudgets = budgets.filter(b => (b.budgetMode === 'RECURRING' || (b as any).type === 'RECURRING') && !b.isArchived && b.status === 'ACTIVE');
-  const plannedBudgets = budgets.filter(b => b.status === 'PLANNING' && !b.isArchived);
+  const activeEvents = budgetsWithSpent.filter(b => (b.budgetMode === 'EVENT' || (b as any).type === 'EVENT') && !b.isArchived && b.status === 'ACTIVE');
+  const recurringBudgets = budgetsWithSpent.filter(b => (b.budgetMode === 'RECURRING' || (b as any).type === 'RECURRING') && !b.isArchived && b.status === 'ACTIVE');
+  const plannedBudgets = budgetsWithSpent.filter(b => b.status === 'PLANNING' && !b.isArchived);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
