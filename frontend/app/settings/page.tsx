@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import { downloadBackup, readBackupFile, importBackup } from '@/lib/backup';
-import { Loader2, Download, Upload, AlertTriangle, CheckCircle, Database } from 'lucide-react';
+import { Loader2, Download, Upload, AlertTriangle, CheckCircle, Database, RefreshCw } from 'lucide-react';
+
+import Navbar from '@/components/Navbar';
 
 export default function SettingsPage() {
     const [loading, setLoading] = useState(false);
@@ -56,6 +58,7 @@ export default function SettingsPage() {
 
     return (
         <div className="min-h-screen bg-gray-950 text-gray-100 pb-24 md:pb-10 pt-safe-top px-4 md:px-8">
+            <Navbar />
             {/* Mobile Header Spacer */}
             <div className="h-16 md:h-24"></div> 
             
@@ -159,11 +162,155 @@ export default function SettingsPage() {
                         </label>
                     </div>
                  </div>
-                 
+
+                 <div className="flex items-center gap-2 mb-6 mt-10">
+                    <RefreshCw className="h-5 w-5 text-purple-400" />
+                    <h2 className="text-2xl font-bold text-white">Sync Configuration</h2>
+                 </div>
+
+                 <CouchDbSettings />
+
                  <div className="text-center text-sm text-gray-500 mt-8">
-                    PocketTogether Data Management v1.0
+                    PocketTogether Data Management v1.1
                  </div>
              </div>
         </div>
     );
 }
+
+function CouchDbSettings() {
+    const [config, setConfig] = useState({
+        url: '',
+        username: '',
+        password: '',
+        enabled: false
+    });
+    const [showPassword, setShowPassword] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
+
+    React.useEffect(() => {
+        const stored = localStorage.getItem('couchdb_config');
+        if (stored) {
+            try {
+                setConfig(JSON.parse(stored));
+            } catch (e) {
+                console.error('Failed to parse couchdb config', e);
+            }
+        } else {
+             // Pre-populate with env vars if available for convenience, but don't save automatically
+             setConfig(prev => ({
+                 ...prev,
+                 url: process.env.NEXT_PUBLIC_COUCHDB_URL || ''
+             }));
+        }
+    }, []);
+
+    const handleChange = (field: keyof typeof config, value: string | boolean) => {
+        setConfig(prev => ({ ...prev, [field]: value }));
+        setIsDirty(true);
+    };
+
+    const handleSave = () => {
+        localStorage.setItem('couchdb_config', JSON.stringify(config));
+        setIsDirty(false);
+        alert('Sync settings saved. Please reload the application for changes to take effect.');
+        window.location.reload();
+    };
+
+    const handleReset = () => {
+        if (confirm('Are you sure you want to reset to default settings?')) {
+            localStorage.removeItem('couchdb_config');
+            setConfig({
+                url: process.env.NEXT_PUBLIC_COUCHDB_URL || '',
+                username: '',
+                password: '',
+                enabled: false
+            });
+            setIsDirty(false);
+            window.location.reload();
+        }
+    };
+
+    return (
+        <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                     <h3 className="text-xl font-bold text-white">Custom Sync Server</h3>
+                     <p className="text-gray-400 text-sm">Connect to your own CouchDB/PouchDB instance</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            className="sr-only peer" 
+                            checked={config.enabled}
+                            onChange={(e) => handleChange('enabled', e.target.checked)}
+                        />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        <span className="ml-3 text-sm font-medium text-gray-300">Use Custom</span>
+                    </label>
+                </div>
+            </div>
+
+            {config.enabled && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-1">Server URL</label>
+                        <input 
+                            type="text" 
+                            value={config.url}
+                            onChange={(e) => handleChange('url', e.target.value)}
+                            placeholder="https://your-couchdb-instance.com"
+                            className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                        />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">Username</label>
+                            <input 
+                                type="text" 
+                                value={config.username}
+                                onChange={(e) => handleChange('username', e.target.value)}
+                                className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                            <div className="relative">
+                                <input 
+                                    type={showPassword ? "text" : "password"}
+                                    value={config.password}
+                                    onChange={(e) => handleChange('password', e.target.value)}
+                                    className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                />
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 text-xs"
+                                >
+                                    {showPassword ? 'Hide' : 'Show'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 pt-4">
+                        <button 
+                            onClick={handleReset}
+                            className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                        >
+                            Reset to Default
+                        </button>
+                        <button 
+                            onClick={handleSave}
+                            disabled={!isDirty}
+                            className="px-6 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all shadow-lg shadow-purple-900/20"
+                        >
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>);
+        }

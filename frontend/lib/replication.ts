@@ -20,11 +20,34 @@ export const syncState$ = new BehaviorSubject<{
 });
 
 export const initializeReplication = async (getToken: () => Promise<string | null>) => {
-  const couchURL = process.env.NEXT_PUBLIC_COUCHDB_URL;
+  // Check local storage for custom config
+  let couchURL = process.env.NEXT_PUBLIC_COUCHDB_URL;
+  let authHeaders: any = {};
+  
+  if (typeof window !== 'undefined') {
+      try {
+          const stored = localStorage.getItem('couchdb_config');
+          if (stored) {
+              const config = JSON.parse(stored);
+              if (config.enabled && config.url) {
+                  console.log('Using custom CouchDB configuration');
+                  couchURL = config.url;
+                  if (config.username && config.password) {
+                      authHeaders = {
+                          'Authorization': 'Basic ' + btoa(config.username + ":" + config.password)
+                      };
+                  }
+              }
+          }
+      } catch (e) {
+          console.error('Error loading custom couchdb config', e);
+      }
+  }
+
   const isReplicationDisabled = process.env.NEXT_PUBLIC_REPLICATION_DISSABLED === 'true';
   
   if (!couchURL || isReplicationDisabled) {
-    console.warn('CouchDB Sync is disabled.');
+    console.warn('CouchDB Sync is disabled (No URL or Disabled via Env).');
     syncState$.next({ ...syncState$.getValue(), status: 'PAUSED', connected: false });
     return [];
   }
@@ -38,12 +61,23 @@ export const initializeReplication = async (getToken: () => Promise<string | nul
     { name: 'budgets', db: budgetsDB },
   ];
   
-  const token = await getToken();
-  const ajaxOptions = token ? {
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  } : {};
+  // Only use Clerk token if no custom auth headers provided
+  if (Object.keys(authHeaders).length === 0) {
+      try {
+        const token = await getToken();
+        if (token) {
+            authHeaders = {
+                'Authorization': `Bearer ${token}`
+            };
+        }
+      } catch (e) {
+          console.warn('Failed to get auth token', e);
+      }
+  }
+
+  const ajaxOptions = {
+    headers: authHeaders
+  };
 
   const replicationStates: any[] = [];
 
