@@ -288,24 +288,52 @@ export const transactionService = {
     
     // Update account balance
     // We need to fetch account, modify, save.
+    // Update account balance or credit card outstanding
     try {
-        const accountDoc = await accountsDB.get(data.accountId) as any;
-        const currentBalance = accountDoc.balance || 0;
-        const newBalance = data.type === 'INCOME' 
-            ? currentBalance + data.amount
-            : currentBalance - data.amount;
-        
-        await accountsDB.put({
-            ...accountDoc,
-            balance: newBalance,
-            updatedAt: now
-        });
+        let accountDoc;
+        try {
+            accountDoc = await accountsDB.get(data.accountId) as any;
+            const currentBalance = accountDoc.balance || 0;
+            const newBalance = data.type === 'INCOME' 
+                ? currentBalance + data.amount
+                : currentBalance - data.amount;
+            
+            await accountsDB.put({
+                ...accountDoc,
+                balance: newBalance,
+                updatedAt: now
+            });
+        } catch (err: any) {
+            if (err.status === 404) {
+                try {
+                     console.log('Attempting to update Credit Card balance for:', data.accountId);
+                     const ccDoc = await creditcardsDB.get(data.accountId) as any;
+                     console.log('Found Credit Card doc:', ccDoc);
+                     
+                     const currentOutstanding = Number(ccDoc.currentOutstanding || 0);
+                     console.log('Current Outstanding:', currentOutstanding);
+
+                     const newOutstanding = data.type === 'EXPENSE'
+                        ? currentOutstanding + Number(data.amount)
+                        : currentOutstanding - Number(data.amount);
+                     
+                     console.log('New Outstanding:', newOutstanding);
+
+                     await creditcardsDB.put({
+                        ...ccDoc,
+                        currentOutstanding: newOutstanding,
+                        updatedAt: now
+                     });
+                     console.log('Credit Card updated successfully');
+                } catch (ccErr) {
+                    console.error('Account/Card not found for transaction', ccErr);
+                }
+            } else {
+                throw err;
+            }
+        }
     } catch (err: any) {
-        console.error('Failed to update account balance', err);
-        // Continue? Yes, create transaction anyway? Or fail?
-        // RxDB implementation continued if account found, but didn't fail if not found? 
-        // RxDB: if (accountDoc) { ... }
-        // So strict error handling not present there.
+        console.error('Failed to update balance', err);
     }
 
     const id = generateId();
@@ -327,30 +355,62 @@ export const transactionService = {
     const oldTx = oldTxDoc as Transaction;
     const now = new Date().toISOString();
 
-    // Revert old transaction effect on account
+    // Revert old transaction effect on account or credit card
     try {
-        const accountDoc = await accountsDB.get(oldTx.accountId) as any;
-        if (accountDoc) {
-          let balance = accountDoc.balance || 0;
-          
-          // Revert old
-          balance = oldTx.type === 'INCOME'
-            ? balance - oldTx.amount
-            : balance + oldTx.amount;
-            
-          // Apply new
-          const newAmount = data.amount ?? oldTx.amount;
-          const newType = data.type ?? oldTx.type;
-          
-          balance = newType === 'INCOME'
-            ? balance + newAmount
-            : balance - newAmount;
+        let accountDoc;
+        try {
+            accountDoc = await accountsDB.get(oldTx.accountId) as any;
+            if (accountDoc) {
+              let balance = accountDoc.balance || 0;
+              
+              // Revert old
+              balance = oldTx.type === 'INCOME'
+                ? balance - oldTx.amount
+                : balance + oldTx.amount;
+                
+              // Apply new
+              const newAmount = data.amount ?? oldTx.amount;
+              const newType = data.type ?? oldTx.type;
+              
+              balance = newType === 'INCOME'
+                ? balance + newAmount
+                : balance - newAmount;
+    
+              await accountsDB.put({
+                ...accountDoc,
+                balance,
+                updatedAt: now
+              });
+            }
+        } catch (err: any) {
+             if (err.status === 404) {
+                 // Try CreditCard
+                 try {
+                     const ccDoc = await creditcardsDB.get(oldTx.accountId) as any;
+                     if (ccDoc) {
+                         let outstanding = ccDoc.currentOutstanding || 0;
 
-          await accountsDB.put({
-            ...accountDoc,
-            balance,
-            updatedAt: now
-          });
+                         // Revert old: Income (Payment) meant lower debt, so revert means add back. Expense meant higher debt, so revert means subtract.
+                         outstanding = oldTx.type === 'INCOME'
+                            ? outstanding + oldTx.amount
+                            : outstanding - oldTx.amount;
+
+                         // Apply new
+                         const newAmount = data.amount ?? oldTx.amount;
+                         const newType = data.type ?? oldTx.type;
+                         
+                         outstanding = newType === 'EXPENSE'
+                            ? outstanding + newAmount
+                            : outstanding - newAmount;
+
+                         await creditcardsDB.put({
+                             ...ccDoc,
+                             currentOutstanding: outstanding,
+                             updatedAt: now
+                         });
+                     }
+                 } catch (ccErr) {}
+             }
         }
     } catch (err) {
         // ignore account update error?
@@ -373,18 +433,39 @@ export const transactionService = {
     const tx = txDoc as Transaction;
 
     try {
-        const accountDoc = await accountsDB.get(tx.accountId) as any;
-        if (accountDoc) {
-          let balance = accountDoc.balance || 0;
-          balance = tx.type === 'INCOME'
-            ? balance - tx.amount
-            : balance + tx.amount;
-            
-          await accountsDB.put({
-            ...accountDoc,
-            balance,
-            updatedAt: new Date().toISOString()
-          });
+        let accountDoc;
+        try {
+            accountDoc = await accountsDB.get(tx.accountId) as any;
+            if (accountDoc) {
+              let balance = accountDoc.balance || 0;
+              balance = tx.type === 'INCOME'
+                ? balance - tx.amount
+                : balance + tx.amount;
+                
+              await accountsDB.put({
+                ...accountDoc,
+                balance,
+                updatedAt: new Date().toISOString()
+              });
+            }
+        } catch (err: any) {
+             if (err.status === 404) {
+                 // Try CreditCard
+                 try {
+                     const ccDoc = await creditcardsDB.get(tx.accountId) as any;
+                     let outstanding = ccDoc.currentOutstanding || 0;
+                     // Reverse effect: Income (Payment) lowered debt, so delete means raise it. Expense raised debt, so delete means lower it.
+                     outstanding = tx.type === 'INCOME'
+                        ? outstanding + tx.amount
+                        : outstanding - tx.amount;
+                     
+                     await creditcardsDB.put({
+                         ...ccDoc,
+                         currentOutstanding: outstanding,
+                         updatedAt: new Date().toISOString()
+                     });
+                 } catch (ccErr) {}
+             }
         }
     } catch (err) {
         // ignore
