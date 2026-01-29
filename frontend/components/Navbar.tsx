@@ -66,7 +66,7 @@ export default function Navbar() {
       <nav className="hidden md:block bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-12">
+            <div className="flex items-center gap-6">
                {/* Logo */}
               <Link href="/dashboard" className="flex items-center gap-2">
                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-purple-900/20">
@@ -81,18 +81,25 @@ export default function Navbar() {
                </Link>
               
               {/* Desktop Links */}
-              <div className="flex items-center gap-6">
-                <Link 
-                    href="/dashboard" 
-                    className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/dashboard' ? 'text-white' : 'text-gray-400'}`}
-                >
-                    Home
-                </Link>
+              <div className="flex items-center gap-5">
+                {/* Home link removed */}
                 <Link 
                     href="/transactions" 
                     className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/transactions' ? 'text-white' : 'text-gray-400'}`}
                 >
                     Activity
+                </Link>
+                <Link 
+                    href="/budgets" 
+                    className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/budgets' ? 'text-white' : 'text-gray-400'}`}
+                >
+                    Budgets
+                </Link>
+                <Link 
+                    href="/settings/categories" 
+                    className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/settings/categories' ? 'text-white' : 'text-gray-400'}`}
+                >
+                    Categories
                 </Link>
 
                 {/* Finances Dropdown (Simple Hover Group) */}
@@ -136,14 +143,14 @@ export default function Navbar() {
             </div>
 
             {/* Profile & Actions */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
                <SyncStatusIndicator />
                
                <button 
                 onClick={handleOpenQuickAction}
                 className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-purple-600/20"
                >
-                   <Plus className="h-4 w-4" /> Add New
+                   <Plus className="h-4 w-4" /> <span className="hidden lg:inline">Add New</span><span className="lg:hidden">Add</span>
                </button>
                
                <div className="h-6 w-px bg-gray-800"></div>
