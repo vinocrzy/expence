@@ -17,12 +17,13 @@ export default function TransactionsPage() {
   const allAccounts = useMemo(() => {
       const ccs = creditCards.map(c => ({
           id: c.id,
-          name: c.name, // or c.bankName?
+          name: c.name || c.bankName || 'Credit Card',
           currency: 'INR', // Default/Fallback
           type: 'CREDIT_CARD'
       }));
       return [...accounts, ...ccs];
   }, [accounts, creditCards]);
+
 
   const accountMap = useMemo(() => {
     const map: Record<string, any> = {};

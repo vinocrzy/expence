@@ -8,12 +8,12 @@ import {
     MoreHorizontal, Home, Settings, CloudOff, RefreshCw, CloudUpload, FileDown
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import QuickActionSheet from './QuickActionSheet';
 // import BackupStatusIndicator from './BackupStatusIndicator'; // Removed legacy
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSyncStatus } from '../hooks/useSyncStatus';
-import { useAccounts } from '../hooks/useLocalData';
+import { useAccounts, useCreditCards } from '../hooks/useLocalData';
 import SyncStatusIndicator from './ui/SyncStatus';
 
 export default function Navbar() {
@@ -21,7 +21,18 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { accounts } = useAccounts(); // Use local hook
+  const { accounts } = useAccounts();
+  const { creditCards } = useCreditCards();
+
+  const allAccounts = useMemo(() => {
+    const ccs = creditCards.map(c => ({
+        id: c.id,
+        name: c.name || c.bankName || 'Credit Card',
+        currency: 'INR', 
+        type: 'CREDIT_CARD'
+    }));
+    return [...accounts, ...ccs];
+  }, [accounts, creditCards]);
   const { isOnline, isSyncing, unsyncedCount, manualSync } = useSyncStatus();
 
   const handleOpenQuickAction = useCallback(() => setIsQuickActionOpen(true), []);
@@ -346,7 +357,7 @@ export default function Navbar() {
       <QuickActionSheet 
         isOpen={isQuickActionOpen} 
         onClose={handleCloseQuickAction}
-        accounts={accounts}
+        accounts={allAccounts}
       />
     </>
   );

@@ -151,7 +151,6 @@ function TransactionModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-md shadow-xl animate-in fade-in zoom-in duration-200">
         <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
-        // ... header ...
           <h2 className="text-xl font-bold text-white">
             {initialData ? 'Edit Transaction' : 'Add Transaction'}
           </h2>
