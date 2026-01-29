@@ -29,7 +29,15 @@ export default function BudgetsPage() {
 
   const convertBudget = async (id: string) => {
       try {
-          await updateBudget(id, { status: 'ACTIVE' });
+          const budget = budgets.find(b => b.id === id);
+          const updates: any = { status: 'ACTIVE' };
+          
+          // Migrate legacy data if needed
+          if (budget && !budget.budgetMode && (budget as any).type) {
+              updates.budgetMode = (budget as any).type;
+          }
+          
+          await updateBudget(id, updates);
       } catch(e) {
           console.error(e);
       }
@@ -62,8 +70,8 @@ export default function BudgetsPage() {
       }
   };
 
-  const activeEvents = budgets.filter(b => b.budgetMode === 'EVENT' && !b.isArchived && b.status === 'ACTIVE');
-  const recurringBudgets = budgets.filter(b => b.budgetMode === 'RECURRING' && !b.isArchived && b.status === 'ACTIVE');
+  const activeEvents = budgets.filter(b => (b.budgetMode === 'EVENT' || (b as any).type === 'EVENT') && !b.isArchived && b.status === 'ACTIVE');
+  const recurringBudgets = budgets.filter(b => (b.budgetMode === 'RECURRING' || (b as any).type === 'RECURRING') && !b.isArchived && b.status === 'ACTIVE');
   const plannedBudgets = budgets.filter(b => b.status === 'PLANNING' && !b.isArchived);
 
   return (
@@ -138,7 +146,7 @@ export default function BudgetsPage() {
                                 <div>
                                     <h3 className="text-xl font-bold">{budget.name}</h3>
                                     <div className="text-sm text-gray-400 mt-1">
-                                        {budget.budgetMode} • {budget.totalBudget ? `₹${budget.totalBudget.toLocaleString()}` : ''}
+                                        {budget.budgetMode || (budget as any).type} • {budget.totalBudget ? `₹${budget.totalBudget.toLocaleString()}` : ''}
                                     </div>
                                 </div>
                             </div>
