@@ -18,6 +18,7 @@ export default function LoanModal({ isOpen, onClose, onSubmit, accounts }: LoanM
   const [rate, setRate] = useState('');
   const [tenure, setTenure] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [initialPaidEmis, setInitialPaidEmis] = useState('0');
   const [linkedAccountId, setLinkedAccountId] = useState('');
   
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,7 @@ export default function LoanModal({ isOpen, onClose, onSubmit, accounts }: LoanM
         setRate('');
         setTenure('');
         setStartDate(new Date().toISOString().split('T')[0]);
+        setInitialPaidEmis('0');
         setLinkedAccountId('');
         setError('');
         setEmiPreview(null);
@@ -57,6 +59,19 @@ export default function LoanModal({ isOpen, onClose, onSubmit, accounts }: LoanM
       calculateEmi();
   }, [principal, rate, tenure]);
 
+  useEffect(() => {
+      if (startDate) {
+          const start = new Date(startDate);
+          const now = new Date();
+          const diffMonths = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+          if (diffMonths > 0) {
+              setInitialPaidEmis(diffMonths.toString());
+          } else {
+              setInitialPaidEmis('0');
+          }
+      }
+  }, [startDate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -71,6 +86,7 @@ export default function LoanModal({ isOpen, onClose, onSubmit, accounts }: LoanM
         interestRate: parseFloat(rate),
         tenureMonths: parseFloat(tenure),
         startDate: new Date(startDate).toISOString(),
+        initialPaidEmis: parseInt(initialPaidEmis) || 0,
         linkedAccountId
       });
       onClose();
@@ -148,6 +164,12 @@ export default function LoanModal({ isOpen, onClose, onSubmit, accounts }: LoanM
                      <label className="text-sm font-medium text-gray-300">Start Date</label>
                     <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2 text-white" required />
                 </div>
+            </div>
+
+            <div className="space-y-2">
+                 <label className="text-sm font-medium text-gray-300">Already Paid EMIs</label>
+                 <input type="number" value={initialPaidEmis} onChange={e => setInitialPaidEmis(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2 text-white" min="0" />
+                 <p className="text-xs text-gray-500">Auto-calculated based on start date. Adjust if needed.</p>
             </div>
 
             {emiPreview && (

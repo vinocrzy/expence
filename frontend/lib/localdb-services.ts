@@ -588,11 +588,25 @@ export const loanService = {
         emiAmount = Math.round(emiAmount * 100) / 100;
     }
 
+    // Calculate outstanding principal if initial EMIs are paid
+    let outstandingPrincipal = data.outstandingPrincipal ?? data.principal;
+    if (data.initialPaidEmis && data.initialPaidEmis > 0 && emiAmount) {
+        let balance = data.principal;
+        const r = data.interestRate / 12 / 100;
+        
+        for (let i = 0; i < data.initialPaidEmis; i++) {
+            const interest = balance * r;
+            const principalComponent = emiAmount - interest;
+            balance -= principalComponent;
+        }
+        outstandingPrincipal = Math.max(0, Math.round(balance * 100) / 100);
+    }
+
     const loan: Loan = {
        ...data,
        id,
        householdId,
-       outstandingPrincipal: data.outstandingPrincipal ?? data.principal, // Initialize with principal
+       outstandingPrincipal, // Use calculated or provided outstanding
        status: data.status ?? 'ACTIVE',
        emiAmount,
        createdAt: now,

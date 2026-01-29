@@ -160,10 +160,9 @@ export default function AnalyticsPage() {
                                                 ))}
                                             </Pie>
                                             <Tooltip 
-                                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '8px' }}
+                                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
                                                 itemStyle={{ color: '#fff' }}
-                                                formatter={(value: number | undefined) => `₹${value?.toLocaleString() ?? 0}`}
-
+                                                formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
                                             />
                                             <Legend verticalAlign="bottom" height={36} iconType="circle" />
                                         </PieChart>
@@ -186,7 +185,9 @@ export default function AnalyticsPage() {
                                             <YAxis stroke="#9ca3af" tickFormatter={(val) => `₹${val/1000}k`} />
                                             <Tooltip 
                                                 cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '8px' }}
+                                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                                itemStyle={{ color: '#fff' }}
+                                                formatter={(value: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, '']}
                                             />
                                             <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                             <Bar dataKey="income" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />

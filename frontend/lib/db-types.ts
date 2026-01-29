@@ -65,6 +65,7 @@ export interface Loan {
   interestRate: number;
   tenureMonths: number;
   startDate: string;
+  initialPaidEmis?: number;
   emiAmount?: number;
   outstandingPrincipal: number;
   status?: 'ACTIVE' | 'CLOSED';

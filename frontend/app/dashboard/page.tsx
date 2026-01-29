@@ -82,8 +82,9 @@ export default function DashboardPage() {
                             <XAxis dataKey="month" stroke="#9CA3AF" />
                             <YAxis stroke="#9CA3AF" />
                             <Tooltip 
-                                contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                                itemStyle={{ color: '#E5E7EB' }}
+                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                itemStyle={{ color: '#fff' }}
+                                formatter={(value: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, '']}
                             />
                             <Legend />
                             <Bar dataKey="income" name="Income" fill="#3B82F6" radius={[4, 4, 0, 0]} />
@@ -118,8 +119,9 @@ export default function DashboardPage() {
                                     ))}
                                 </Pie>
                                 <Tooltip 
-                                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                                    itemStyle={{ color: '#E5E7EB' }}
+                                    contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                    formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
                                 />
                                 <Legend />
                             </PieChart>

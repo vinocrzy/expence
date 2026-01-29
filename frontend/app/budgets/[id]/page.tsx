@@ -272,8 +272,9 @@ export default function BudgetDetailPage() {
                                         ))}
                                     </Pie>
                                     <ReTooltip 
-                                        contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                                        formatter={(value: any) => [`₹${value ?? 0}`, 'Spend']}
+                                        contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                        itemStyle={{ color: '#fff' }}
+                                        formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
                                     />
                                 </RePieChart>
                             </ResponsiveContainer>
@@ -313,8 +314,9 @@ export default function BudgetDetailPage() {
                                 <YAxis stroke="#4B5563" fontSize={12} />
                                 <ReTooltip
                                     cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                                    contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
-                                    formatter={(value: any) => [`₹${value ?? 0}`, 'Spent']}
+                                    contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                    formatter={(value: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, 'Spent']}
                                     labelFormatter={(label) => new Date(label).toLocaleDateString()}
                                 />
                                 <Bar dataKey="amount" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
