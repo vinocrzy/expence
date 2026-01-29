@@ -118,7 +118,7 @@ export default function AccountsPage() {
     <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 pb-32 md:pb-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <Wallet className="h-8 w-8 text-purple-400" />
@@ -136,14 +136,14 @@ export default function AccountsPage() {
         {loading ? (
            <div className="text-center text-gray-400 py-12">Loading accounts...</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {accounts.map((account) => (
               <div key={account.id} className="group bg-gray-800/50 backdrop-blur-md p-6 rounded-2xl border border-gray-700/50 hover:border-purple-500/30 transition-all relative overflow-hidden">
                 <div className="flex items-start justify-between mb-4 relative z-10">
                   <div className="bg-gray-700 p-3 rounded-xl group-hover:bg-purple-500/20 transition-colors">
                     {getIcon(account.type)}
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 md:gap-2">
                     <button 
                         onClick={() => handleEdit(account)}
                         className="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"

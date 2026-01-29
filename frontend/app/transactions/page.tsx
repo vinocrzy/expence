@@ -67,7 +67,7 @@ export default function TransactionsPage() {
     <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 pb-32 md:pb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Transactions</h1>
@@ -124,7 +124,7 @@ export default function TransactionsPage() {
                                     {getIcon(t.type)}
                                 </div>
                                 <div>
-                                    <div className="font-bold text-white mb-0.5">{t.description || 'No description'}</div>
+                                    <div className="font-bold text-white mb-0.5 text-sm md:text-base line-clamp-1">{t.description || 'No description'}</div>
                                     <div className="flex items-center gap-2 text-xs text-gray-400">
                                         <span className="flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
@@ -136,9 +136,9 @@ export default function TransactionsPage() {
                                 </div>
                             </div>
                             
-                            <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-3 md:gap-6">
                                 <div className={clsx(
-                                    "text-right font-mono font-bold text-lg",
+                                    "text-right font-mono font-bold text-base md:text-lg",
                                     t.type === 'INCOME' && "text-green-400",
                                     t.type === 'EXPENSE' && "text-red-400",
                                     t.type === 'TRANSFER' && "text-blue-400"
@@ -148,7 +148,7 @@ export default function TransactionsPage() {
                                 </div>
                                 <button
                                     onClick={() => handleDelete(t.id)}
-                                    className="p-2 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                    className="p-2 text-gray-500 hover:text-red-400 transition-all active:scale-95"
                                     title="Delete Transaction"
                                 >
                                     <Trash2 className="h-4 w-4" />
