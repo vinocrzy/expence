@@ -26,7 +26,7 @@ export default function FinancesPage() {
 
   const totalBankBalance = data.accounts.reduce((sum, a) => sum + Number(a.balance), 0);
   const totalLoanOutstanding = data.loans.reduce((sum, l) => sum + Number(l.outstandingPrincipal), 0);
-  const totalCcOutstanding = data.creditCards.reduce((sum, c) => sum + Number(c.outstandingAmount || 0), 0);
+  const totalCcOutstanding = data.creditCards.reduce((sum, c) => sum + Number(c.currentOutstanding || 0), 0);
 
   if (loading) {
       return (
@@ -40,7 +40,7 @@ export default function FinancesPage() {
     <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
       <Navbar />
       
-      <main className="max-w-3xl mx-auto px-4 py-8">
+      <main className="max-w-3xl mx-auto px-4 py-4 md:py-8 pb-32 md:pb-8">
         <motion.h1 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -125,15 +125,15 @@ export default function FinancesPage() {
              <div className="space-y-3">
                 {data.creditCards.map(acc => (
                     <motion.div variants={fadeInUp} key={acc.id}>
-                        <Link href={`/credit-cards/${acc.creditCard?.accountId}`} className="block bg-gray-800 border border-gray-700/50 p-4 rounded-xl flex justify-between items-center hover:bg-gray-750 transition-colors group">
+                        <Link href={`/credit-cards/${acc.id}`} className="block bg-gray-800 border border-gray-700/50 p-4 rounded-xl flex justify-between items-center hover:bg-gray-750 transition-colors group">
                              <div>
-                                <div className="font-bold text-white group-hover:text-purple-300 transition-colors">{acc.creditCard?.issuer || acc.name}</div>
+                                <div className="font-bold text-white group-hover:text-purple-300 transition-colors">{acc.bankName || acc.name}</div>
                                 <div className="text-sm text-gray-400">{acc.name}</div>
                             </div>
                             <div className="flex items-center gap-3">
                                  <div className="text-right">
                                     <div className="text-xs text-gray-500">Outstanding</div>
-                                    <div className="font-mono font-bold text-white">₹{Number(acc.creditCard?.outstandingAmount || 0).toLocaleString()}</div>
+                                    <div className="font-mono font-bold text-white">₹{Number(acc.currentOutstanding || 0).toLocaleString()}</div>
                                 </div>
                                 <div className="p-1 rounded-full bg-gray-700 group-hover:bg-purple-500/20 group-hover:text-purple-400 transition-colors">
                                     <ChevronRight className="h-4 w-4 text-gray-500 group-hover:text-purple-400" />

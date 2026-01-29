@@ -77,7 +77,7 @@ export default function BudgetsPage() {
     <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
       <Navbar />
       
-      <main className="max-w-3xl mx-auto px-4 py-8">
+      <main className="max-w-3xl mx-auto px-4 py-4 md:py-8 pb-32 md:pb-8">
         <div className="flex items-center justify-between mb-8">
              <motion.h1 
                 initial={{ opacity: 0, x: -20 }}
@@ -137,7 +137,7 @@ export default function BudgetsPage() {
                     </div>
                 ) : (
                     plannedBudgets.map(budget => (
-                        <div key={budget.id} className="bg-gray-800 p-6 rounded-2xl border border-yellow-500/20 relative overflow-hidden group">
+                        <div key={budget.id} className="bg-gray-800 p-4 md:p-6 rounded-2xl border border-yellow-500/20 relative overflow-hidden group">
                            <div className="absolute top-0 right-0 bg-yellow-500/20 text-yellow-500 text-[10px] uppercase font-bold px-3 py-1 rounded-bl-xl">
                                Draft Mode
                            </div>
