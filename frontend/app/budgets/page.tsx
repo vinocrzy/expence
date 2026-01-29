@@ -43,30 +43,29 @@ export default function BudgetsPage() {
       }
   };
 
-  const handleDeleteClick = (id: string, isDraft: boolean) => {
+  const handleDeleteClick = (id: string, action: 'DELETE' | 'ARCHIVE') => {
     setConfirmModal({
         isOpen: true,
-        title: isDraft ? 'Delete Draft Budget?' : 'Archive Active Budget?',
-        message: isDraft 
-            ? "Are you sure you want to delete this draft budget? This action cannot be undone." 
+        title: action === 'DELETE' ? 'Delete Budget?' : 'Archive Active Budget?',
+        message: action === 'DELETE' 
+            ? "Are you sure you want to permanently delete this budget? This action cannot be undone." 
             : "Are you sure you want to archive this active budget? It will be removed from your active list, but all transaction history will be preserved.",
-        isDangerous: isDraft, // Deleting is dangerous, Archiving is safer
-        confirmText: isDraft ? 'Delete Draft' : 'Archive Budget',
-        onConfirm: () => handleDeleteBudget(id, isDraft)
+        isDangerous: action === 'DELETE',
+        confirmText: action === 'DELETE' ? 'Delete Budget' : 'Archive Budget',
+        onConfirm: () => handleDeleteBudget(id, action)
     });
   };
 
-  const handleDeleteBudget = async (id: string, isDraft: boolean) => {
-      const action = isDraft ? 'delete' : 'archive';
+  const handleDeleteBudget = async (id: string, action: 'DELETE' | 'ARCHIVE') => {
       try {
-          if (isDraft) {
+          if (action === 'DELETE') {
               await deleteBudget(id);
           } else {
               await updateBudget(id, { isArchived: true });
           }
       } catch (e) {
           console.error(e);
-          alert(`Failed to ${action} budget`);
+          alert(`Failed to ${action.toLowerCase()} budget`);
       }
   };
 
@@ -152,7 +151,7 @@ export default function BudgetsPage() {
                             </div>
                             <div className="flex justify-end gap-3 mt-4">
                                 <button 
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, true); }}
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'DELETE'); }}
                                     className="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-red-400 flex items-center gap-1"
                                 >
                                     <Trash2 className="h-3 w-3" /> Delete
@@ -209,8 +208,15 @@ export default function BudgetsPage() {
                                     <div className="text-xs text-gray-500 uppercase flex items-center justify-end gap-2 mt-1">
                                         Target
                                         <button 
-                                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, false); }}
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'DELETE'); }}
                                             className="p-1 hover:text-red-400 text-gray-600 transition-colors"
+                                            title="Delete Budget"
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </button>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'ARCHIVE'); }}
+                                            className="p-1 hover:text-yellow-400 text-gray-600 transition-colors"
                                             title="Archive Budget"
                                         >
                                             <Archive className="h-3 w-3" />
