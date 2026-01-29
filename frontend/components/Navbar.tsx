@@ -340,7 +340,7 @@ export default function Navbar() {
        )}
        </AnimatePresence>
       {/* Spacer */}
-      <div className="h-24 md:hidden"></div>
+
       
       {/* Global Quick Action Sheet */}
       <QuickActionSheet 
