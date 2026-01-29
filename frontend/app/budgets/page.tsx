@@ -62,9 +62,9 @@ export default function BudgetsPage() {
       }
   };
 
-  const activeEvents = budgets.filter(b => b.type === 'EVENT' && b.isActive && b.status === 'ACTIVE');
-  const recurringBudgets = budgets.filter(b => b.type === 'RECURRING' && b.isActive && b.status === 'ACTIVE');
-  const plannedBudgets = budgets.filter(b => b.status === 'PLANNING' && b.isActive);
+  const activeEvents = budgets.filter(b => b.budgetMode === 'EVENT' && !b.isArchived && b.status === 'ACTIVE');
+  const recurringBudgets = budgets.filter(b => b.budgetMode === 'RECURRING' && !b.isArchived && b.status === 'ACTIVE');
+  const plannedBudgets = budgets.filter(b => b.status === 'PLANNING' && !b.isArchived);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
@@ -138,7 +138,7 @@ export default function BudgetsPage() {
                                 <div>
                                     <h3 className="text-xl font-bold">{budget.name}</h3>
                                     <div className="text-sm text-gray-400 mt-1">
-                                        {budget.type} • {budget.amount ? `₹${budget.amount.toLocaleString()}` : ''}
+                                        {budget.budgetMode} • {budget.totalBudget ? `₹${budget.totalBudget.toLocaleString()}` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -193,11 +193,11 @@ export default function BudgetsPage() {
                                 <div>
                                     <h3 className="text-xl font-bold">{budget.name}</h3>
                                     <div className="text-sm text-gray-400 mt-1">
-                                        {new Date(budget.startDate).toLocaleDateString()} - {new Date(budget.endDate).toLocaleDateString()}
+                                        {budget.startDate && budget.endDate ? `${new Date(budget.startDate).toLocaleDateString()} - ${new Date(budget.endDate).toLocaleDateString()}` : 'No date set'}
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-2xl font-bold font-mono">₹{budget.amount.toLocaleString()}</div>
+                                    <div className="text-2xl font-bold font-mono">₹{(budget.totalBudget || 0).toLocaleString()}</div>
                                     <div className="text-xs text-gray-500 uppercase flex items-center justify-end gap-2 mt-1">
                                         Target
                                         <button 
@@ -214,23 +214,23 @@ export default function BudgetsPage() {
                             {/* Progress Bar */}
                             <div className="mb-2">
                                 <div className="flex justify-between text-sm mb-1">
-                                    <span className="text-gray-400">Spent: ₹{budget.spent.toLocaleString()}</span>
-                                    <span className={budget.spent > budget.amount ? 'text-red-400 font-bold' : 'text-green-400'}>
-                                        {Math.round((budget.spent / budget.amount) * 100)}%
+                                    <span className="text-gray-400">Spent: ₹{(budget.totalSpent || 0).toLocaleString()}</span>
+                                    <span className={(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'text-red-400 font-bold' : 'text-green-400'}>
+                                        {Math.round(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100)}%
                                     </span>
                                 </div>
                                 <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
                                     <div 
-                                        className={`h-full rounded-full ${budget.spent > budget.amount ? 'bg-red-500' : 'bg-purple-500'}`}
-                                        style={{ width: `${Math.min((budget.spent / budget.amount) * 100, 100)}%` }}
+                                        className={`h-full rounded-full ${(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'bg-red-500' : 'bg-purple-500'}`}
+                                        style={{ width: `${Math.min(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100, 100)}%` }}
                                     />
                                 </div>
                             </div>
                             
-                            {budget.spent > budget.amount && (
+                            {(budget.totalSpent || 0) > (budget.totalBudget || 0) && (
                                 <div className="flex items-center gap-2 text-red-400 text-sm mt-2 font-bold bg-red-500/10 p-2 rounded-lg">
                                     <AlertTriangle className="h-4 w-4" />
-                                    Over Budget by ₹{(budget.spent - budget.amount).toLocaleString()}
+                                    Over Budget by ₹{((budget.totalSpent || 0) - (budget.totalBudget || 0)).toLocaleString()}
                                 </div>
                             )}
 
@@ -259,7 +259,7 @@ export default function BudgetsPage() {
                      {/* Render recurring budgets here similarly */}
                      {recurringBudgets.map(b => (
                          <div key={b.id} className="bg-gray-800 p-4 rounded-xl">
-                             {b.name} - ₹{b.amount}
+                             {b.name} - ₹{b.totalBudget}
                          </div>
                      ))}
                 </div>
@@ -351,7 +351,9 @@ function CreateBudgetModal({ onClose, onSuccess, initialStatus }: any) {
         setLoading(true);
         try {
             await budgetService.create({
-                name, type, amount: parseFloat(amount), startDate, endDate, status
+                name, budgetMode: type, totalBudget: parseFloat(amount), startDate, endDate, status,
+                planItems: [], // Initialize plan items
+                totalSpent: 0
             });
             onClose(); // Close first
             await onSuccess(); // Then refresh
