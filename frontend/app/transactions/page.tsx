@@ -123,8 +123,9 @@ export default function TransactionsPage() {
                                 )}>
                                     {getIcon(t.type)}
                                 </div>
-                                <div>
-                                    <div className="font-bold text-white mb-0.5 text-sm md:text-base line-clamp-1">{t.description || 'No description'}</div>
+
+                                <div className="min-w-0 flex-1">
+                                    <div className="font-bold text-white mb-0.5 text-sm md:text-base line-clamp-1 break-all">{t.description || 'No description'}</div>
                                     <div className="flex items-center gap-2 text-xs text-gray-400">
                                         <span className="flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />

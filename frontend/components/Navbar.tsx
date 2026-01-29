@@ -158,8 +158,9 @@ export default function Navbar() {
       
       {/* Top Bar (Mobile) */}
       {/* Top Bar (Mobile) */}
+      {/* Top Bar (Mobile) */}
       <nav className="md:hidden bg-gray-900/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40 px-4 pt-safe pb-3 flex items-center justify-between transition-all duration-300">
-           <div className="flex items-center gap-3">
+           <div className="flex items-center gap-3 pt-2"> {/* Added pt-2 for extra island clearance */}
                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-purple-900/20">
                  P
                  </div>
@@ -167,7 +168,7 @@ export default function Navbar() {
            </div>
            
             {/* Status Indicator (Mobile) */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pt-2">
                 <SyncStatusIndicator />
                 <Link href="/profile" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
                     <User className="h-5 w-5" />
@@ -176,8 +177,7 @@ export default function Navbar() {
       </nav>
 
       {/* Bottom Nav (Mobile) */}
-      {/* Bottom Nav (Mobile) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900/85 backdrop-blur-xl border-t border-white/10 z-50 pb-safe pt-2">
+      <nav className="md:hidden fixed bottom-6 left-4 right-4 bg-gray-900/90 backdrop-blur-2xl border border-white/10 z-50 rounded-[2rem] shadow-2xl shadow-black/50 transition-all duration-300 pb-2 pt-2 safe-area-bottom-margin">
         <div className="flex items-center justify-between px-6">
             {mobileNavItems.map((item, index) => {
                 const Icon = item.icon;
@@ -185,7 +185,7 @@ export default function Navbar() {
                 
                 if (item.isFab) {
                      return (
-                        <div key="fab" className="relative -top-8">
+                        <div key="fab" className="relative -top-10"> {/* Adjusted for floating nav */}
                             <motion.button 
                                 onClick={() => {
                                     if (navigator.vibrate) navigator.vibrate(10);
