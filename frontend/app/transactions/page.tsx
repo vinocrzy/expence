@@ -126,13 +126,13 @@ export default function TransactionsPage() {
 
                                 <div className="min-w-0 flex-1">
                                     <div className="font-bold text-white mb-0.5 text-sm md:text-base line-clamp-1 break-all">{t.description || 'No description'}</div>
-                                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                                        <span className="flex items-center gap-1">
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400 mt-0.5">
+                                        <span className="flex items-center gap-1 shrink-0">
                                             <Calendar className="h-3 w-3" />
                                             {format(new Date(t.date), 'MMM d, yyyy')}
                                         </span>
-                                        <span>•</span>
-                                        <span>{accountMap[t.accountId]?.name}</span>
+                                        <span className="hidden xs:inline text-gray-600">•</span>
+                                        <span className="truncate max-w-[140px] xs:max-w-none">{accountMap[t.accountId]?.name}</span>
                                     </div>
                                 </div>
                             </div>
