@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const data = {
       accounts: accounts || [],
       monthly: monthlyData.map(m => ({ month: m.month, income: m.income, expense: m.expense })) || [],
-      categories: categoryData.map(c => ({ name: c.categoryName, value: c.amount })) || [],
+      categories: categoryData.map(c => ({ name: c.categoryName, value: c.amount, color: c.color })) || [],
       context: { description: 'This Month' }
   };
 
