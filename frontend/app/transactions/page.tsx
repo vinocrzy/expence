@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import TransactionModal from '../../components/TransactionModal';
-import { useTransactions, useAccounts } from '../../hooks/useLocalData';
+import { useTransactions, useAccounts, useCreditCards } from '../../hooks/useLocalData';
 import { Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Trash2, Calendar, Search } from 'lucide-react';
 import clsx from 'clsx';
 import { format } from 'date-fns';
@@ -11,15 +11,26 @@ import { format } from 'date-fns';
 export default function TransactionsPage() {
   const { transactions, loading: txLoading, addTransaction, deleteTransaction } = useTransactions();
   const { accounts, loading: accLoading } = useAccounts();
-  const loading = txLoading || accLoading;
+  const { creditCards, loading: ccLoading } = useCreditCards();
+  const loading = txLoading || accLoading || ccLoading;
+
+  const allAccounts = useMemo(() => {
+      const ccs = creditCards.map(c => ({
+          id: c.id,
+          name: c.name, // or c.bankName?
+          currency: 'INR', // Default/Fallback
+          type: 'CREDIT_CARD'
+      }));
+      return [...accounts, ...ccs];
+  }, [accounts, creditCards]);
 
   const accountMap = useMemo(() => {
     const map: Record<string, any> = {};
-    accounts.forEach(acc => {
+    allAccounts.forEach(acc => {
       map[acc.id] = acc;
     });
     return map;
-  }, [accounts]);
+  }, [allAccounts]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -167,7 +178,7 @@ export default function TransactionsPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSubmit}
-        accounts={accounts}
+        accounts={allAccounts}
       />
     </div>
   );
