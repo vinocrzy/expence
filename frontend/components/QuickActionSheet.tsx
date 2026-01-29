@@ -75,9 +75,12 @@ function QuickActionSheet({ isOpen, onClose, accounts }: QuickActionSheetProps) 
                         onDragEnd={(_, info) => {
                             if (info.offset.y > 100) onClose();
                         }}
-                        className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 border-t border-gray-800 rounded-t-3xl shadow-2xl p-6 pb-safe"
+                        className="fixed bottom-0 left-0 right-0 z-50 bg-gray-950 border-t border-white/10 rounded-t-[2.5rem] shadow-2xl p-6 pb-safe pt-2"
                     >
-                        <div className="w-12 h-1 bg-gray-700 rounded-full mx-auto mb-6 cursor-grab active:cursor-grabbing"></div>
+                        {/* Handle */}
+                        <div className="w-full flex justify-center pt-2 pb-6">
+                            <div className="w-12 h-1.5 bg-gray-700/50 rounded-full" />
+                        </div>
                         
                         <h3 className="text-lg font-bold text-white mb-6 text-center">Quick Actions</h3>
                         
@@ -141,24 +144,27 @@ function QuickActionSheet({ isOpen, onClose, accounts }: QuickActionSheetProps) 
 
 function ActionButton({ icon: Icon, label, color, onClick }: any) {
     const colorClasses: any = {
-        red: "bg-red-500/10 text-red-500 border-red-500/20 group-hover:bg-red-500",
-        green: "bg-green-500/10 text-green-500 border-green-500/20 group-hover:bg-green-500",
-        blue: "bg-blue-500/10 text-blue-500 border-blue-500/20 group-hover:bg-blue-500",
-        orange: "bg-orange-500/10 text-orange-500 border-orange-500/20 group-hover:bg-orange-500",
-        purple: "bg-purple-500/10 text-purple-500 border-purple-500/20 group-hover:bg-purple-500",
+        red: "bg-red-500/15 text-red-500 group-hover:bg-red-500 group-hover:text-white",
+        green: "bg-green-500/15 text-green-500 group-hover:bg-green-500 group-hover:text-white",
+        blue: "bg-blue-500/15 text-blue-500 group-hover:bg-blue-500 group-hover:text-white",
+        orange: "bg-orange-500/15 text-orange-500 group-hover:bg-orange-500 group-hover:text-white",
+        purple: "bg-purple-500/15 text-purple-500 group-hover:bg-purple-500 group-hover:text-white",
     };
 
     return (
         <motion.button 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={onClick} 
-            className="flex flex-col items-center gap-2 group"
+            onClick={() => {
+                if (navigator.vibrate) navigator.vibrate(10);
+                onClick();
+            }} 
+            className="flex flex-col items-center gap-3 group w-full"
         >
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border group-hover:text-white transition-all ${colorClasses[color]}`}>
-                <Icon className="h-6 w-6" />
+            <div className={`w-16 h-16 rounded-[1.2rem] flex items-center justify-center transition-all duration-300 ${colorClasses[color]}`}>
+                <Icon className="h-7 w-7" />
             </div>
-            <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors">{label}</span>
+            <span className="text-xs font-semibold text-gray-400 group-hover:text-white transition-colors">{label}</span>
         </motion.button>
     );
 }

@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { useState, useCallback } from 'react';
 import QuickActionSheet from './QuickActionSheet';
 // import BackupStatusIndicator from './BackupStatusIndicator'; // Removed legacy
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSyncStatus } from '../hooks/useSyncStatus';
 import { useAccounts } from '../hooks/useLocalData';
 import SyncStatusIndicator from './ui/SyncStatus';
@@ -157,43 +157,46 @@ export default function Navbar() {
       {/* --- MOBILE NAVIGATION --- */}
       
       {/* Top Bar (Mobile) */}
-      <nav className="md:hidden bg-gray-900 border-b border-gray-800 sticky top-0 z-40 px-4 py-3 flex items-center justify-between">
-           <Link href="/dashboard" className="flex items-center gap-2">
-                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-purple-900/20">
+      {/* Top Bar (Mobile) */}
+      <nav className="md:hidden bg-gray-900/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40 px-4 pt-safe pb-3 flex items-center justify-between transition-all duration-300">
+           <div className="flex items-center gap-3">
+                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-purple-900/20">
                  P
                  </div>
-                 <span className="font-bold text-white text-lg">Pocket</span>
-                 <span className="font-bold text-white text-lg">Together</span>
-           </Link>
+                 <span className="font-semibold text-white text-lg tracking-tight">PocketTogether</span>
+           </div>
            
             {/* Status Indicator (Mobile) */}
-            <div className="mr-auto ml-4">
-                 <SyncStatusIndicator />
+            <div className="flex items-center gap-3">
+                <SyncStatusIndicator />
+                <Link href="/profile" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                    <User className="h-5 w-5" />
+                </Link>
             </div>
-
-           <Link href="/profile" className="text-gray-400">
-               <User className="h-6 w-6" />
-           </Link>
       </nav>
 
       {/* Bottom Nav (Mobile) */}
-      <nav className="md:hidden fixed bottom-6 left-4 right-4 bg-gray-800/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-40 pb-safe">
-        <div className="flex items-center justify-between px-2">
+      {/* Bottom Nav (Mobile) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900/85 backdrop-blur-xl border-t border-white/10 z-50 pb-safe pt-2">
+        <div className="flex items-center justify-between px-6">
             {mobileNavItems.map((item, index) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 
                 if (item.isFab) {
                      return (
-                        <div key="fab" className="relative -top-5">
+                        <div key="fab" className="relative -top-8">
                             <motion.button 
-                                onClick={handleOpenQuickAction}
+                                onClick={() => {
+                                    if (navigator.vibrate) navigator.vibrate(10);
+                                    handleOpenQuickAction();
+                                }}
                                 className="w-14 h-14 bg-gradient-to-tr from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-purple-600/40 border-4 border-gray-900"
                                 whileTap={{ scale: 0.9 }}
                                 whileHover={{ scale: 1.05 }}
                                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                             >
-                                <Plus className="h-8 w-8" />
+                                <Plus className="h-7 w-7 stroke-[3]" />
                             </motion.button>
                         </div>
                     );
@@ -203,10 +206,13 @@ export default function Navbar() {
                     return (
                         <button 
                             key="menu"
-                            onClick={handleOpenMobileMenu}
-                            className={`relative flex flex-col items-center justify-center py-3 px-2 w-16 ${isMobileMenuOpen ? 'text-white' : 'text-gray-500'}`}
+                            onClick={() => {
+                                if (navigator.vibrate) navigator.vibrate(5);
+                                handleOpenMobileMenu();
+                            }}
+                            className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-xl transition-all duration-200 ${isMobileMenuOpen ? 'text-blue-500' : 'text-gray-500'}`}
                         >
-                            <MoreHorizontal className="h-6 w-6 mb-1" />
+                            <MoreHorizontal className={`h-6 w-6 ${isMobileMenuOpen ? 'stroke-[2.5px]' : ''}`} />
                             <span className="text-[10px] font-medium">More</span>
                         </button>
                     )
@@ -216,19 +222,16 @@ export default function Navbar() {
                     <Link 
                         key={item.href}
                         href={item.href}
-                        className="relative flex flex-col items-center justify-center py-3 px-2 w-16"
+                        onClick={() => {
+                          if (navigator.vibrate) navigator.vibrate(5);
+                        }}
+                        className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-xl transition-all duration-200 ${isActive ? 'text-blue-500' : 'text-gray-500'}`}
                     >
-                        {isActive && (
-                            <motion.div 
-                                layoutId="mobile-nav-pill"
-                                className="absolute inset-x-2 top-1 bottom-1 bg-white/10 rounded-xl -z-10"
-                                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                            />
-                        )}
                         <Icon 
-                            className={`h-6 w-6 mb-1 transition-colors duration-200 ${isActive ? 'fill-white/10 stroke-[2.5px] text-white' : 'text-gray-500'}`} 
+                            className={`h-6 w-6 transition-all duration-200 ${isActive ? 'fill-current' : ''}`} 
+                            strokeWidth={isActive ? 0 : 2}
                         />
-                         <span className={`text-[10px] font-medium transition-opacity duration-200 ${isActive ? 'opacity-100 text-white' : 'opacity-70 text-gray-500'}`}>
+                         <span className="text-[10px] font-medium">
                              {item.label}
                          </span>
                     </Link>
@@ -238,77 +241,104 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile Menu Drawer */}
+      {/* Mobile Menu Drawer (iOS Style Grouped List) */}
+       <AnimatePresence>
        {isMobileMenuOpen && (
-            <div className="fixed inset-0 z-50 md:hidden">
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseMobileMenu} />
+            <div className="fixed inset-0 z-50 md:hidden flex flex-col">
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
+                    onClick={handleCloseMobileMenu} 
+                />
                 <motion.div 
                     initial={{ y: '100%' }}
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}
-                    className="absolute bottom-0 left-0 right-0 bg-gray-900 rounded-t-3xl border-t border-gray-800 p-6 pb-24"
+                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                    className="absolute bottom-0 left-0 right-0 bg-gray-950 rounded-t-[2rem] border-t border-white/10 flex flex-col max-h-[90vh]"
                 >
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xl font-bold">More & & Insights</h3>
-                        <button onClick={handleCloseMobileMenu} className="p-2 bg-gray-800 rounded-full">
-                            <ChevronDown className="h-6 w-6" />
+                    {/* Handle */}
+                    <div className="w-full flex justify-center pt-3 pb-2">
+                        <div className="w-12 h-1.5 bg-gray-700/50 rounded-full" />
+                    </div>
+
+                    <div className="p-4 pt-2 overflow-y-auto pb-safe">
+                        <div className="flex items-center justify-between mb-6 px-2">
+                            <h3 className="text-2xl font-bold text-white">Menu</h3>
+                            <button 
+                                onClick={handleCloseMobileMenu}
+                                className="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-full text-gray-400"
+                            >
+                                <ChevronDown className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        {/* Group 1: Insights & Reports */}
+                        <div className="bg-gray-900 rounded-2xl overflow-hidden mb-4 border border-white/5">
+                            <Link href="/analytics" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 border-b border-white/5 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                                    <BarChart2 className="h-5 w-5" />
+                                </div>
+                                <span className="text-base font-medium flex-1">Analytics</span>
+                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
+                            </Link>
+                            <Link href="/reports" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">
+                                    <FileDown className="h-5 w-5" />
+                                </div>
+                                <span className="text-base font-medium flex-1">Reports</span>
+                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
+                            </Link>
+                        </div>
+
+                        {/* Group 2: Management */}
+                        <div className="bg-gray-900 rounded-2xl overflow-hidden mb-4 border border-white/5">
+                            <Link href="/transactions" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 border-b border-white/5 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                                    <ArrowRightLeft className="h-5 w-5" />
+                                </div>
+                                <span className="text-base font-medium flex-1">All Activity</span>
+                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
+                            </Link>
+                            <Link href="/settings/categories" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center text-pink-400">
+                                    <Target className="h-5 w-5" />
+                                </div>
+                                <span className="text-base font-medium flex-1">Manage Categories</span>
+                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
+                            </Link>
+                        </div>
+
+                        {/* Group 3: Settings & Profile */}
+                        <div className="bg-gray-900 rounded-2xl overflow-hidden mb-6 border border-white/5">
+                            <Link href="/household" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 border-b border-white/5 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400">
+                                    <Home className="h-5 w-5" />
+                                </div>
+                                <span className="text-base font-medium flex-1">Household Settings</span>
+                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
+                            </Link>
+                            <Link href="/profile" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-gray-700/50 flex items-center justify-center text-gray-300">
+                                    <User className="h-5 w-5" />
+                                </div>
+                                <span className="text-base font-medium flex-1">My Profile</span>
+                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
+                            </Link>
+                        </div>
+
+                        <button onClick={logout} className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 text-red-500 rounded-2xl font-bold hover:bg-red-500/20 transition-colors">
+                             <LogOut className="h-5 w-5" /> Log Out
                         </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-4 gap-4">
-                         <Link href="/analytics" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700 col-span-2 flex-row justify-center">
-                             <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
-                                 <BarChart2 className="h-5 w-5" />
-                             </div>
-                             <span className="text-sm font-medium">Analytics & Insights</span>
-                        </Link>
-                         <Link href="/reports" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700 col-span-2 flex-row justify-center">
-                             <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-500">
-                                 <FileDown className="h-5 w-5" />
-                             </div>
-                             <span className="text-sm font-medium">Reports</span>
-                        </Link>
-                         <Link href="/settings/categories" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700 col-span-2 flex-row justify-center">
-                             <div className="w-10 h-10 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-500">
-                                 <Target className="h-5 w-5" />
-                             </div>
-                             <span className="text-sm font-medium">Categories</span>
-                        </Link>
-
-                        <Link href="/transactions" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
-                             <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
-                                 <ArrowRightLeft className="h-5 w-5" />
-                             </div>
-                             <span className="text-xs font-medium">Activity</span>
-                        </Link>
                         
-                        <Link href="/household" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
-                             <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
-                                 <Home className="h-5 w-5" />
-                             </div>
-                             <span className="text-xs font-medium">Household</span>
-                        </Link>
-                        <Link href="/profile" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
-                             <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-300">
-                                 <User className="h-5 w-5" />
-                             </div>
-                             <span className="text-xs font-medium">Profile</span>
-                        </Link>
-                         <Link href="/reports" onClick={handleCloseMobileMenu} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gray-800 hover:bg-gray-700">
-                             <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-500">
-                                 <FileDown className="h-5 w-5" />
-                             </div>
-                             <span className="text-xs font-medium">Reports</span>
-                        </Link>
-                    </div>
-
-                    <div className="mt-6 pt-6 border-t border-gray-800">
-                         <button onClick={logout} className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 text-red-500 rounded-xl font-bold hover:bg-red-500/20">
-                             <LogOut className="h-5 w-5" /> Logout
-                         </button>
+                        <div className="h-8" />
                     </div>
                 </motion.div>
             </div>
        )}
+       </AnimatePresence>
       {/* Spacer */}
       <div className="h-24 md:hidden"></div>
       
