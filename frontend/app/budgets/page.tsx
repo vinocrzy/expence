@@ -78,7 +78,7 @@ export default function BudgetsPage() {
       <Navbar />
       
       <main className="max-w-3xl mx-auto px-4 py-4 md:py-8 pb-32 md:pb-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 md:gap-0">
              <motion.h1 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -88,7 +88,7 @@ export default function BudgetsPage() {
             </motion.h1>
             <button 
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 transition-colors w-full md:w-auto justify-center"
                 style={{ backgroundColor: activeTab === 'PLANNING' ? '#F59E0B' : undefined }}
             >
                 <Plus className="h-5 w-5" />

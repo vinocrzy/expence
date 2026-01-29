@@ -67,7 +67,7 @@ export default function AnalyticsPage() {
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 mb-8">
                     <div>
                         <h1 className="text-3xl font-bold flex items-center gap-3">
                             <BarChart2 className="h-8 w-8 text-blue-500" />
@@ -78,11 +78,11 @@ export default function AnalyticsPage() {
                             {isSyncing && <span className="ml-2 text-yellow-500 text-xs">(Syncing...)</span>}
                         </p>
                     </div>
-                     <div className="flex gap-2">
+                     <div className="flex gap-2 w-full md:w-auto">
                         <select 
                             value={range} 
                             onChange={(e) => setRange(e.target.value as any)}
-                            className="bg-gray-800 border border-gray-700 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500"
+                            className="bg-gray-800 border border-gray-700 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 flex-1 md:flex-none"
                         >
                             <option value="MONTH">This Month</option>
                             <option value="QUARTER">Last Quarter</option>
