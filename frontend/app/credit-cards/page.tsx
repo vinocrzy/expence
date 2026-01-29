@@ -29,14 +29,14 @@ export default function CreditCardsPage() {
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 flex items-center gap-3">
-             <CreditCard className="h-8 w-8 text-blue-400" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 flex items-center gap-2 sm:gap-3">
+             <CreditCard className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
             Credit Cards
           </h1>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-white bg-purple-600 hover:bg-purple-500 transition-all font-bold shadow-lg shadow-purple-500/25"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:py-2 rounded-xl text-white bg-purple-600 hover:bg-purple-500 transition-all font-bold shadow-lg shadow-purple-500/25 active:scale-95"
           >
             <Plus className="h-5 w-5" />
             Add Card
@@ -47,12 +47,9 @@ export default function CreditCardsPage() {
              <div className="text-center text-gray-500 py-12">Loading credit cards...</div>
         ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {cards.map(acc => {
-                    const card = acc.creditCard;
-                    if (!card) return null;
-                    
+                {cards.map(card => {
                     const limit = Number(card.creditLimit);
-                    const outstanding = Number(card.outstandingAmount || 0);
+                    const outstanding = Number(card.currentOutstanding || 0);
                     // Use Account Balance if outstanding not set?
                     // Safe fallbacks.
                     
@@ -60,15 +57,15 @@ export default function CreditCardsPage() {
                     const available = limit - outstanding;
 
                     return (
-                        <Link href={`/credit-cards/${card.accountId}`} key={acc.id} className="block group">
+                        <Link href={`/credit-cards/${card.id}`} key={card.id} className="block group">
                             <div className="bg-gray-800 border border-gray-700/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all shadow-lg hover:shadow-purple-500/10 h-full flex flex-col justify-between">
                                 <div>
                                     <div className="flex justify-between items-start mb-4">
                                         <div>
                                             <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors uppercase tracking-wide">
-                                                {card.issuer}
+                                                {card.bankName}
                                             </h3>
-                                            <div className="text-sm text-gray-400">{acc.name}</div>
+                                            <div className="text-sm text-gray-400">{card.name}</div>
                                         </div>
                                         <div className="bg-gray-700/50 p-2 rounded-lg">
                                             <CreditCard className="h-6 w-6 text-gray-400" />
@@ -99,11 +96,11 @@ export default function CreditCardsPage() {
                                 <div className="grid grid-cols-2 gap-4 border-t border-gray-700/50 pt-4 mt-auto">
                                     <div className="flex items-center gap-2 text-gray-400 text-sm">
                                         <Calendar className="h-4 w-4" />
-                                        <span>Bill Day: {card.billingCycleStartDay}</span>
+                                        <span>Bill Day: {card.billingCycle}</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-gray-400 text-sm justify-end">
                                         <AlertTriangle className="h-4 w-4" />
-                                        <span>Due +{card.dueDays}d</span>
+                                        <span>Due +{card.paymentDueDay}d</span>
                                     </div>
                                 </div>
                             </div>

@@ -48,6 +48,7 @@ export interface CreditCard {
   paymentDueDay?: number;
   creditLimit?: number;
   currentOutstanding?: number;
+  apr?: number;
   isArchived?: boolean;
   householdId: string;
   createdAt?: string;
