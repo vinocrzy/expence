@@ -156,7 +156,7 @@ export default function Navbar() {
                <div className="h-6 w-px bg-gray-800"></div>
                
                <div className="flex items-center gap-3">
-                    <Link href="/household" className="text-gray-400 hover:text-white transition-colors" title="Household Settings">
+                    <Link href="/settings" className="text-gray-400 hover:text-white transition-colors" title="Settings">
                         <Settings className="h-5 w-5" />
                     </Link>
                     <Link href="/profile" className="flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white">
@@ -343,6 +343,13 @@ export default function Navbar() {
                                     <User className="h-5 w-5" />
                                 </div>
                                 <span className="text-base font-medium flex-1">My Profile</span>
+                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
+                            </Link>
+                            <Link href="/settings" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 border-b border-white/5 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-gray-700/50 flex items-center justify-center text-gray-300">
+                                    <Settings className="h-5 w-5" />
+                                </div>
+                                <span className="text-base font-medium flex-1">Settings & Data</span>
                                 <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
                             </Link>
                         </div>
