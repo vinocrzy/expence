@@ -6,15 +6,19 @@ import { Cloud, RefreshCw, AlertTriangle, CheckCircle, WifiOff, Settings2, Play,
 import { AnimatePresence, motion } from 'framer-motion';
 
 const SyncStatusIndicator = () => {
-    const { isOnline, isSyncing, error, isConnected, manualSync, status: syncStatus } = useSyncStatus();
+    const { isOnline, isSyncing, error, isConnected, manualSync, status: syncStatus, setAutoSync, isAutoSyncEnabled } = useSyncStatus();
     const [isOpen, setIsOpen] = useState(false);
-    const [isAutoSync, setIsAutoSync] = useState(true);
 
-    if (syncStatus === 'DISABLED') return null;
+    if (syncStatus === 'BLOCKED') return null;
+
+    const toggleAutoSync = (enabled: boolean) => {
+        setAutoSync(enabled);
+    };
 
     // Determine status
     let status = 'COMPLETED';
-    if (!isOnline) status = 'OFFLINE';
+    if (!isAutoSyncEnabled) status = 'DISABLED';
+    else if (!isOnline) status = 'OFFLINE';
     else if (error) status = 'ERROR';
     else if (isSyncing) status = 'SYNCING';
     else if (isConnected) status = 'COMPLETED';
@@ -23,6 +27,7 @@ const SyncStatusIndicator = () => {
         'SYNCING': { icon: RefreshCw, text: 'Syncing...', color: 'text-blue-500', bg: 'bg-blue-500/10', animate: true },
         'ERROR': { icon: AlertTriangle, text: 'Error', color: 'text-amber-500', bg: 'bg-amber-500/10' },
         'OFFLINE': { icon: WifiOff, text: 'Offline', color: 'text-gray-500', bg: 'bg-gray-500/10' },
+        'DISABLED': { icon: Pause, text: 'Sync Off', color: 'text-gray-400', bg: 'bg-gray-400/10' },
         'COMPLETED': { icon: CheckCircle, text: 'Synced', color: 'text-green-500', bg: 'bg-green-500/10' }
     }[status] || { icon: Cloud, text: 'Unknown', color: 'text-gray-500', bg: 'bg-gray-500/10' };
 
@@ -82,12 +87,12 @@ const SyncStatusIndicator = () => {
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-medium text-gray-300">Auto-Sync</span>
                                         <button 
-                                            onClick={() => setIsAutoSync(!isAutoSync)}
-                                            className={`w-11 h-6 rounded-full p-1 transition-colors duration-200 ${isAutoSync ? 'bg-green-500' : 'bg-gray-700'}`}
+                                            onClick={() => toggleAutoSync(!isAutoSyncEnabled)}
+                                            className={`w-11 h-6 rounded-full p-1 transition-colors duration-200 ${isAutoSyncEnabled ? 'bg-green-500' : 'bg-gray-700'}`}
                                         >
                                             <motion.div 
                                                 className="w-4 h-4 bg-white rounded-full shadow-sm"
-                                                animate={{ x: isAutoSync ? 20 : 0 }}
+                                                animate={{ x: isAutoSyncEnabled ? 20 : 0 }}
                                                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                             />
                                         </button>

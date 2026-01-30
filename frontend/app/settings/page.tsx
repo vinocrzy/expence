@@ -299,8 +299,15 @@ function CouchDbSettings() {
             }
 
         } catch (err: any) {
-            console.error(err);
-            setTestStatus({ type: 'error', message: err.message || 'Failed to connect. Check URL and CORS settings.' });
+            // Use warn for expected network errors to avoid double red-errors in console (browser logs the fetch fail)
+            console.warn('Connection test result:', err.message);
+            let msg = err.message || 'Failed to connect.';
+            
+            if (msg === 'Failed to fetch' || msg.includes('NetworkError') || msg.includes('ECONNREFUSED')) {
+                msg = 'Unable to connect to server. Please check if CouchDB is running, accessible, and CORS is enabled.';
+            }
+            
+            setTestStatus({ type: 'error', message: msg });
         }
     };
 
