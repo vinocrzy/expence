@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
-import { householdService } from '../../lib/localdb-services';
-import { Users, Copy, Check, UserPlus, LogOut } from 'lucide-react';
+import { householdService, sharedDataService } from '../../lib/localdb-services';
+import { Users, Copy, Check, UserPlus, LogOut, CloudUpload, RefreshCw } from 'lucide-react';
 import { useAuth, useUser } from '@clerk/nextjs';
 
 export default function HouseholdPage() {
@@ -13,6 +13,7 @@ export default function HouseholdPage() {
   const [copied, setCopied] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [joining, setJoining] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState('');
   const [role, setRole] = useState<'OWNER' | 'GUEST'>('OWNER');
 
@@ -70,6 +71,20 @@ export default function HouseholdPage() {
     }
   };
 
+  const handlePublish = async () => {
+      if (!household?.id) return;
+      try {
+          setPublishing(true);
+          await sharedDataService.publishSnapshot(household.id);
+          alert('Shared data updated successfully!');
+      } catch (e) {
+          console.error(e);
+          alert('Failed to publish data.');
+      } finally {
+          setPublishing(false);
+      }
+  };
+
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!joinCode) return;
@@ -78,26 +93,6 @@ export default function HouseholdPage() {
     setError('');
     
     try {
-        // Real Join Logic:
-        // 1. We assume the code is the household ID (or we use a lookup service if we had a server)
-        // For this local-first offline architecture, the "Invite Code" provided by Owner IS the Household ID (or mapped).
-        // Let's assume the user enters the Household ID directly ideally, or we parse it.
-        // If the code is "INV-...", and we don't have a lookup, we might need the raw ID.
-        // DESIGN DECISION: For now, we assume the code IS the ID the user needs to enter. 
-        // Or we assume the invite code is just the ID. 
-        
-        // Actually, householdService.create makes 'INV-'+uuid.
-        // Since we can't resolve INV code to ID without a central server in this architecture easily,
-        // we will ask the user to enter the Owner's Household ID for now? 
-        // OR: The implementation plan implies a "Code".
-        // Let's just mock the resolution: Code -> ID? No, that won't work peer-to-peer.
-        // We will assume the code IS the ID for simplicity in this version, OR we store the ID in the invite code?
-        // Let's strip 'INV-' and assume the rest is the ID? No, uuid is unrelated.
-        
-        // CORRECTION: For this PouchDB setup to work, the Guest needs the household ID to form the DB name `hh_{id}_shared`.
-        // So the "Invite Code" displayed should probably just BE the household ID (maybe base64 encoded?)
-        // Let's treat the joinCode as the target ID.
-        
         const targetId = joinCode.trim();
         
         localStorage.setItem('household_role', 'GUEST');
@@ -203,6 +198,33 @@ export default function HouseholdPage() {
                         </div>
                     )}
                 </div>
+
+                {/* Publish Config - Only for Owner */}
+                {role === 'OWNER' && (
+                    <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="p-3 bg-green-500/10 rounded-xl text-green-400">
+                                <CloudUpload className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-white">Share Data</h2>
+                                <p className="text-sm text-gray-400">Publish a monthly snapshot for guests</p>
+                            </div>
+                        </div>
+                        <p className="text-gray-400 mb-6 max-w-2xl text-sm">
+                            Guests cannot see your live data. You must manually publish a snapshot of the current month's transactions and balances.
+                            This ensures you have full control over what is shared.
+                        </p>
+                        <button 
+                            onClick={handlePublish}
+                            disabled={publishing}
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold transition-colors disabled:opacity-50 shadow-lg shadow-green-900/20"
+                        >
+                            {publishing ? <RefreshCw className="h-5 w-5 animate-spin" /> : <CloudUpload className="h-5 w-5" />}
+                            {publishing ? 'Publishing...' : 'Update Shared Snapshot'}
+                        </button>
+                    </div>
+                )}
 
                 {/* Members List - Only for Owner */}
                 {role === 'OWNER' && (
