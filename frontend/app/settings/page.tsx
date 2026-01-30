@@ -185,6 +185,7 @@ export default function SettingsPage() {
 }
 
 function CouchDbSettings() {
+    const { user } = useUser();
     const [config, setConfig] = useState<{
         url: string;
         username: string;
@@ -267,6 +268,17 @@ function CouchDbSettings() {
         return urlStr;
     };
 
+    const getExpectedDBs = () => {
+        if (!user) return [];
+        const householdId = (user.publicMetadata as any)?.householdId || user.id;
+        if (!householdId) return [];
+        
+        const safeId = householdId.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+        const suffixes = ['accounts', 'transactions', 'categories', 'creditcards', 'loans', 'budgets', 'shared'];
+        
+        return suffixes.map(name => `hh_${safeId}_${name}`);
+    };
+
     const testConnection = async () => {
         setTestStatus({ type: 'loading', message: 'Testing connection...' });
         setMissingDbs([]);
@@ -294,8 +306,10 @@ function CouchDbSettings() {
             }
 
             const allDbs = await response.json();
-            const requiredDbs = ['accounts', 'transactions', 'categories', 'creditcards', 'loans', 'budgets'];
-            const missing = requiredDbs.filter(db => !allDbs.includes(db));
+            const expected = getExpectedDBs();
+            
+            // Check if ANY required DB is missing
+            const missing = expected.filter(db => !allDbs.includes(db));
 
             if (missing.length > 0) {
                 setMissingDbs(missing);
@@ -344,7 +358,7 @@ function CouchDbSettings() {
         }
 
         if (failCount === 0) {
-            setInitStatus({ type: 'success', message: 'All databases created successfully!' });
+            setInitStatus({ type: 'success', message: 'All personal databases created successfully!' });
             setMissingDbs([]); // Clear missing list
             setTestStatus({ type: 'success', message: 'Connection successful! All databases exist.' });
         } else {
@@ -492,15 +506,16 @@ function CouchDbSettings() {
                         {missingDbs.length > 0 && (
                             <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
                                 <p className="text-yellow-200 text-sm mb-2">
-                                    The following databases are missing: <span className="font-mono text-yellow-100">{missingDbs.join(', ')}</span>.
-                                    The application will not sync correctly without them.
+                                    The following databases are missing on the remote server:<br/>
+                                     <span className="font-mono text-yellow-100 break-all text-xs">{missingDbs.join(', ')}</span>.
+                                    <br/>The application will not sync correctly without them.
                                 </p>
                                 <button 
                                     onClick={initializeDatabases}
                                     disabled={initStatus.type === 'loading'}
                                     className="w-full md:w-auto px-3 py-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-200 text-xs font-bold uppercase tracking-wider rounded-lg border border-yellow-500/30 transition-colors"
                                 >
-                                    {initStatus.type === 'loading' ? 'Creating...' : 'Initialize Databases'}
+                                    {initStatus.type === 'loading' ? 'Creating...' : 'Initialize Personal Databases'}
                                 </button>
                                 {initStatus.message && (
                                     <p className={`text-xs mt-2 ${initStatus.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
