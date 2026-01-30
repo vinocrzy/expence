@@ -864,6 +864,7 @@ export const sharedDataService = {
         
         // 2. Get Current Balances
         const accounts = await accountService.getAllActive(householdId);
+        const creditCards = await creditCardService.getAllActive(householdId);
 
         // 3. Clear existing Shared DB (or diff update? Clear is safer for "Snapshot" semantics)
         // PouchDB doesn't have "clear", so we must fetch all and bulk delete, then bulk add.
@@ -881,15 +882,15 @@ export const sharedDataService = {
         }
 
         // 4. Transform and Insert new data
-        const sharedTxs = transactions.map(t => {
-             // We need category name.
-             // This is async inside map, so we should fetch categories first.
-             return t; 
-        }); // Wait, we need category names.
+        // Wait, we need category names.
 
         const categories = await categoryService.getAll(householdId);
         const catMap = new Map(categories.map(c => [c.id, c.name]));
-        const accountMap = new Map(accounts.map(a => [a.id, a.name]));
+        
+        // Combine accounts and credit cards for the map
+        const accountMap = new Map();
+        accounts.forEach(a => accountMap.set(a.id, a.name));
+        creditCards.forEach(c => accountMap.set(c.id, c.name));
 
         const newDocs: any[] = [];
 
@@ -919,6 +920,18 @@ export const sharedDataService = {
                 currency: a.currency
             };
             newDocs.push({ ...sharedBal, _id: `bal_${a.id}`, docType: 'BALANCE' });
+        });
+
+        // Add Credit Cards
+        creditCards.forEach(cc => {
+            const sharedBal: SharedAccountBalance = {
+                id: cc.id,
+                name: cc.name,
+                type: 'Credit Card',
+                balance: -(cc.currentOutstanding || 0), // Negative for liability
+                currency: 'INR' // Default for now
+            };
+            newDocs.push({ ...sharedBal, _id: `bal_${cc.id}`, docType: 'BALANCE' });
         });
 
         await sharedDB.bulkDocs(newDocs);
