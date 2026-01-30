@@ -23,9 +23,23 @@ export function useLocalFirst() {
   return useContext(LocalFirstContext);
 }
 
+import { useHouseholdPublisher } from '@/hooks/useHouseholdPublisher';
+
 export function LocalFirstProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
   const { getToken, user, loading } = useAuth(); // Custom AuthContext
+
+  // Determine role for publisher
+  const [role, setRole] = useState<'OWNER' | 'GUEST'>('OWNER');
+  
+  useEffect(() => {
+      if (typeof window !== 'undefined') {
+          const r = localStorage.getItem('household_role');
+          if (r === 'GUEST') setRole('GUEST');
+      }
+  }, []);
+
+  useHouseholdPublisher(role === 'OWNER');
 
   useEffect(() => {
     if (!loading) {
@@ -46,12 +60,24 @@ export function LocalFirstProvider({ children }: { children: ReactNode }) {
   };
 
   const initializeLocalFirst = async () => {
-    if (!user?.householdId) return;
-
-    // Run migration V2 (Dexie -> RxDB) - DISABLED/REMOVED
-    // const { runMigration } = await import('@/lib/migration-runner');
-    // await runMigration();
+    // If we are guest, we might ignore user.householdId check? 
+    // But we need to be logged in (user exists).
     
+    // Determine target ID and Role
+    let activeViewingId: string | undefined = undefined;
+    
+    if (typeof window !== 'undefined') {
+        const guestRole = localStorage.getItem('household_role');
+        const joinedId = localStorage.getItem('joined_household_id');
+        if (guestRole === 'GUEST' && joinedId) {
+             activeViewingId = joinedId;
+             setRole('GUEST');
+        }
+    }
+
+    if (!user || !user.householdId) return;
+    const currentUserHouseholdId = user.householdId;
+
     // Initialize Replication
     const { initDB } = await import('@/lib/pouchdb');
     const { initializeReplication } = await import('@/lib/replication');
@@ -60,18 +86,18 @@ export function LocalFirstProvider({ children }: { children: ReactNode }) {
     await initDB();
     
     // Set context for services
-    setHouseholdId(user.householdId);
+    setHouseholdId(currentUserHouseholdId); // ALWAYS personal ID for write ops
 
     // Pass token getter and householdId
     await initializeReplication(async () => {
         return await getToken();
-    }, user.householdId);
+    }, currentUserHouseholdId, activeViewingId);
 
     setIsReady(true);
   };
   
   // Show loading while checking
-  if (!isReady) {
+  if (!isReady && user) { // Only show loading if we have a user and expect to init
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

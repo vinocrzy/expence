@@ -11,6 +11,7 @@ import {
   creditcardsDB, 
   loansDB, 
   budgetsDB,
+  sharedDB, // New shared DB
   initDB 
 } from './pouchdb';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,6 +22,9 @@ import type {
   CreditCard,
   Loan,
   Budget,
+  Household,
+  SharedTransaction,
+  SharedAccountBalance
 } from './db-types';
 
 // Helper to generate IDs
@@ -772,5 +776,169 @@ export const getHouseholdId = async (): Promise<string> => {
     return currentHouseholdId;
 };
 
-// Removed mock userService and householdService
+// ============================================
+// HOUSEHOLD OPERATIONS
+// ============================================
+
+export const householdService = {
+  // Current logic for owner: store household meta-data in accountsDB or a specific household meta-doc?
+  // Since we don't have a dedicated "meta" DB, we can store it in 'accountsDB' with a special ID or type,
+  // OR we can make a dedicated single-doc in local storage?
+  // Better: Use a specialized doc in PouchDB with id 'household_metadata'.
+  
+  async getCurrent(): Promise<Household | null> {
+      try {
+          // We check the accountsDB for a special doc
+          const doc = await accountsDB.get('household_metadata');
+          return doc as unknown as Household;
+      } catch (e: any) {
+          if (e.status === 404) return null;
+          throw e;
+      }
+  },
+
+  async create(name: string, owner: { id: string, name: string, email: string }): Promise<Household> {
+     const householdId = await getHouseholdId(); // Usually 'household_1' locally
+     // In a real multi-user offline-first app, the ID should be unique globally (UUID)
+     // But we are sticking to the existing pattern.
+     
+     const now = new Date().toISOString();
+     const household: Household = {
+         id: householdId,
+         name,
+         ownerId: owner.id,
+         inviteCode: 'INV-' + uuidv4().substring(0, 8).toUpperCase(), // Generate a unique code
+         members: [{
+             userId: owner.id,
+             name: owner.name,
+             email: owner.email,
+             role: 'OWNER',
+             joinedAt: now
+         }],
+         createdAt: now,
+         updatedAt: now,
+         _id: 'household_metadata' // Fixed ID for easy retrieval
+     };
+
+     await accountsDB.put(household); // Storing in accountsDB for simplicity of syncing
+     return household;
+  },
+
+  async update(data: Partial<Household>) {
+      const current = await this.getCurrent();
+      if (!current) throw new Error("No household found");
+      
+      const updated = {
+          ...current,
+          ...data,
+          updatedAt: new Date().toISOString()
+      };
+      await accountsDB.put(updated);
+      return updated;
+  },
+  
+  // For Guests: They join by setting their processing context. 
+  // Real joining logic happens via joining the shared DB sync.
+  // This function is mainly for UI feedback or "persisting" the join state locally.
+  async mockJoin(code: string) {
+       // Ideally we verify this code against a server or we just try to sync the DB with that code alias?
+       // For this implementation, we assume the code IS the household ALIAS or we map it.
+       // Let's assume Invite Code is just for show, and we need the Household ID.
+       return true;
+  }
+};
+
+// ============================================
+// SHARED DATA PUBLISHING (OWNER SIDE)
+// ============================================
+
+export const sharedDataService = {
+    // OWNER calls this to publish snapshots
+    async publishSnapshot(householdId: string) {
+        // 1. Get Current Month Transactions
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+        const transactions = await transactionService.getByDateRange(householdId, startOfMonth, endOfMonth);
+        
+        // 2. Get Current Balances
+        const accounts = await accountService.getAllActive(householdId);
+
+        // 3. Clear existing Shared DB (or diff update? Clear is safer for "Snapshot" semantics)
+        // PouchDB doesn't have "clear", so we must fetch all and bulk delete, then bulk add.
+        // Optimization: Only update changed docs? For now, bulk replace is simple.
+        
+        const allShared = await sharedDB.allDocs({ include_docs: true });
+        const deletions = allShared.rows.map(row => ({ 
+            _id: row.id, 
+            _rev: (row.doc as any)._rev, 
+            _deleted: true 
+        }));
+        
+        if (deletions.length > 0) {
+            await sharedDB.bulkDocs(deletions);
+        }
+
+        // 4. Transform and Insert new data
+        const sharedTxs = transactions.map(t => {
+             // We need category name.
+             // This is async inside map, so we should fetch categories first.
+             return t; 
+        }); // Wait, we need category names.
+
+        const categories = await categoryService.getAll(householdId);
+        const catMap = new Map(categories.map(c => [c.id, c.name]));
+        const accountMap = new Map(accounts.map(a => [a.id, a.name]));
+
+        const newDocs: any[] = [];
+
+        // Add Transactions
+        transactions.forEach(t => {
+            const sharedTx: SharedTransaction = {
+                id: t.id,
+                date: t.date,
+                amount: t.amount,
+                type: t.type,
+                categoryName: catMap.get(t.categoryId || '') || 'Uncategorized',
+                description: t.description || '',
+                accountName: accountMap.get(t.accountId) || 'Unknown Account',
+                user: 'Owner' // TODO: mapped user name
+            };
+            // Use same ID or specific prefix
+            newDocs.push({ ...sharedTx, _id: `tx_${t.id}`, docType: 'TRANSACTION' });
+        });
+
+        // Add Balances
+        accounts.forEach(a => {
+            const sharedBal: SharedAccountBalance = {
+                id: a.id,
+                name: a.name,
+                type: a.type,
+                balance: a.balance || 0,
+                currency: a.currency
+            };
+            newDocs.push({ ...sharedBal, _id: `bal_${a.id}`, docType: 'BALANCE' });
+        });
+
+        await sharedDB.bulkDocs(newDocs);
+        console.log(`Published ${newDocs.length} shared items.`);
+    },
+
+    // GUEST calls this to read data
+    async getSharedTransactions(): Promise<SharedTransaction[]> {
+        const result = await sharedDB.find({
+            selector: { docType: 'TRANSACTION' }
+        });
+        // Sort by date desc
+        return (result.docs as any[]).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    },
+
+    async getSharedBalances(): Promise<SharedAccountBalance[]> {
+        const result = await sharedDB.find({
+            selector: { docType: 'BALANCE' }
+        });
+        return result.docs as any[];
+    }
+};
 

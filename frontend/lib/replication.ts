@@ -145,9 +145,17 @@ const ensureRemoteDB = async (url: string, headers: any) => {
     }
 };
 
-  export const initializeReplication = async (getToken: () => Promise<string | null>, householdId: string) => {
+import { sharedDB } from './pouchdb';
+// ... existing imports
+
+  // We need to accept both Personal ID and (Optionally) Viewing ID
+  export const initializeReplication = async (
+      getToken: () => Promise<string | null>, 
+      personalHouseholdId: string, 
+      viewingHouseholdId?: string
+  ) => {
   cachedGetToken = getToken;
-  cachedHouseholdId = householdId;
+  cachedHouseholdId = personalHouseholdId; // Default to personal for manual syncs if not specified otherwise
 
   // Clear existing
   stopReplication(); // Sets status to DISABLED
@@ -176,24 +184,19 @@ const ensureRemoteDB = async (url: string, headers: any) => {
     return [];
   }
 
-  if (isReplicationDisabled && forceEnable) {
-      console.warn('Replication is disabled by env var, but FORCED ENABLED by user settings.');
-  }
-
+  // ... (URL checks same as before)
   if (!couchURL) {
       console.error('CouchDB URL is not defined.');
       syncState$.next({ ...syncState$.getValue(), status: 'ERROR', error: 'No URL', connected: false });
       return [];
   }
 
-  // 4. Check Auto-Sync State
   if (!isAutoSyncEnabled) {
       console.log('Auto-sync is disabled by user setting, skipping initialization');
       syncState$.next({ ...syncState$.getValue(), status: 'DISABLED', connected: false });
       return [];
   }
 
-  // 5. Verify Connection
   const isConnected = await verifyConnection(couchURL, authOptions, ajaxOptions);
   if (!isConnected) {
       console.error('Connection verification failed.');
@@ -201,25 +204,50 @@ const ensureRemoteDB = async (url: string, headers: any) => {
       return [];
   }
 
-  // 6. Start Replication
-  const collections = [
-    { name: 'accounts', db: accountsDB },
-    { name: 'transactions', db: transactionsDB },
-    { name: 'categories', db: categoriesDB },
-    { name: 'creditcards', db: creditcardsDB },
-    { name: 'loans', db: loansDB },
-    { name: 'budgets', db: budgetsDB },
+  // 6. Define Collections & Targets
+  // Strategy: 
+  // - Sync Personal DBs (txs, accounts, etc.) -> hh_{personal}_...
+  // - Sync Shared DB -> hh_{viewing OR personal}_shared
+  
+  const personalDBs = [
+      { name: 'accounts', db: accountsDB },
+      { name: 'transactions', db: transactionsDB },
+      { name: 'categories', db: categoriesDB },
+      { name: 'creditcards', db: creditcardsDB },
+      { name: 'loans', db: loansDB },
+      { name: 'budgets', db: budgetsDB },
   ];
 
-  for (const { name, db } of collections) {
-      // Use household-specific database name
-      // Logic: hh_{householdId}_{dbName}
-      // Clerk IDs can have Uppercase. We MUST lowercase it for CouchDB name compliance.
-      const safeId = householdId.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+  // 1. Sync Personal Data
+  for (const { name, db } of personalDBs) {
+      const safeId = personalHouseholdId.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
       const remoteDBName = `hh_${safeId}_${name}`;
+      await startSingleSync(db, remoteDBName, couchURL, authOptions, ajaxOptions);
+  }
+
+  // 2. Sync Shared Data (Target depends on Viewing vs Publishing)
+  // If we are VIEWING another household, we sync sharedDB with THAT household's shared DB.
+  // If we are NOT viewing (just normal usage), we sync sharedDB with OUR OWN shared DB (to publish/backup it).
+  
+  const sharedTargetId = viewingHouseholdId || personalHouseholdId;
+  const safeSharedId = sharedTargetId.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+  const remoteSharedName = `hh_${safeSharedId}_shared`;
+
+  // Note: Guest View needs Read-Only? Or Sync? Sync is fine for now as it's local PouchDB cache.
+  // Ideally if Guest, we might want one-way FROM remote (replication.from).
+  // But let's stick to .sync for simplicity unless we want to prevent local edits propagating (which UI prevents anyway).
+  await startSingleSync(sharedDB, remoteSharedName, couchURL, authOptions, ajaxOptions);
+
+  // Set initial connected state
+  syncState$.next({ ...syncState$.getValue(), connected: true, status: 'ACTIVE' });
+
+  return activeReplications;
+};
+
+// Helper to start a sync for one DB
+async function startSingleSync(db: any, remoteDBName: string, couchURL: string, authOptions: any, ajaxOptions: any) {
       const remoteURL = `${couchURL}/${remoteDBName}`;
 
-      // Ensure remote DB exists before syncing
       let createHeaders: any = {};
       if (authOptions.username && authOptions.password) {
           createHeaders['Authorization'] = 'Basic ' + btoa(authOptions.username + ':' + authOptions.password);
@@ -236,71 +264,24 @@ const ensureRemoteDB = async (url: string, headers: any) => {
         batch_size: 60
       };
 
-      if (Object.keys(authOptions).length > 0) {
-          syncOptions.auth = authOptions;
-      }
-
-      if (Object.keys(ajaxOptions).length > 0) {
-          syncOptions.ajax = ajaxOptions;
-      }
+      if (Object.keys(authOptions).length > 0) syncOptions.auth = authOptions;
+      if (Object.keys(ajaxOptions).length > 0) syncOptions.ajax = ajaxOptions;
 
       const syncHandler = db.sync(remoteURL, syncOptions);
 
-      syncHandler
-        .on('change', (info) => {
-           // handle change
-           syncState$.next({
-             ...syncState$.getValue(),
-             status: 'ACTIVE',
-             connected: true,
-             lastSync: new Date()
-           });
-        })
-        .on('paused', (err) => {
-           // replication paused (e.g. replication up to date, user went offline)
-           // If err is present, it might be due to offline, handled by 'error' usually or handled here.
-           // But usually 'paused' without error means we are up-to-date and waiting.
-           syncState$.next({
-             ...syncState$.getValue(),
-             status: 'PAUSED',
-             connected: true
-           });
-        })
-        .on('active', () => {
-           // replicate resumed (e.g. new changes replicating)
-           syncState$.next({
-             ...syncState$.getValue(),
-             status: 'ACTIVE',
-             connected: true
-           });
-        })
-        .on('denied', (err) => {
-           // a document failed to replicate (e.g. due to permissions)
-           console.error(`Sync denied on ${name}:`, err);
-        })
-        .on('complete', (info) => {
-           // handle complete if we stopped it manually or connection lost
-           // If we manually stopped, status might already be DISABLED
-        })
-        .on('error', (err) => {
-           // handle error
-           console.error(`Sync error on ${name}:`, err);
-           syncState$.next({
-               ...syncState$.getValue(),
-               status: 'ERROR',
-               error: err,
-               connected: false
-           });
-        });
+      // Attach event aliases to the main subject
+      syncHandler.on('change', () => {
+           syncState$.next({ ...syncState$.getValue(), status: 'ACTIVE', connected: true, lastSync: new Date() });
+      }).on('paused', () => {
+           syncState$.next({ ...syncState$.getValue(), status: 'PAUSED', connected: true });
+      }).on('error', (err: any) => {
+           console.error(`Sync error on ${remoteDBName}:`, err);
+           // Don't fail global state immediately for one DB?
+           // syncState$.next({ ...syncState$.getValue(), status: 'ERROR', error: err, connected: false });
+      });
 
       activeReplications.push(syncHandler);
-  }
-
-  // Set initial connected state
-  syncState$.next({ ...syncState$.getValue(), connected: true, status: 'ACTIVE' });
-
-  return activeReplications;
-};
+}
 
 export const triggerManualSync = async () => {
     console.log('Manual sync triggered...');

@@ -102,3 +102,47 @@ export interface Budget {
   planItems?: BudgetPlanItem[];
   _rev?: string;
 }
+
+export interface Household {
+  id: string; 
+  name: string;
+  ownerId: string; 
+  inviteCode: string; 
+  members: {
+      userId: string;
+      name: string;
+      email: string;
+      role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'GUEST';
+      joinedAt: string;
+  }[];
+  createdAt: string;
+  updatedAt: string;
+  _rev?: string;
+  _id?: string;
+}
+
+export interface SharedTransaction {
+    id: string;
+    date: string;
+    amount: number;
+    type: string;
+    categoryName: string;
+    description: string;
+    accountName: string;
+    user: string;
+}
+
+export interface SharedAccountBalance {
+    id: string;
+    name: string;
+    type: string;
+    balance: number;
+    currency: string;
+}
+
+export interface SharedBudget {
+    id: string;
+    name: string;
+    totalBudget: number;
+    totalSpent: number;
+}

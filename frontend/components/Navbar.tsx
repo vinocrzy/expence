@@ -5,7 +5,9 @@ import { usePathname } from 'next/navigation';
 import { 
     LayoutDashboard, ArrowRightLeft, Plus, BarChart2, User, 
     Wallet, CreditCard, Landmark, LogOut, ChevronDown, Menu, Target,
-    MoreHorizontal, Home, Settings, CloudOff, RefreshCw, CloudUpload, FileDown
+    MoreHorizontal, Home, Settings, CloudOff, RefreshCw, CloudUpload, FileDown,
+    Users,
+    ChartBar
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useState, useCallback, useMemo } from 'react';
@@ -89,18 +91,6 @@ export default function Navbar() {
                 >
                     Activity
                 </Link>
-                <Link 
-                    href="/budgets" 
-                    className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/budgets' ? 'text-white' : 'text-gray-400'}`}
-                >
-                    Budgets
-                </Link>
-                <Link 
-                    href="/settings/categories" 
-                    className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/settings/categories' ? 'text-white' : 'text-gray-400'}`}
-                >
-                    Categories
-                </Link>
 
                 {/* Finances Dropdown (Simple Hover Group) */}
                 <div className="relative group">
@@ -124,6 +114,9 @@ export default function Navbar() {
                          <Link href="/loans" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-b-xl">
                             <Landmark className="h-4 w-4" /> Loans
                         </Link>
+                         <Link href="/budgets" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-b-xl">
+                            <ChartBar className="h-4 w-4" /> Budgets
+                        </Link>
                     </div>
                 </div>
                 
@@ -139,6 +132,26 @@ export default function Navbar() {
                 >
                     Reports
                 </Link>
+
+                {/* Household Dropdown */}
+                <div className="relative group">
+                    <button className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-white ${
+                        ['/household', '/shared-dashboard'].some(p => pathname.startsWith(p)) ? 'text-white' : 'text-gray-400'
+                    }`}>
+                        Household <ChevronDown className="h-4 w-4" />
+                    </button>
+                    <div className="absolute top-full left-0 mt-2 w-52 bg-gray-800 border border-gray-700 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-left">
+                        <Link href="/shared-dashboard" className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-t-xl">
+                             <div className="p-1 bg-blue-500/20 rounded text-blue-400"><Users className="h-3 w-3" /></div>
+                             Shared Dashboard
+                        </Link>
+                        <div className="h-px bg-gray-700/50 mx-2"></div>
+                        <Link href="/household" className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-b-xl">
+                             <Settings className="h-4 w-4" /> Settings
+                        </Link>
+                    </div>
+                </div>
+
               </div>
             </div>
 
@@ -174,8 +187,6 @@ export default function Navbar() {
 
       {/* --- MOBILE NAVIGATION --- */}
       
-      {/* Top Bar (Mobile) */}
-      {/* Top Bar (Mobile) */}
       {/* Top Bar (Mobile) */}
       <nav className="md:hidden bg-gray-900/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40 px-4 pt-safe pb-3 flex items-center justify-between transition-all duration-300">
            <div className="flex items-center gap-3 pt-2"> {/* Added pt-2 for extra island clearance */}
@@ -258,7 +269,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Menu Drawer */}
       {/* Mobile Menu Drawer (iOS Style Grouped List) */}
        <AnimatePresence>
        {isMobileMenuOpen && (
@@ -310,8 +320,26 @@ export default function Navbar() {
                                 <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
                             </Link>
                         </div>
+                        
+                        {/* Group 2: Shared & Household (Promoted) */}
+                         <div className="bg-gray-900 rounded-2xl overflow-hidden mb-4 border border-white/5">
+                             <Link href="/shared-dashboard" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 border-b border-white/5 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                                    <Users className="h-5 w-5" />
+                                </div>
+                                <span className="text-base font-medium flex-1">Shared Dashboard</span>
+                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
+                            </Link>
+                             <Link href="/household" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400">
+                                    <Home className="h-5 w-5" />
+                                </div>
+                                <span className="text-base font-medium flex-1">Household Settings</span>
+                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
+                            </Link>
+                        </div>
 
-                        {/* Group 2: Management */}
+                        {/* Group 3: Management */}
                         <div className="bg-gray-900 rounded-2xl overflow-hidden mb-4 border border-white/5">
                             <Link href="/transactions" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 border-b border-white/5 active:bg-gray-800 transition-colors">
                                 <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
@@ -329,27 +357,20 @@ export default function Navbar() {
                             </Link>
                         </div>
 
-                        {/* Group 3: Settings & Profile */}
+                        {/* Group 4: Settings & Profile */}
                         <div className="bg-gray-900 rounded-2xl overflow-hidden mb-6 border border-white/5">
-                            <Link href="/household" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 border-b border-white/5 active:bg-gray-800 transition-colors">
-                                <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400">
-                                    <Home className="h-5 w-5" />
-                                </div>
-                                <span className="text-base font-medium flex-1">Household Settings</span>
-                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
-                            </Link>
-                            <Link href="/profile" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 active:bg-gray-800 transition-colors">
+                            <Link href="/profile" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 border-b border-white/5 active:bg-gray-800 transition-colors">
                                 <div className="w-8 h-8 rounded-lg bg-gray-700/50 flex items-center justify-center text-gray-300">
                                     <User className="h-5 w-5" />
                                 </div>
                                 <span className="text-base font-medium flex-1">My Profile</span>
                                 <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
                             </Link>
-                            <Link href="/settings" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 border-b border-white/5 active:bg-gray-800 transition-colors">
+                            <Link href="/settings" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 active:bg-gray-800 transition-colors">
                                 <div className="w-8 h-8 rounded-lg bg-gray-700/50 flex items-center justify-center text-gray-300">
                                     <Settings className="h-5 w-5" />
                                 </div>
-                                <span className="text-base font-medium flex-1">Settings & Data</span>
+                                <span className="text-base font-medium flex-1">App Settings</span>
                                 <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
                             </Link>
                         </div>

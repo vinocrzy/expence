@@ -13,6 +13,7 @@ import {
   creditCardService,
   loanService,
   budgetService,
+  sharedDataService,
   getHouseholdId,
 } from '@/lib/localdb-services';
 import {
@@ -30,10 +31,17 @@ import type {
   Budget,
 } from '@/lib/db-types';
 
-// Helper to get householdId from local storage or user
-// async function getHouseholdId(): Promise<string> {
-//   // Imported from services
-// }
+// Helper to get role
+const getUserRole = () => {
+    if (typeof window !== 'undefined') {
+        return localStorage.getItem('household_role') || 'OWNER';
+    }
+    return 'OWNER';
+};
+
+// ============================================
+// TRANSACTION HOOKS
+// ============================================
 
 // ============================================
 // TRANSACTION HOOKS
@@ -60,7 +68,6 @@ export function useTransactions() {
   }, [loadTransactions]);
 
   const addTransaction = useCallback(async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
-    // householdId is handled by the service internally
     const transaction = await transactionService.create(data);
     await loadTransactions();
     return transaction;
@@ -111,7 +118,6 @@ export function useAccounts() {
   }, [loadAccounts]);
 
   const addAccount = useCallback(async (data: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
-    // householdId is handled by the service internally
     const account = await accountService.create(data);
     await loadAccounts();
     return account;

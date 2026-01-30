@@ -35,6 +35,7 @@ export const categoriesDB = createDB('categories');
 export const creditcardsDB = createDB('creditcards');
 export const loansDB = createDB('loans');
 export const budgetsDB = createDB('budgets');
+export const sharedDB = createDB('shared'); // New Shared DB
 
 // Map for easier access if needed
 export const collections = {
@@ -44,6 +45,7 @@ export const collections = {
   creditcards: creditcardsDB,
   loans: loansDB,
   budgets: budgetsDB,
+  shared: sharedDB,
 };
 
 let initialized = false;
