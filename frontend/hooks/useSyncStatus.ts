@@ -23,17 +23,8 @@ export function useSyncStatus() {
         await setAutoSync(enabled);
     },
     manualSync: async () => {
-        // Trigger push/pull if needed
-        // RxDB replication is 'live', so it syncs automatically.
-        // We can force a check by pausing and resuming, or just rely on live.
-        // For UI feedback, we can simulate a check.
-        const { syncState$ } = await import('../lib/replication');
-        // Force active momentarily
-        syncState$.next({ ...syncState$.getValue(), status: 'ACTIVE' });
-        setTimeout(() => {
-           // Revert to computed state is handled by the subscription in replication.ts
-           // ideally we would call replicationState.reSync() if available
-        }, 1000);
+        const { triggerManualSync } = await import('../lib/replication');
+        await triggerManualSync();
     }
   };
 }

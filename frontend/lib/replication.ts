@@ -53,43 +53,29 @@ export const syncState$ = new BehaviorSubject<{
         return false;
     }
   };
-  
+
   // Store the token getter for re-initialization
   let cachedGetToken: (() => Promise<string | null>) | null = null;
 
-  export const initializeReplication = async (getToken: () => Promise<string | null>) => {
-  cachedGetToken = getToken;
-  
-  // Clear existing
-  stopReplication(); // Sets status to DISABLED
-
-  // 1. Load Configuration
+// Helper to load config
+const getReplicationConfig = async (getToken: () => Promise<string | null>) => {
   let couchURL = process.env.NEXT_PUBLIC_COUCHDB_URL;
   let username = '';
   let password = '';
   let forceEnable = false;
-  
-  // Try to parse credentials from the env URL
+
   if (couchURL) {
       try {
           const urlObj = new URL(couchURL);
           if (urlObj.username && urlObj.password) {
-              console.log('Using credentials from NEXT_PUBLIC_COUCHDB_URL');
               username = urlObj.username;
               password = urlObj.password;
-              
-              // Remove credentials from URL
               urlObj.username = '';
               urlObj.password = '';
               couchURL = urlObj.toString();
-              // Remove trailing slash if present
-              if (couchURL.endsWith('/')) {
-                  couchURL = couchURL.slice(0, -1);
-              }
+              if (couchURL.endsWith('/')) couchURL = couchURL.slice(0, -1);
           }
-      } catch (e) {
-          console.error('Error parsing NEXT_PUBLIC_COUCHDB_URL', e);
-      }
+      } catch (e) { console.error('Error parsing NEXT_PUBLIC_COUCHDB_URL', e); }
   }
 
   if (typeof window !== 'undefined') {
@@ -98,21 +84,53 @@ export const syncState$ = new BehaviorSubject<{
           if (stored) {
               const config = JSON.parse(stored);
               if (config.enabled && config.url) {
-                  console.log('Using custom CouchDB configuration');
                   couchURL = config.url;
                   if (config.username && config.password) {
                       username = config.username;
                       password = config.password;
                   }
               }
-              if (config.forceEnable) {
-                  forceEnable = true;
-              }
+              if (config.forceEnable) forceEnable = true;
           }
-      } catch (e) {
-          console.error('Error loading custom couchdb config', e);
-      }
+      } catch (e) { console.error('Error loading custom couchdb config', e); }
   }
+
+  // Enforce HTTP for localhost:5984
+  if (couchURL) {
+      try {
+          const url = new URL(couchURL);
+          if (url.protocol === 'https:' && url.hostname === 'localhost' && url.port === '5984') {
+             url.protocol = 'http:';
+             couchURL = url.toString();
+             if (couchURL.endsWith('/')) couchURL = couchURL.slice(0, -1);
+          }
+      } catch (e) { console.error('Error parsing/downgrading URL', e); }
+  }
+
+  let ajaxOptions: any = {};
+  let authOptions: any = {};
+
+  if (username && password) {
+      authOptions = { username, password };
+  } else {
+      try {
+        const token = await getToken();
+        if (token) {
+            ajaxOptions = { headers: { 'Authorization': `Bearer ${token}` } };
+        }
+      } catch (e) { console.log('Failed to get auth token', e); }
+  }
+
+  return { couchURL, authOptions, ajaxOptions, forceEnable };
+};
+
+  export const initializeReplication = async (getToken: () => Promise<string | null>) => {
+  cachedGetToken = getToken;
+
+  // Clear existing
+  stopReplication(); // Sets status to DISABLED
+
+  const { couchURL, authOptions, ajaxOptions, forceEnable } = await getReplicationConfig(getToken);
 
   // 2. Check Environment Restrictions
   const isReplicationDisabled = process.env.NEXT_PUBLIC_REPLICATION_DISSABLED === 'true';
@@ -128,49 +146,9 @@ export const syncState$ = new BehaviorSubject<{
   }
 
   if (!couchURL) {
-      console.error('CouchDB URL is not defined. CouchDB Sync is disabled.');
+      console.error('CouchDB URL is not defined.');
       syncState$.next({ ...syncState$.getValue(), status: 'ERROR', error: 'No URL', connected: false });
       return [];
-  }
-
-  // Enforce HTTP for localhost:5984 to avoid SSL errors
-  if (couchURL) {
-      try {
-          const url = new URL(couchURL);
-          if (url.protocol === 'https:' && url.hostname === 'localhost' && url.port === '5984') {
-            console.warn('Detected HTTPS for localhost:5984. Downgrading to HTTP to avoid connection timeout.');
-            url.protocol = 'http:';
-            couchURL = url.toString();
-             // Remove trailing slash if present (toString() might add it)
-             if (couchURL.endsWith('/')) {
-                  couchURL = couchURL.slice(0, -1);
-              }
-          }
-      } catch (e) {
-          console.error('Error parsing/downgrading URL', e);
-      }
-  }
-  
-  // 3. Construct Options
-  let ajaxOptions: any = {};
-  let authOptions: any = {};
-
-  if (username && password) {
-      authOptions = { username, password };
-  } else {
-      // Only use Clerk token if no basic auth credentials provided
-      try {
-        const token = await getToken();
-        if (token) {
-            ajaxOptions = {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            };
-        }
-      } catch (e) {
-          console.warn('Failed to get auth token', e);
-      }
   }
 
   // 4. Check Auto-Sync State
@@ -197,10 +175,10 @@ export const syncState$ = new BehaviorSubject<{
     { name: 'loans', db: loansDB },
     { name: 'budgets', db: budgetsDB },
   ];
-  
+
   for (const { name, db } of collections) {
       const remoteURL = `${couchURL}/${name}`;
-      
+
       const syncOptions: any = {
         live: true,
         retry: true,
@@ -210,7 +188,7 @@ export const syncState$ = new BehaviorSubject<{
       if (Object.keys(authOptions).length > 0) {
           syncOptions.auth = authOptions;
       }
-      
+
       if (Object.keys(ajaxOptions).length > 0) {
           syncOptions.ajax = ajaxOptions;
       }
@@ -220,28 +198,29 @@ export const syncState$ = new BehaviorSubject<{
       syncHandler
         .on('change', (info) => {
            // handle change
-           syncState$.next({ 
-             ...syncState$.getValue(), 
-             status: 'ACTIVE', 
+           syncState$.next({
+             ...syncState$.getValue(),
+             status: 'ACTIVE',
              connected: true,
              lastSync: new Date()
            });
         })
         .on('paused', (err) => {
            // replication paused (e.g. replication up to date, user went offline)
-           // Keep ACTIVE usually, as it's just idle
-           syncState$.next({ 
-             ...syncState$.getValue(), 
-             status: 'ACTIVE', 
+           // If err is present, it might be due to offline, handled by 'error' usually or handled here.
+           // But usually 'paused' without error means we are up-to-date and waiting.
+           syncState$.next({
+             ...syncState$.getValue(),
+             status: 'PAUSED',
              connected: true
            });
         })
         .on('active', () => {
            // replicate resumed (e.g. new changes replicating)
-           syncState$.next({ 
-             ...syncState$.getValue(), 
-             status: 'ACTIVE', 
-             connected: true 
+           syncState$.next({
+             ...syncState$.getValue(),
+             status: 'ACTIVE',
+             connected: true
            });
         })
         .on('denied', (err) => {
@@ -255,21 +234,82 @@ export const syncState$ = new BehaviorSubject<{
         .on('error', (err) => {
            // handle error
            console.error(`Sync error on ${name}:`, err);
-           syncState$.next({ 
-               ...syncState$.getValue(), 
-               status: 'ERROR', 
-               error: err, 
-               connected: false 
+           syncState$.next({
+               ...syncState$.getValue(),
+               status: 'ERROR',
+               error: err,
+               connected: false
            });
         });
 
       activeReplications.push(syncHandler);
   }
-  
+
   // Set initial connected state
   syncState$.next({ ...syncState$.getValue(), connected: true, status: 'ACTIVE' });
 
   return activeReplications;
+};
+
+export const triggerManualSync = async () => {
+    console.log('Manual sync triggered...');
+    if (!cachedGetToken) {
+        console.error('Cannot sync: No cached token getter');
+        return;
+    }
+
+    // If auto-sync is enabled, restarting initialization is essentially a manual "check now"
+    if (isAutoSyncEnabled) {
+        await initializeReplication(cachedGetToken);
+        return;
+    }
+
+    // If auto-sync is disabled, we do a ONE-OFF sync
+    const { couchURL, authOptions, ajaxOptions, forceEnable } = await getReplicationConfig(cachedGetToken);
+
+    const isReplicationDisabled = process.env.NEXT_PUBLIC_REPLICATION_DISSABLED === 'true';
+    if (isReplicationDisabled && !forceEnable) {
+        console.warn('Sync is BLOCKED by env var.');
+        return;
+    }
+
+    if (!couchURL) return;
+
+    // Verify first
+    syncState$.next({ ...syncState$.getValue(), status: 'ACTIVE', connected: false }); // Show "Syncing..."
+    const isConnected = await verifyConnection(couchURL, authOptions, ajaxOptions);
+    if (!isConnected) {
+         syncState$.next({ ...syncState$.getValue(), status: 'ERROR', error: 'Connection Failed', connected: false });
+         return;
+    }
+
+    const collections = [
+        { name: 'accounts', db: accountsDB },
+        { name: 'transactions', db: transactionsDB },
+        { name: 'categories', db: categoriesDB },
+        { name: 'creditcards', db: creditcardsDB },
+        { name: 'loans', db: loansDB },
+        { name: 'budgets', db: budgetsDB },
+    ];
+
+    let completed = 0;
+
+    for (const { name, db } of collections) {
+      const remoteURL = `${couchURL}/${name}`;
+      const syncOptions: any = { live: false, retry: false, batch_size: 60 }; // ONE-OFF
+      if (Object.keys(authOptions).length > 0) syncOptions.auth = authOptions;
+      if (Object.keys(ajaxOptions).length > 0) syncOptions.ajax = ajaxOptions;
+
+      db.sync(remoteURL, syncOptions).on('complete', () => {
+          completed++;
+          if (completed === collections.length) {
+               syncState$.next({ ...syncState$.getValue(), status: 'DISABLED', connected: true, lastSync: new Date() });
+          }
+      }).on('error', (err) => {
+          console.error(`Manual sync error ${name}`, err);
+          // Don't fail all?
+      });
+    }
 };
 
 // Implement toggle logic correctly now that we have cachedGetToken
@@ -278,34 +318,32 @@ export const syncState$ = new BehaviorSubject<{
 const performToggle = async (enable: boolean) => {
      if (enable) {
          // Optimistic update? No, let's verify first to avoid flicker if it fails.
-         // But we need to update UI to show "Checking..." ideally. 
+         // But we need to update UI to show "Checking..." ideally.
          // For now, we update to "SYNCING" or similar? Or just keep disabled until verified?
          // User requested: "disabled the sync entairly but user can enable in setting before enable it will verify couchdb is up or not"
-         
+
          // We need the URL and Creds to verify. We usually get them in initializeReplication.
          // Refactor: We can't verify HERE easily without duplicating the config loading logic.
-         // SOLUTION: We'll let initializeReplication handle verification failure gracefully BUT 
+         // SOLUTION: We'll let initializeReplication handle verification failure gracefully BUT
          // since we are toggling ON, we want to know if it SUCCEEDED.
-         
+
+         // We'll rely on initializeReplication to do the right thing,
+         // but we want to fail back to disabled if it fails?
+         // Actually, initializeReplication calls verify? No.
+
+         // Let's try to initialize.
          if (cachedGetToken) {
              // We set state to ACTIVE/SYNCING temporarily or let initializeReplication do it.
              syncState$.next({ ...syncState$.getValue(), status: 'ACTIVE', connected: false, isAutoSyncEnabled: true });
-             
+
              // Initialize will return empty array if it fails?
              // We should modify initializeReplication to possibly THROW or we check result.
              // But initializeReplication currently handles its own config loading.
-             
-             // We'll rely on initializeReplication to do the right thing, 
+
+             // We'll rely on initializeReplication to do the right thing,
              // but we want to fail back to disabled if it fails?
              // Actually, initializeReplication calls verify? No.
-             
-             // Let's modify initializeReplication to do a check? 
-             // Or better: We just run it. If it fails (network error), PouchDB sync will emit 'error'.
-             // IF the user wants explicit "verify before enable" so it DOESNT stay enabled if down:
-             
-             // Simple approach: We trust the sync. If it errors, it errors.
-             // BUT user asked: "verify couchdb is up or not like that"
-             
+
              // Let's try to initialize.
              const handlers = await initializeReplication(cachedGetToken);
              if (handlers.length === 0) {
