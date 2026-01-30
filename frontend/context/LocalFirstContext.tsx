@@ -8,7 +8,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 // import { checkMigrationStatus, type MigrationStatus } from '@/lib/migration'; // Removed legacy
 // import MigrationWizard from '@/components/MigrationWizard'; // Removed legacy
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/context/AuthContext'; // Use local AuthContext
+import { setHouseholdId } from '@/lib/localdb-services';
 
 interface LocalFirstContextValue {
   isReady: boolean;
@@ -24,13 +25,29 @@ export function useLocalFirst() {
 
 export function LocalFirstProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
-  const { getToken } = useAuth(); // Clerk Auth
+  const { getToken, user, loading } = useAuth(); // Custom AuthContext
 
   useEffect(() => {
-    initializeLocalFirst();
-  }, []);
+    if (!loading) {
+        if (user) {
+             initializeLocalFirst();
+        } else {
+             handleLogout();
+        }
+    }
+  }, [loading, user]);
+
+  const handleLogout = async () => {
+      setIsReady(false);
+      const { resetReplicationState } = await import('@/lib/replication');
+      resetReplicationState();
+      setHouseholdId(null);
+      setIsReady(true); // Ready (but empty/logged out)
+  };
 
   const initializeLocalFirst = async () => {
+    if (!user?.householdId) return;
+
     // Run migration V2 (Dexie -> RxDB) - DISABLED/REMOVED
     // const { runMigration } = await import('@/lib/migration-runner');
     // await runMigration();
@@ -42,10 +59,13 @@ export function LocalFirstProvider({ children }: { children: ReactNode }) {
     // Ensure indexes are created
     await initDB();
     
-    // Pass token getter
+    // Set context for services
+    setHouseholdId(user.householdId);
+
+    // Pass token getter and householdId
     await initializeReplication(async () => {
         return await getToken();
-    });
+    }, user.householdId);
 
     setIsReady(true);
   };

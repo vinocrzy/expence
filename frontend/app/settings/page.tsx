@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { downloadBackup, readBackupFile, importBackup } from '@/lib/backup';
 import { Loader2, Download, Upload, AlertTriangle, CheckCircle, Database, RefreshCw } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
 
 import Navbar from '@/components/Navbar';
 
 export default function SettingsPage() {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null);
+    const { user } = useUser();
 
     const handleExport = async () => {
         try {
@@ -43,7 +45,11 @@ export default function SettingsPage() {
             const backupData = await readBackupFile(file);
             
             setStatus({ type: 'info', message: 'Restoring data (this may take a moment)...' });
-            await importBackup(backupData);
+            
+            // Determine household ID for migration
+            const householdId = (user?.publicMetadata as any)?.householdId || user?.id;
+            
+            await importBackup(backupData, householdId);
             
             setStatus({ type: 'success', message: 'Backup restored successfully. Reloading...' });
             setTimeout(() => window.location.reload(), 1500);

@@ -37,7 +37,7 @@ export const exportBackup = async (): Promise<BackupData> => {
   };
 };
 
-export const importBackup = async (backup: BackupData): Promise<void> => {
+export const importBackup = async (backup: BackupData, targetHouseholdId?: string): Promise<void> => {
   if (backup.version !== 1) {
     throw new Error(`Unsupported backup version: ${backup.version}`);
   }
@@ -56,6 +56,8 @@ export const importBackup = async (backup: BackupData): Promise<void> => {
       const backupIds = new Set(docs.map((d: any) => d._id));
 
       // 2. Prepare Deletions (Docs in DB but not in Backup)
+      // NOTE: This behavior effectively syncs the local state to EXACTLY match the backup.
+      // Any data on the device NOT in the backup will be deleted.
       const toDelete = allDocs.rows
         .filter(row => !row.id.startsWith('_design/') && !backupIds.has(row.id))
         .map(row => ({
@@ -66,6 +68,11 @@ export const importBackup = async (backup: BackupData): Promise<void> => {
       
       // 3. Prepare Updates/Inserts
       const changes = docs.map((doc: any) => {
+         // Data Migration: Override householdId if provided
+         if (targetHouseholdId && !doc._id.startsWith('_design/')) {
+             doc.householdId = targetHouseholdId;
+         }
+
          const currentRev = currentRevs.get(doc._id);
          if (currentRev) {
              // Exists in DB: Update with current rev
@@ -99,6 +106,9 @@ export const importBackup = async (backup: BackupData): Promise<void> => {
                      if (row.value && row.value.rev) {
                          const backupDoc = docs.find((d: any) => d._id === row.id);
                          if (backupDoc) {
+                             if (targetHouseholdId && !backupDoc._id.startsWith('_design/')) {
+                                 backupDoc.householdId = targetHouseholdId;
+                             }
                              return { ...backupDoc, _rev: row.value.rev };
                          }
                      }

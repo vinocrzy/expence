@@ -36,11 +36,8 @@ const safeGet = async <T>(db: PouchDB.Database, id: string): Promise<T | undefin
     throw err;
   }
 };
+// getHouseholdId moved to bottom to be near setter
 
-const getHouseholdId = async () => {
-    const household = await householdService.getCurrent();
-    return household.id;
-};
 
 // Ensure indexes are created before we do too much
 // We can call this lazily or let the app init call it.
@@ -752,14 +749,28 @@ export const budgetPlanItemService = {
     async getAll() { return []; }
 };
 
-export const userService = {
-    async getCurrent() {
-        return { id: 'user_1', householdId: 'household_1' }; 
-    }
+// ============================================
+// HOUSEHOLD/USER CONTEXT
+// ============================================
+
+// Mutable state to store the current household ID
+// This must be set by the application (e.g. via AuthContext/LocalFirstContext) before using services
+let currentHouseholdId: string | null = null;
+
+export const setHouseholdId = (id: string | null) => {
+    currentHouseholdId = id;
 };
 
-export const householdService = {
-    async getCurrent() {
-        return { id: 'household_1', name: 'My Household' };
+export const getHouseholdId = async (): Promise<string> => {
+    if (!currentHouseholdId) {
+        // Fallback for dev or uninitialized state? 
+        // Ideally we should throw, but to prevent crash during initial render before auth:
+        console.warn('getHouseholdId called but no householdId set. Defaulting to temporary ID.');
+        return 'household_1';
+        // throw new Error('Household ID not set. Ensure user is logged in and context is initialized.');
     }
+    return currentHouseholdId;
 };
+
+// Removed mock userService and householdService
+

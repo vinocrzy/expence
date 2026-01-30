@@ -7,7 +7,7 @@ import {
   budgetsDB 
 } from './pouchdb';
 import { BehaviorSubject } from 'rxjs';
-import PouchDB from 'pouchdb';
+import PouchDB from 'pouchdb-core';
 
 export const syncState$ = new BehaviorSubject<{
   status: 'ACTIVE' | 'PAUSED' | 'ERROR' | 'DISABLED' | 'BLOCKED';
@@ -56,6 +56,13 @@ export const syncState$ = new BehaviorSubject<{
 
   // Store the token getter for re-initialization
   let cachedGetToken: (() => Promise<string | null>) | null = null;
+  let cachedHouseholdId: string | null = null;
+
+  export const resetReplicationState = () => {
+      stopReplication();
+      cachedGetToken = null;
+      cachedHouseholdId = null;
+  };
 
 // Helper to load config
 const getReplicationConfig = async (getToken: () => Promise<string | null>) => {
@@ -106,7 +113,6 @@ const getReplicationConfig = async (getToken: () => Promise<string | null>) => {
           }
       } catch (e) { console.error('Error parsing/downgrading URL', e); }
   }
-
   let ajaxOptions: any = {};
   let authOptions: any = {};
 
@@ -124,8 +130,24 @@ const getReplicationConfig = async (getToken: () => Promise<string | null>) => {
   return { couchURL, authOptions, ajaxOptions, forceEnable };
 };
 
-  export const initializeReplication = async (getToken: () => Promise<string | null>) => {
+// Helper to ensure remote DB exists via PUT
+const ensureRemoteDB = async (url: string, headers: any) => {
+    try {
+        const response = await fetch(url, { method: 'PUT', headers });
+        if (response.ok || response.status === 412) { // 201 Created or 412 Precondition Failed (Exists)
+            return true;
+        }
+        console.warn(`Failed to create remote DB ${url}: ${response.status} ${response.statusText}`);
+        return false;
+    } catch (e) {
+        // console.error(`Error creating remote DB ${url}`, e);
+        return false;
+    }
+};
+
+  export const initializeReplication = async (getToken: () => Promise<string | null>, householdId: string) => {
   cachedGetToken = getToken;
+  cachedHouseholdId = householdId;
 
   // Clear existing
   stopReplication(); // Sets status to DISABLED
@@ -190,7 +212,23 @@ const getReplicationConfig = async (getToken: () => Promise<string | null>) => {
   ];
 
   for (const { name, db } of collections) {
-      const remoteURL = `${couchURL}/${name}`;
+      // Use household-specific database name
+      // Logic: hh_{householdId}_{dbName}
+      // Clerk IDs can have Uppercase. We MUST lowercase it for CouchDB name compliance.
+      const safeId = householdId.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+      const remoteDBName = `hh_${safeId}_${name}`;
+      const remoteURL = `${couchURL}/${remoteDBName}`;
+
+      // Ensure remote DB exists before syncing
+      let createHeaders: any = {};
+      if (authOptions.username && authOptions.password) {
+          createHeaders['Authorization'] = 'Basic ' + btoa(authOptions.username + ':' + authOptions.password);
+      }
+      if (ajaxOptions.headers) {
+          createHeaders = { ...createHeaders, ...ajaxOptions.headers };
+      }
+      
+      await ensureRemoteDB(remoteURL, createHeaders);
 
       const syncOptions: any = {
         live: true,
@@ -266,14 +304,14 @@ const getReplicationConfig = async (getToken: () => Promise<string | null>) => {
 
 export const triggerManualSync = async () => {
     console.log('Manual sync triggered...');
-    if (!cachedGetToken) {
-        console.error('Cannot sync: No cached token getter');
+    if (!cachedGetToken || !cachedHouseholdId) {
+        console.error('Cannot sync: No cached token getter or household ID set');
         return;
     }
 
     // If auto-sync is enabled, restarting initialization is essentially a manual "check now"
     if (isAutoSyncEnabled) {
-        await initializeReplication(cachedGetToken);
+        await initializeReplication(cachedGetToken, cachedHouseholdId);
         return;
     }
 
@@ -308,24 +346,37 @@ export const triggerManualSync = async () => {
     let completed = 0;
 
     for (const { name, db } of collections) {
-      const remoteURL = `${couchURL}/${name}`;
-      const syncOptions: any = { live: false, retry: false, batch_size: 60 }; // ONE-OFF
-      if (Object.keys(authOptions).length > 0) syncOptions.auth = authOptions;
-      if (Object.keys(ajaxOptions).length > 0) syncOptions.ajax = ajaxOptions;
+         // CouchDB requires lowercase
+         const safeId = cachedHouseholdId.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+         const remoteDBName = `hh_${safeId}_${name}`;
+         const remoteURL = `${couchURL}/${remoteDBName}`;
+       
+       // Ensure remote DB exists before syncing manual
+       let createHeaders: any = {};
+       if (Object.keys(authOptions).length > 0 && authOptions.username) {
+             createHeaders['Authorization'] = 'Basic ' + btoa(authOptions.username + ':' + authOptions.password);
+       }
+       if (Object.keys(ajaxOptions).length > 0 && ajaxOptions.headers) {
+             createHeaders = { ...createHeaders, ...ajaxOptions.headers };
+       }
+       
+       await ensureRemoteDB(remoteURL, createHeaders);
+       
+       const syncOptions: any = { live: false, retry: false, batch_size: 60 }; // ONE-OFF
+       if (Object.keys(authOptions).length > 0) syncOptions.auth = authOptions;
+       if (Object.keys(ajaxOptions).length > 0) syncOptions.ajax = ajaxOptions;
 
-      db.sync(remoteURL, syncOptions).on('complete', () => {
-          completed++;
-          if (completed === collections.length) {
-               syncState$.next({ ...syncState$.getValue(), status: 'DISABLED', connected: true, lastSync: new Date() });
-          }
-      }).on('error', (err) => {
-          console.error(`Manual sync error ${name}`, err);
-          // Don't fail all?
-      });
+       db.sync(remoteURL, syncOptions).on('complete', () => {
+           completed++;
+           if (completed === collections.length) {
+                syncState$.next({ ...syncState$.getValue(), status: 'DISABLED', connected: true, lastSync: new Date() });
+           }
+       }).on('error', (err) => {
+           console.error(`Manual sync error ${name}`, err);
+           // Don't fail all?
+       });
     }
 };
-
-// Implement toggle logic correctly now that we have cachedGetToken
 
 
 const performToggle = async (enable: boolean) => {
@@ -358,19 +409,24 @@ const performToggle = async (enable: boolean) => {
              // Actually, initializeReplication calls verify? No.
 
              // Let's try to initialize.
-             const handlers = await initializeReplication(cachedGetToken);
-             if (handlers.length === 0) {
-                 // It returned empty either because disabled (which we just enabled) OR execution failed before creating handlers?
-                 // initializeReplication returns empty if no URL etc.
-                 // We can check if status became ERROR or remains DISABLED?
-                 const current = syncState$.getValue();
-                 if (current.status === 'DISABLED' || current.status === 'PAUSED') {
-                      // It seems it failed to start.
-                      // Revert toggle
-                      syncState$.next({ ...syncState$.getValue(), isAutoSyncEnabled: false, status: 'DISABLED' });
-                      isAutoSyncEnabled = false;
-                      // Maybe alert user?
+             // We need cachedHouseholdId here too.
+             if (cachedHouseholdId) {
+                 const handlers = await initializeReplication(cachedGetToken, cachedHouseholdId);
+                 if (handlers.length === 0) {
+                     // It returned empty either because disabled (which we just enabled) OR execution failed before creating handlers?
+                     // initializeReplication returns empty if no URL etc.
+                     // We can check if status became ERROR or remains DISABLED?
+                     const current = syncState$.getValue();
+                     if (current.status === 'DISABLED' || current.status === 'PAUSED') {
+                          // It seems it failed to start.
+                          // Revert toggle
+                          syncState$.next({ ...syncState$.getValue(), isAutoSyncEnabled: false, status: 'DISABLED' });
+                          isAutoSyncEnabled = false;
+                          // Maybe alert user?
+                     }
                  }
+             } else {
+                 console.warn('Cannot enable auto-sync: No cached household ID');
              }
          } else {
              console.warn('Cannot enable auto-sync: No cached token getter');

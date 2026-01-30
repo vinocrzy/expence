@@ -13,7 +13,7 @@ import {
   creditCardService,
   loanService,
   budgetService,
-  userService,
+  getHouseholdId,
 } from '@/lib/localdb-services';
 import {
   calculateMonthlyStats,
@@ -31,15 +31,9 @@ import type {
 } from '@/lib/db-types';
 
 // Helper to get householdId from local storage or user
-async function getHouseholdId(): Promise<string> {
-  // userService.getCurrent() is a stub for now, update when Auth is fully integrated
-  const user = await userService.getCurrent();
-  if (!user?.householdId) {
-     return 'household_1'; // Failover for development until Auth is ready
-    // throw new Error('No household found. Please complete setup.');
-  }
-  return user.householdId;
-}
+// async function getHouseholdId(): Promise<string> {
+//   // Imported from services
+// }
 
 // ============================================
 // TRANSACTION HOOKS

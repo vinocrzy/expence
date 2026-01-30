@@ -1,12 +1,29 @@
-import PouchDB from 'pouchdb';
+import PouchDB from 'pouchdb-core';
+import HttpPouch from 'pouchdb-adapter-http';
+import IDBPouch from 'pouchdb-adapter-idb';
 import PouchFind from 'pouchdb-find';
+import PouchReplication from 'pouchdb-replication';
 
+// Register plugins
+PouchDB.plugin(HttpPouch);
+PouchDB.plugin(IDBPouch);
 PouchDB.plugin(PouchFind);
+PouchDB.plugin(PouchReplication);
 
 export const dbRequestTimeout = 60000;
 
 const createDB = (name: string) => {
+  if (typeof window === 'undefined') {
+      // Server-side: return a dummy proxy to prevent crashes during SSR imports
+      return new Proxy({}, {
+          get: (target, prop) => {
+              if (prop === 'sync') return () => ({ on: () => ({ on: () => {} }) }); // Mock sync handler
+              return () => Promise.resolve({}); // Mock async methods
+          }
+      }) as unknown as PouchDB.Database;
+  }
   return new PouchDB(name, {
+    adapter: 'idb',
     auto_compaction: true,
   });
 };
@@ -32,6 +49,7 @@ export const collections = {
 let initialized = false;
 
 export const initDB = async () => {
+  if (typeof window === 'undefined') return;
   if (initialized) return;
   console.log('Initializing PouchDB indexes...');
 

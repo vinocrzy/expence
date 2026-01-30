@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, ReactNode } from 'react';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser, useClerk, useAuth as useClerkAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -17,6 +17,7 @@ interface AuthContextType {
   login: (token: string, user: User) => void;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  getToken: (options?: any) => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { user: clerkUser, isLoaded } = useUser();
   const { signOut, openSignIn } = useClerk();
+  const { getToken } = useClerkAuth();
   const router = useRouter();
 
   // Map Clerk user to App user
@@ -31,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     id: clerkUser.id,
     email: clerkUser.primaryEmailAddress?.emailAddress || '',
     name: clerkUser.fullName || clerkUser.username || '',
-    householdId: (clerkUser.publicMetadata as any)?.householdId || 'household_1' // Temporary fallback
+    householdId: (clerkUser.publicMetadata as any)?.householdId || clerkUser.id // Default to User ID if no household set
   } : null;
 
   const login = () => {
@@ -49,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading: !isLoaded, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading: !isLoaded, login, logout, refreshUser, getToken }}>
       {children}
     </AuthContext.Provider>
   );

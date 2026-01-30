@@ -49,14 +49,13 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <LocalFirstProvider>
-            {/* Keeping AuthProvider for now if it provides custom logic, but wrapping with Clerk */}
-            <AuthProvider>
+          <AuthProvider>
+            <LocalFirstProvider>
               {children}
               {/* <SyncStatusIndicator /> - Moved to Navbar */}
               <IOSInstallPrompt />
-            </AuthProvider>
-          </LocalFirstProvider>
+            </LocalFirstProvider>
+          </AuthProvider>
         </body>
       </html>
     </ClerkProvider>
