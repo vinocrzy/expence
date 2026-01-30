@@ -130,6 +130,19 @@ const getReplicationConfig = async (getToken: () => Promise<string | null>) => {
   // Clear existing
   stopReplication(); // Sets status to DISABLED
 
+  // NEW: Check LocalStorage for Auto-Sync preference
+  if (typeof window !== 'undefined') {
+      const storedAutoSync = localStorage.getItem('autoSyncEnabled');
+      if (storedAutoSync !== null) {
+          isAutoSyncEnabled = storedAutoSync === 'true';
+           // Update subject to match valid state
+           const current = syncState$.getValue();
+           if (current.isAutoSyncEnabled !== isAutoSyncEnabled) {
+               syncState$.next({ ...current, isAutoSyncEnabled });
+           }
+      }
+  }
+
   const { couchURL, authOptions, ajaxOptions, forceEnable } = await getReplicationConfig(getToken);
 
   // 2. Check Environment Restrictions
@@ -370,6 +383,9 @@ const performToggle = async (enable: boolean) => {
 
 // Redefine to use the helper
 export const setAutoSync = async (enable: boolean) => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('autoSyncEnabled', enable.toString());
+    }
     isAutoSyncEnabled = enable;
     await performToggle(enable);
 };
