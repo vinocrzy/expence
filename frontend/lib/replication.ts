@@ -10,7 +10,7 @@ import { BehaviorSubject } from 'rxjs';
 import PouchDB from 'pouchdb';
 
 export const syncState$ = new BehaviorSubject<{
-  status: 'ACTIVE' | 'PAUSED' | 'ERROR';
+  status: 'ACTIVE' | 'PAUSED' | 'ERROR' | 'DISABLED';
   connected: boolean;
   lastSync?: Date;
   error?: any;
@@ -22,8 +22,33 @@ export const syncState$ = new BehaviorSubject<{
 export const initializeReplication = async (getToken: () => Promise<string | null>) => {
   // Check local storage for custom config
   let couchURL = process.env.NEXT_PUBLIC_COUCHDB_URL;
-  let authHeaders: any = {};
+  let username = '';
+  let password = '';
+  let forceEnable = false;
   
+  // Try to parse credentials from the env URL
+  if (couchURL) {
+      try {
+          const urlObj = new URL(couchURL);
+          if (urlObj.username && urlObj.password) {
+              console.log('Using credentials from NEXT_PUBLIC_COUCHDB_URL');
+              username = urlObj.username;
+              password = urlObj.password;
+              
+              // Remove credentials from URL
+              urlObj.username = '';
+              urlObj.password = '';
+              couchURL = urlObj.toString();
+              // Remove trailing slash if present
+              if (couchURL.endsWith('/')) {
+                  couchURL = couchURL.slice(0, -1);
+              }
+          }
+      } catch (e) {
+          console.error('Error parsing NEXT_PUBLIC_COUCHDB_URL', e);
+      }
+  }
+
   if (typeof window !== 'undefined') {
       try {
           const stored = localStorage.getItem('couchdb_config');
@@ -33,23 +58,53 @@ export const initializeReplication = async (getToken: () => Promise<string | nul
                   console.log('Using custom CouchDB configuration');
                   couchURL = config.url;
                   if (config.username && config.password) {
-                      authHeaders = {
-                          'Authorization': 'Basic ' + btoa(config.username + ":" + config.password)
-                      };
+                      username = config.username;
+                      password = config.password;
                   }
+              }
+              if (config.forceEnable) {
+                  forceEnable = true;
               }
           }
       } catch (e) {
           console.error('Error loading custom couchdb config', e);
       }
   }
-
-  const isReplicationDisabled = process.env.NEXT_PUBLIC_REPLICATION_DISSABLED === 'true';
   
-  if (!couchURL || isReplicationDisabled) {
-    console.warn('CouchDB Sync is disabled (No URL or Disabled via Env).');
-    syncState$.next({ ...syncState$.getValue(), status: 'PAUSED', connected: false });
+  const isReplicationDisabled = process.env.NEXT_PUBLIC_REPLICATION_DISSABLED === 'true';
+
+  if (isReplicationDisabled && !forceEnable) {
+    console.warn('CouchDB Sync is disabled via environment variable.');
+    syncState$.next({ ...syncState$.getValue(), status: 'DISABLED', connected: false });
     return [];
+  }
+
+  if (isReplicationDisabled && forceEnable) {
+      console.warn('Replication is disabled by env var, but FORCED ENABLED by user settings.');
+  }
+
+  if (!couchURL) {
+      console.error('CouchDB URL is not defined. CouchDB Sync is disabled.');
+      syncState$.next({ ...syncState$.getValue(), status: 'PAUSED', connected: false });
+      return [];
+  }
+
+  // Enforce HTTP for localhost:5984 to avoid SSL errors
+  if (couchURL) {
+      try {
+          const url = new URL(couchURL);
+          if (url.protocol === 'https:' && url.hostname === 'localhost' && url.port === '5984') {
+            console.warn('Detected HTTPS for localhost:5984. Downgrading to HTTP to avoid connection timeout.');
+            url.protocol = 'http:';
+            couchURL = url.toString();
+             // Remove trailing slash if present (toString() might add it)
+             if (couchURL.endsWith('/')) {
+                  couchURL = couchURL.slice(0, -1);
+              }
+          }
+      } catch (e) {
+          console.error('Error parsing/downgrading URL', e);
+      }
   }
 
   const collections = [
@@ -61,13 +116,20 @@ export const initializeReplication = async (getToken: () => Promise<string | nul
     { name: 'budgets', db: budgetsDB },
   ];
   
-  // Only use Clerk token if no custom auth headers provided
-  if (Object.keys(authHeaders).length === 0) {
+  let ajaxOptions = {};
+  let authOptions: any = {};
+
+  if (username && password) {
+      authOptions = { username, password };
+  } else {
+      // Only use Clerk token if no basic auth credentials provided
       try {
         const token = await getToken();
         if (token) {
-            authHeaders = {
-                'Authorization': `Bearer ${token}`
+            ajaxOptions = {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             };
         }
       } catch (e) {
@@ -75,21 +137,26 @@ export const initializeReplication = async (getToken: () => Promise<string | nul
       }
   }
 
-  const ajaxOptions = {
-    headers: authHeaders
-  };
-
   const replicationStates: any[] = [];
 
   for (const { name, db } of collections) {
       const remoteURL = `${couchURL}/${name}`;
       
-      const syncHandler = db.sync(remoteURL, {
+      const syncOptions: any = {
         live: true,
         retry: true,
-        batch_size: 60,
-        ajax: ajaxOptions
-      } as any);
+        batch_size: 60
+      };
+
+      if (Object.keys(authOptions).length > 0) {
+          syncOptions.auth = authOptions;
+      }
+      
+      if (Object.keys(ajaxOptions).length > 0) {
+          syncOptions.ajax = ajaxOptions;
+      }
+
+      const syncHandler = db.sync(remoteURL, syncOptions);
 
       syncHandler
         .on('change', (info) => {

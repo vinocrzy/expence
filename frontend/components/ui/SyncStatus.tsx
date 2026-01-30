@@ -6,9 +6,11 @@ import { Cloud, RefreshCw, AlertTriangle, CheckCircle, WifiOff, Settings2, Play,
 import { AnimatePresence, motion } from 'framer-motion';
 
 const SyncStatusIndicator = () => {
-    const { isOnline, isSyncing, error, isConnected, manualSync } = useSyncStatus();
+    const { isOnline, isSyncing, error, isConnected, manualSync, status: syncStatus } = useSyncStatus();
     const [isOpen, setIsOpen] = useState(false);
     const [isAutoSync, setIsAutoSync] = useState(true);
+
+    if (syncStatus === 'DISABLED') return null;
 
     // Determine status
     let status = 'COMPLETED';

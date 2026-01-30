@@ -10,6 +10,7 @@ export function useSyncStatus() {
   }, []);
 
   return {
+    status: status.status,
     isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
     isSyncing: status.status === 'ACTIVE' && status.connected,
     isConnected: status.connected,

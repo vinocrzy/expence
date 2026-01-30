@@ -179,14 +179,25 @@ export default function SettingsPage() {
 }
 
 function CouchDbSettings() {
-    const [config, setConfig] = useState({
+    const [config, setConfig] = useState<{
+        url: string;
+        username: string;
+        password: string;
+        enabled: boolean;
+        forceEnable?: boolean;
+    }>({
         url: '',
         username: '',
         password: '',
-        enabled: false
+        enabled: false,
+        forceEnable: false
     });
     const [showPassword, setShowPassword] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
+
+    const [testStatus, setTestStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error', message: string }>({ type: 'idle', message: '' });
+    const [missingDbs, setMissingDbs] = useState<string[]>([]);
+    const [initStatus, setInitStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error', message: string }>({ type: 'idle', message: '' });
 
     React.useEffect(() => {
         const stored = localStorage.getItem('couchdb_config');
@@ -208,10 +219,136 @@ function CouchDbSettings() {
     const handleChange = (field: keyof typeof config, value: string | boolean) => {
         setConfig(prev => ({ ...prev, [field]: value }));
         setIsDirty(true);
+        // Reset test status on change
+        setTestStatus({ type: 'idle', message: '' });
+        setMissingDbs([]);
+    };
+
+    const getAuthHeaders = () => {
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
+        };
+        if (config.username && config.password) {
+            headers['Authorization'] = 'Basic ' + btoa(config.username + ":" + config.password);
+        }
+        return headers;
+    };
+
+    const normalizeUrl = (url: string) => {
+        let urlStr = url.trim();
+        if (!urlStr) return '';
+
+        // Add protocol if missing
+        if (!/^https?:\/\//i.test(urlStr)) {
+            urlStr = 'http://' + urlStr;
+        }
+
+        // Force HTTP for localhost to avoid SSL errors
+        try {
+            const urlObj = new URL(urlStr);
+            if (urlObj.hostname === 'localhost' && urlObj.protocol === 'https:') {
+                 console.warn('Downgrading localhost to HTTP');
+                 urlObj.protocol = 'http:';
+                 urlStr = urlObj.toString();
+            }
+             // Remove trailing slash
+             if (urlStr.endsWith('/')) {
+                 urlStr = urlStr.slice(0, -1);
+             }
+        } catch (e) {
+            console.error('Invalid URL', e);
+        }
+        return urlStr;
+    };
+
+    const testConnection = async () => {
+        setTestStatus({ type: 'loading', message: 'Testing connection...' });
+        setMissingDbs([]);
+        setInitStatus({ type: 'idle', message: '' });
+
+        try {
+            const normalizedUrl = normalizeUrl(config.url);
+            if (!normalizedUrl) throw new Error('URL is required');
+
+            // Update state with normalized URL if changed
+            if (normalizedUrl !== config.url) {
+                setConfig(prev => ({ ...prev, url: normalizedUrl }));
+            }
+
+            console.log(`Testing connection to: ${normalizedUrl}/_all_dbs`);
+
+            const response = await fetch(`${normalizedUrl}/_all_dbs`, {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                if (response.status === 401) throw new Error('Unauthorized: Check username and password.');
+                throw new Error(`Connection failed: ${response.status} ${response.statusText}`);
+            }
+
+            const allDbs = await response.json();
+            const requiredDbs = ['accounts', 'transactions', 'categories', 'creditcards', 'loans', 'budgets'];
+            const missing = requiredDbs.filter(db => !allDbs.includes(db));
+
+            if (missing.length > 0) {
+                setMissingDbs(missing);
+                setTestStatus({ type: 'error', message: `Connected, but ${missing.length} databases are missing.` });
+            } else {
+                setTestStatus({ type: 'success', message: 'Connection successful! All databases exist.' });
+            }
+
+        } catch (err: any) {
+            console.error(err);
+            setTestStatus({ type: 'error', message: err.message || 'Failed to connect. Check URL and CORS settings.' });
+        }
+    };
+
+    const initializeDatabases = async () => {
+        setInitStatus({ type: 'loading', message: 'Creating databases...' });
+        const normalizedUrl = normalizeUrl(config.url);
+        const headers = getAuthHeaders();
+        
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const db of missingDbs) {
+            try {
+                const res = await fetch(`${normalizedUrl}/${db}`, {
+                    method: 'PUT',
+                    headers: headers
+                });
+                if (res.ok || res.status === 412) { // 412 means already exists
+                    successCount++;
+                } else {
+                    failCount++;
+                    console.error(`Failed to create ${db}: ${res.statusText}`);
+                }
+            } catch (e) {
+                failCount++;
+                console.error(`Error creating ${db}`, e);
+            }
+        }
+
+        if (failCount === 0) {
+            setInitStatus({ type: 'success', message: 'All databases created successfully!' });
+            setMissingDbs([]); // Clear missing list
+            setTestStatus({ type: 'success', message: 'Connection successful! All databases exist.' });
+        } else {
+            setInitStatus({ type: 'error', message: `Created ${successCount} databases, failed ${failCount}. Check server logs.` });
+            // Re-test to update missing list
+            testConnection();
+        }
     };
 
     const handleSave = () => {
-        localStorage.setItem('couchdb_config', JSON.stringify(config));
+        const normalizedUrl = normalizeUrl(config.url);
+        const finalConfig = { ...config, url: normalizedUrl };
+        if (normalizedUrl !== config.url) {
+             setConfig(finalConfig);
+        }
+        
+        localStorage.setItem('couchdb_config', JSON.stringify(finalConfig));
         setIsDirty(false);
         alert('Sync settings saved. Please reload the application for changes to take effect.');
         window.location.reload();
@@ -227,28 +364,47 @@ function CouchDbSettings() {
                 enabled: false
             });
             setIsDirty(false);
+            setTestStatus({ type: 'idle', message: '' });
             window.location.reload();
         }
     };
 
     return (
         <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-6 gap-4">
                 <div>
                      <h3 className="text-xl font-bold text-white">Custom Sync Server</h3>
                      <p className="text-gray-400 text-sm">Connect to your own CouchDB/PouchDB instance</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                            type="checkbox" 
-                            className="sr-only peer" 
-                            checked={config.enabled}
-                            onChange={(e) => handleChange('enabled', e.target.checked)}
-                        />
-                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                        <span className="ml-3 text-sm font-medium text-gray-300">Use Custom</span>
-                    </label>
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer" 
+                                checked={config.enabled}
+                                onChange={(e) => handleChange('enabled', e.target.checked)}
+                            />
+                            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 shrink-0 relative"></div>
+                            <span className="ml-3 text-sm font-medium text-gray-300 whitespace-nowrap">Use Custom</span>
+                        </label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer" 
+                                checked={config.forceEnable || false}
+                                onChange={(e) => handleChange('forceEnable', e.target.checked)}
+                            />
+                            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600 shrink-0 relative"></div>
+                            <div className="ml-3 flex flex-col">
+                                <span className="text-sm font-medium text-gray-300 whitespace-nowrap">Force Enable Sync</span>
+                                <span className="text-xs text-gray-500">Bypass env restriction</span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -265,7 +421,7 @@ function CouchDbSettings() {
                         />
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-400 mb-1">Username</label>
                             <input 
@@ -295,7 +451,55 @@ function CouchDbSettings() {
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-3 pt-4">
+                    {/* Test Connection & Output */}
+                   <div className="pt-2">
+                        <div className="flex flex-col md:flex-row md:items-center gap-3">
+                            <button
+                                onClick={testConnection}
+                                disabled={!config.url || testStatus.type === 'loading'}
+                                className="w-full md:w-auto px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors border border-gray-700 whitespace-nowrap"
+                            >
+                                {testStatus.type === 'loading' ? 'Testing...' : 'Test Connection'}
+                            </button>
+                            
+                            {testStatus.message && (
+                                <span className={`text-sm flex items-start md:items-center gap-2 ${
+                                    testStatus.type === 'success' ? 'text-green-400' : 
+                                    testStatus.type === 'error' ? 'text-red-400' : 'text-gray-400'
+                                }`}>
+                                    <span className="mt-1 md:mt-0">
+                                        {testStatus.type === 'success' && <CheckCircle className="h-4 w-4" />}
+                                        {testStatus.type === 'error' && <AlertTriangle className="h-4 w-4" />}
+                                    </span>
+                                    <span>{testStatus.message}</span>
+                                </span>
+                            )}
+                        </div>
+
+                        {missingDbs.length > 0 && (
+                            <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                                <p className="text-yellow-200 text-sm mb-2">
+                                    The following databases are missing: <span className="font-mono text-yellow-100">{missingDbs.join(', ')}</span>.
+                                    The application will not sync correctly without them.
+                                </p>
+                                <button 
+                                    onClick={initializeDatabases}
+                                    disabled={initStatus.type === 'loading'}
+                                    className="w-full md:w-auto px-3 py-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-200 text-xs font-bold uppercase tracking-wider rounded-lg border border-yellow-500/30 transition-colors"
+                                >
+                                    {initStatus.type === 'loading' ? 'Creating...' : 'Initialize Databases'}
+                                </button>
+                                {initStatus.message && (
+                                    <p className={`text-xs mt-2 ${initStatus.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                                        {initStatus.message}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                   </div>
+
+
+                    <div className="flex flex-col-reverse md:flex-row items-stretch md:items-center justify-end gap-3 pt-4 border-t border-gray-800 mt-4">
                         <button 
                             onClick={handleReset}
                             className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
@@ -312,5 +516,6 @@ function CouchDbSettings() {
                     </div>
                 </div>
             )}
-        </div>);
-        }
+        </div>
+    );
+}
