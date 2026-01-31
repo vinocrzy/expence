@@ -41,6 +41,30 @@ export async function generatePDF(data: ReportData, type: ReportType): Promise<B
     startY += 10; // Extra spacing before table
   }
 
+  // Category Breakdown
+  if (data.categoryBreakdown) {
+      doc.setFontSize(12);
+      doc.setTextColor(0);
+      doc.text('Category Breakdown', 14, startY);
+      startY += 5;
+
+      const breakdownData = Object.entries(data.categoryBreakdown)
+        .sort((a,b) => b[1] - a[1])
+        .map(([cat, amount]) => [cat, amount.toLocaleString(undefined, { minimumFractionDigits: 2 })]);
+
+      autoTable(doc, {
+          startY,
+          head: [['Category', 'Amount']],
+          body: breakdownData,
+          styles: { fontSize: 9, cellPadding: 2 },
+          headStyles: { fillColor: [100, 100, 100] },
+          margin: { left: 14, right: 140 } // Keep it narrow
+      });
+
+      // @ts-ignore
+      startY = doc.lastAutoTable.finalY + 15;
+  }
+
   // Table
   autoTable(doc, {
     startY,

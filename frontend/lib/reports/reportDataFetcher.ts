@@ -12,14 +12,19 @@ import { format } from 'date-fns';
 
 export async function fetchReportData(type: ReportType, filters: ReportFilters): Promise<ReportData> {
   const household = await householdService.getCurrent();
+  if (!household) throw new Error('Household not found');
   const householdId = household.id;
   const generatedAt = new Date().toISOString();
 
   // Common data
   const accounts = await accountService.getAll(householdId);
+  const creditCards = await creditCardService.getAll(householdId);
   const categories = await categoryService.getAll(householdId);
   
-  const accountMap = new Map(accounts.map(a => [a.id, a.name]));
+  const accountMap = new Map();
+  accounts.forEach(a => accountMap.set(a.id, a.name));
+  creditCards.forEach(c => accountMap.set(c.id, c.name));
+
   const categoryMap = new Map(categories.map(c => [c.id, c.name]));
 
   const startDate = new Date(filters.startDate);
@@ -45,6 +50,13 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
       
       const totalAmount = filtered.reduce((sum, t) => sum + t.amount, 0);
       
+      // Calculate Category Breakdown
+      const categoryBreakdown: Record<string, number> = {};
+      filtered.forEach(t => {
+          const catName = categoryMap.get(t.categoryId || '') || 'Uncategorized';
+          categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + t.amount;
+      });
+
       return {
         title: `${type === 'EXPENSE' ? 'Expense' : 'Income'} Report`,
         subtitle: `${format(startDate, 'PP')} - ${format(endDate, 'PP')}`,
@@ -60,7 +72,8 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
         summary: {
           'Total Count': filtered.length,
           'Total Amount': totalAmount
-        }
+        },
+        categoryBreakdown
       };
     }
 
