@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, memo } from 'react';
 import { X } from 'lucide-react';
-import { categoryService, transactionService, budgetService, userService } from '../lib/localdb-services';
+import { categoryService, transactionService, budgetService, getHouseholdId } from '../lib/localdb-services';
 
 interface Account {
   id: string;
@@ -83,10 +83,10 @@ function TransactionModal({
   // Fetch categories when modal opens
   useEffect(() => {
     if (isOpen) {
-        // Fetch user and then categories
-        userService.getCurrent().then(user => {
-            if (user?.householdId) {
-                categoryService.getAll(user.householdId).then(cats => setCategories(cats as any));
+        // Fetch household and then categories
+        getHouseholdId().then(householdId => {
+            if (householdId) {
+                categoryService.getAll(householdId).then(cats => setCategories(cats as any));
             }
         });
 
