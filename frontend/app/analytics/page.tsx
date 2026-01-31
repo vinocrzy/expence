@@ -6,7 +6,8 @@ import { useTransactions, useCategories } from '../../hooks/useLocalData';
 import { 
     BarChart2, Calendar, TrendingUp, TrendingDown, 
     RefreshCw, Layers, PieChart as PieIcon, Activity,
-    AlertCircle, CheckCircle, Database, Filter, ArrowUpRight
+    AlertCircle, CheckCircle, Database, Filter, ArrowUpRight,
+    Check, ChevronDown, X
 } from 'lucide-react';
 import { 
     PieChart, Pie, Cell, LineChart, Line, BarChart, Bar, 
@@ -28,7 +29,23 @@ export default function AnalyticsPage() {
     const { categories, loading: catLoading } = useCategories();
     const loading = txLoading || catLoading;
 
-    const [selectedCategoryId, setSelectedCategoryId] = useState<string>('ALL');
+    // -- State for Independent Filters --
+    
+    // 1. Expense Breakdown (Pie) - Multi-Select
+    const [pieFilterIds, setPieFilterIds] = useState<string[]>([]); // Empty = ALL
+    const [isPieDropdownOpen, setIsPieDropdownOpen] = useState(false);
+
+    const togglePieCategory = (catId: string) => {
+        setPieFilterIds(prev => 
+            prev.includes(catId)
+                ? prev.filter(id => id !== catId)
+                : [...prev, catId]
+        );
+    };
+
+    // 2. Comparison Chart (Bar) - Single-Select
+    const [barFilterId, setBarFilterId] = useState<string>('ALL'); // 'ALL' = Global Comparison
+    const [isBarDropdownOpen, setIsBarDropdownOpen] = useState(false);
     
     // Calculate date range for filtering transactions
     const dateRange = useMemo(() => {
@@ -93,18 +110,21 @@ export default function AnalyticsPage() {
     }, [transactions, dateRange]); // Removed selectedCategoryId dep
 
     // 2. Calculate Category Breakdown (Pie Chart)
-    // Always shows ALL categories for context, unless filtered? 
-    // Usually Pie chart shows share of "Filtered Total" if a parent filter exists, 
-    // but here the Category Filter IS the Pie Chart selection basically.
-    // Let's keep Pie Chart showing ALL categories within the Date Range to allow re-selection.
+    // Supports Multi-Select Filtering
     const chartCategoryData = useMemo(() => {
         const catMap = new Map<string, number>();
         let total = 0;
 
         transactions.forEach(t => {
             const d = new Date(t.date);
-            // Only Date Filter applies to Pie Chart (so you can pick other categories)
+            // Date Filter always applies
             if (d >= dateRange.start && d <= dateRange.end && t.type === 'EXPENSE') {
+                
+                // Apply Multi-Select Filter if active (pieFilterIds)
+                if (pieFilterIds.length > 0 && t.categoryId && !pieFilterIds.includes(t.categoryId)) {
+                    return;
+                }
+
                 const catName = categories.find(c => c.id === t.categoryId)?.name || 'Uncategorized';
                 catMap.set(catName, (catMap.get(catName) || 0) + t.amount);
                 total += t.amount;
@@ -120,7 +140,8 @@ export default function AnalyticsPage() {
                 }))
                 .sort((a, b) => b.value - a.value)
         };
-    }, [transactions, dateRange, categories]);
+
+    }, [transactions, dateRange, categories, pieFilterIds]);
 
     // 3. Current Period Stats (Summary Cards)
     const currentStats = useMemo(() => {
@@ -134,10 +155,8 @@ export default function AnalyticsPage() {
 
     const savingsRate = currentStats.income > 0 ? (currentStats.net / currentStats.income) * 100 : 0;
 
-    // 4. Comparison Chart Data (Scoped to Selected Category)
+    // 4. Comparison Chart Data (Scoped to SINGLE selected category or Global)
     const comparisonData = useMemo(() => {
-        if (selectedCategoryId === 'ALL') return [];
-
         const now = new Date();
         const thisMonthKey = format(now, 'yyyy-MM');
         const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -148,7 +167,11 @@ export default function AnalyticsPage() {
 
         transactions.forEach(t => {
              if (t.type !== 'EXPENSE') return;
-             if (t.categoryId !== selectedCategoryId) return;
+             
+             // If NOT 'ALL', ensure it matches the selected single category
+             if (barFilterId !== 'ALL') {
+                 if (!t.categoryId || t.categoryId !== barFilterId) return;
+             }
 
              const tDate = new Date(t.date);
              const tKey = format(tDate, 'yyyy-MM');
@@ -161,7 +184,7 @@ export default function AnalyticsPage() {
             { name: 'Last Month', amount: lastMonthTotal, fill: '#9ca3af' },
             { name: 'This Month', amount: thisMonthTotal, fill: thisMonthTotal > lastMonthTotal ? '#ef4444' : '#10b981' }
         ];
-    }, [selectedCategoryId, transactions]);
+    }, [barFilterId, transactions]);
 
 
     return (
@@ -191,16 +214,9 @@ export default function AnalyticsPage() {
                             <option value="QUARTER">Last Quarter</option>
                             <option value="YEAR">This Year</option>
                         </select>
-                        <select
-                            value={selectedCategoryId}
-                            onChange={(e) => setSelectedCategoryId(e.target.value)}
-                            className="bg-gray-800 border border-gray-700 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 max-w-[200px]"
-                        >
-                            <option value="ALL">All Categories</option>
-                            {categories.map(c => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
+                        <div className="relative min-w-[200px] z-20 hidden">
+                            {/* Hidden global filter */}
+                        </div>
                         <button 
                             onClick={() => {}} 
                             disabled={true}
@@ -253,9 +269,57 @@ export default function AnalyticsPage() {
                             
                             {/* Expense Breakdown (Pie) */}
                             <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50 min-h-[400px]">
-                                <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-                                    <PieIcon className="h-5 w-5 text-pink-500" /> Expense Breakdown
-                                </h3>
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-lg font-bold flex items-center gap-2">
+                                        <PieIcon className="h-5 w-5 text-pink-500" /> Expense Breakdown
+                                    </h3>
+                                    
+                                    {/* Multi-Select for Pie Chart */}
+                                    <div className="relative z-30">
+                                        <button
+                                            onClick={() => setIsPieDropdownOpen(!isPieDropdownOpen)}
+                                            className="bg-gray-700 text-white text-xs rounded-lg px-3 py-1.5 border border-gray-600 focus:outline-none flex items-center gap-2 hover:bg-gray-600 transition-colors"
+                                        >
+                                            <span className="truncate max-w-[100px]">
+                                                {pieFilterIds.length === 0 
+                                                    ? 'All Categories' 
+                                                    : `${pieFilterIds.length} Selected`}
+                                            </span>
+                                            <ChevronDown className="h-3 w-3 text-gray-400" />
+                                        </button>
+                                        
+                                        {isPieDropdownOpen && (
+                                            <>
+                                                <div className="fixed inset-0 z-10" onClick={() => setIsPieDropdownOpen(false)} />
+                                                <div className="absolute top-full right-0 mt-2 w-48 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 p-2 space-y-1">
+                                                    <button
+                                                        onClick={() => setPieFilterIds([])}
+                                                        className={clsx(
+                                                            "w-full text-left px-3 py-2 rounded-md text-xs transition-colors result-item flex items-center justify-between",
+                                                            pieFilterIds.length === 0 ? "bg-pink-500 text-white" : "text-gray-300 hover:bg-gray-700"
+                                                        )}
+                                                    >
+                                                        <span>All Categories</span>
+                                                        {pieFilterIds.length === 0 && <Check className="h-3 w-3" />}
+                                                    </button>
+                                                    {categories.map(c => (
+                                                        <button
+                                                            key={c.id}
+                                                            onClick={() => togglePieCategory(c.id)}
+                                                            className={clsx(
+                                                                "w-full text-left px-3 py-2 rounded-md text-xs transition-colors flex items-center justify-between",
+                                                                pieFilterIds.includes(c.id) ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
+                                                            )}
+                                                        >
+                                                            <span>{c.name}</span>
+                                                            {pieFilterIds.includes(c.id) && <Check className="h-3 w-3 text-pink-400" />}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
                                 {chartCategoryData?.chartData?.length > 0 ? (
                                     <ResponsiveContainer width="100%" height={300}>
                                         <PieChart>
@@ -269,7 +333,7 @@ export default function AnalyticsPage() {
                                                 dataKey="value"
                                                 onClick={(data) => {
                                                  const cat = categories.find(c => c.name === data.name);
-                                                 if (cat) setSelectedCategoryId(cat.id);
+                                                 if (cat) togglePieCategory(cat.id);
                                                 }}
                                                 className="cursor-pointer focus:outline-none"
                                             >
@@ -277,8 +341,8 @@ export default function AnalyticsPage() {
                                                     <Cell 
                                                         key={`cell-${index}`} 
                                                         fill={entry.color || COLORS[index % COLORS.length]} 
-                                                        stroke={selectedCategoryId !== 'ALL' && categories.find(c => c.name === entry.name)?.id === selectedCategoryId ? "#fff" : "rgba(0,0,0,0.2)"}
-                                                        strokeWidth={selectedCategoryId !== 'ALL' && categories.find(c => c.name === entry.name)?.id === selectedCategoryId ? 2 : 1}
+                                                        stroke={pieFilterIds.length > 0 && categories.find(c => c.name === entry.name)?.id && pieFilterIds.includes(categories.find(c => c.name === entry.name)!.id) ? "#fff" : "rgba(0,0,0,0.2)"}
+                                                        strokeWidth={pieFilterIds.length > 0 && categories.find(c => c.name === entry.name)?.id && pieFilterIds.includes(categories.find(c => c.name === entry.name)!.id) ? 2 : 1}
                                                         className="transition-all duration-200 hover:opacity-80"
                                                     />
                                                 ))}
@@ -290,7 +354,7 @@ export default function AnalyticsPage() {
                                             />
                                             <Legend verticalAlign="bottom" height={36} iconType="circle" onClick={(data) => {
                                                  const cat = categories.find(c => c.name === data.value);
-                                                 if (cat) setSelectedCategoryId(cat.id === selectedCategoryId ? 'ALL' : cat.id);
+                                                 if (cat) togglePieCategory(cat.id);
                                             }} className="cursor-pointer"/>
                                         </PieChart>
                                     </ResponsiveContainer>
@@ -300,34 +364,79 @@ export default function AnalyticsPage() {
                                 )}
                             </div>
 
-                            {/* Monthly Comparison Chart (Shows only when category selected) */}
-                            {selectedCategoryId !== 'ALL' && (
-                                <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50 min-h-[400px]">
-                                    <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                            {/* Monthly Comparison Chart (Always Visible, Single Select) */}
+                            <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50 min-h-[400px]">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-lg font-bold flex items-center gap-2">
                                         <Activity className="h-5 w-5 text-purple-500" /> 
-                                        {categories.find(c => c.id === selectedCategoryId)?.name} Spending
-                                        <span className="text-xs font-normal text-gray-500 ml-auto">Last Month vs This Month</span>
+                                        Monthly Comparison
                                     </h3>
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <BarChart data={comparisonData} layout="vertical">
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
-                                            <XAxis type="number" stroke="#9ca3af" tickFormatter={(val) => `₹${val}`} />
-                                            <YAxis dataKey="name" type="category" stroke="#9ca3af" width={100} />
-                                            <Tooltip 
-                                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
-                                                itemStyle={{ color: '#fff' }}
-                                                formatter={(value: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, 'Amount']}
-                                            />
-                                            <Bar dataKey="amount" radius={[0, 4, 4, 0]} barSize={40}>
-                                                {comparisonData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
+
+                                    {/* Single-Select for Bar Chart */}
+                                    <div className="relative z-30">
+                                        <button
+                                            onClick={() => setIsBarDropdownOpen(!isBarDropdownOpen)}
+                                            className="bg-gray-700 text-white text-xs rounded-lg px-3 py-1.5 border border-gray-600 focus:outline-none flex items-center gap-2 hover:bg-gray-600 transition-colors"
+                                        >
+                                            <span className="truncate max-w-[100px]">
+                                                {barFilterId === 'ALL' 
+                                                    ? 'All Categories' 
+                                                    : categories.find(c => c.id === barFilterId)?.name || 'Selected'}
+                                            </span>
+                                            <ChevronDown className="h-3 w-3 text-gray-400" />
+                                        </button>
+                                        
+                                        {isBarDropdownOpen && (
+                                            <>
+                                                <div className="fixed inset-0 z-10" onClick={() => setIsBarDropdownOpen(false)} />
+                                                <div className="absolute top-full right-0 mt-2 w-48 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 p-2 space-y-1">
+                                                    <button
+                                                        onClick={() => { setBarFilterId('ALL'); setIsBarDropdownOpen(false); }}
+                                                        className={clsx(
+                                                            "w-full text-left px-3 py-2 rounded-md text-xs transition-colors flex items-center justify-between",
+                                                            barFilterId === 'ALL' ? "bg-purple-500 text-white" : "text-gray-300 hover:bg-gray-700"
+                                                        )}
+                                                    >
+                                                        <span>All Categories</span>
+                                                        {barFilterId === 'ALL' && <Check className="h-3 w-3" />}
+                                                    </button>
+                                                    {categories.map(c => (
+                                                        <button
+                                                            key={c.id}
+                                                            onClick={() => { setBarFilterId(c.id); setIsBarDropdownOpen(false); }}
+                                                            className={clsx(
+                                                                "w-full text-left px-3 py-2 rounded-md text-xs transition-colors flex items-center justify-between",
+                                                                barFilterId === c.id ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
+                                                            )}
+                                                        >
+                                                            <span>{c.name}</span>
+                                                            {barFilterId === c.id && <Check className="h-3 w-3 text-purple-400" />}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
-                            )}
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={comparisonData} layout="vertical">
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
+                                        <XAxis type="number" stroke="#9ca3af" tickFormatter={(val) => `₹${val}`} />
+                                        <YAxis dataKey="name" type="category" stroke="#9ca3af" width={100} />
+                                        <Tooltip 
+                                            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                            contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                            itemStyle={{ color: '#fff' }}
+                                            formatter={(value: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, 'Amount']}
+                                        />
+                                        <Bar dataKey="amount" radius={[0, 4, 4, 0]} barSize={40}>
+                                            {comparisonData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
 
                             {/* Monthly Trends (Bar + Line) */}
                             <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50 min-h-[400px]">
@@ -362,7 +471,7 @@ export default function AnalyticsPage() {
                              <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-lg font-bold flex items-center gap-2">
                                     <Filter className="h-5 w-5 text-purple-500" /> 
-                                    {selectedCategoryId === 'ALL' ? 'All Expenses' : `All Expenses (Global List)`}
+                                    All Expenses (Global List)
                                     <span className="text-sm font-normal text-gray-500 ml-2">({filteredTransactions.length} found)</span>
                                 </h3>
                                 {/* Removed Clear Filter button as list is global now */}
