@@ -40,16 +40,16 @@ export default function AnalyticsPage() {
         return { start, end };
     }, [months]);
 
-    // Filter transactions
+    // Filter transactions (Global - only Date Range applies)
     const filteredTransactions = useMemo(() => {
          return transactions.filter(t => {
             const d = new Date(t.date);
             const inDate = d >= dateRange.start && d <= dateRange.end;
             const isExpense = t.type === 'EXPENSE';
-            const matchesCategory = selectedCategoryId === 'ALL' || t.categoryId === selectedCategoryId;
-            return inDate && isExpense && matchesCategory;
+            // Global list ignores category filter now
+            return inDate && isExpense;
         }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [transactions, dateRange, selectedCategoryId]);
+    }, [transactions, dateRange]);
     
     // Placeholder network status
     const isOnline = false;
@@ -57,7 +57,7 @@ export default function AnalyticsPage() {
 
     // -- Client-Side Analytics Calculations --
 
-    // 1. Calculate Monthly Trend Data
+    // 1. Calculate Monthly Trend Data (Global - ignores category filter)
     const chartMonthlyData = useMemo(() => {
         const data: Record<string, { income: number; expense: number }> = {};
         
@@ -73,9 +73,8 @@ export default function AnalyticsPage() {
         transactions.forEach(t => {
             const d = new Date(t.date);
             if (d >= dateRange.start && d <= dateRange.end) {
-                // Apply category filter ONLY if set
-                if (selectedCategoryId !== 'ALL' && t.categoryId !== selectedCategoryId) return;
-
+                // Global chart ignores category filter now
+                
                 const key = format(d, 'MMM yyyy');
                 if (data[key]) {
                     if (t.type === 'INCOME') data[key].income += t.amount;
@@ -91,7 +90,7 @@ export default function AnalyticsPage() {
                 expense: stats.expense
             }))
         };
-    }, [transactions, dateRange, selectedCategoryId]);
+    }, [transactions, dateRange]); // Removed selectedCategoryId dep
 
     // 2. Calculate Category Breakdown (Pie Chart)
     // Always shows ALL categories for context, unless filtered? 
@@ -134,6 +133,35 @@ export default function AnalyticsPage() {
     }, [chartMonthlyData]);
 
     const savingsRate = currentStats.income > 0 ? (currentStats.net / currentStats.income) * 100 : 0;
+
+    // 4. Comparison Chart Data (Scoped to Selected Category)
+    const comparisonData = useMemo(() => {
+        if (selectedCategoryId === 'ALL') return [];
+
+        const now = new Date();
+        const thisMonthKey = format(now, 'yyyy-MM');
+        const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthKey = format(lastMonthDate, 'yyyy-MM');
+
+        let thisMonthTotal = 0;
+        let lastMonthTotal = 0;
+
+        transactions.forEach(t => {
+             if (t.type !== 'EXPENSE') return;
+             if (t.categoryId !== selectedCategoryId) return;
+
+             const tDate = new Date(t.date);
+             const tKey = format(tDate, 'yyyy-MM');
+
+             if (tKey === thisMonthKey) thisMonthTotal += t.amount;
+             if (tKey === lastMonthKey) lastMonthTotal += t.amount;
+        });
+
+        return [
+            { name: 'Last Month', amount: lastMonthTotal, fill: '#9ca3af' },
+            { name: 'This Month', amount: thisMonthTotal, fill: thisMonthTotal > lastMonthTotal ? '#ef4444' : '#10b981' }
+        ];
+    }, [selectedCategoryId, transactions]);
 
 
     return (
@@ -267,9 +295,39 @@ export default function AnalyticsPage() {
                                         </PieChart>
                                     </ResponsiveContainer>
                                 ) : (
+
                                     <EmptyState text="No expense data for this period" />
                                 )}
                             </div>
+
+                            {/* Monthly Comparison Chart (Shows only when category selected) */}
+                            {selectedCategoryId !== 'ALL' && (
+                                <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50 min-h-[400px]">
+                                    <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                                        <Activity className="h-5 w-5 text-purple-500" /> 
+                                        {categories.find(c => c.id === selectedCategoryId)?.name} Spending
+                                        <span className="text-xs font-normal text-gray-500 ml-auto">Last Month vs This Month</span>
+                                    </h3>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <BarChart data={comparisonData} layout="vertical">
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
+                                            <XAxis type="number" stroke="#9ca3af" tickFormatter={(val) => `₹${val}`} />
+                                            <YAxis dataKey="name" type="category" stroke="#9ca3af" width={100} />
+                                            <Tooltip 
+                                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                                itemStyle={{ color: '#fff' }}
+                                                formatter={(value: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, 'Amount']}
+                                            />
+                                            <Bar dataKey="amount" radius={[0, 4, 4, 0]} barSize={40}>
+                                                {comparisonData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
 
                             {/* Monthly Trends (Bar + Line) */}
                             <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50 min-h-[400px]">
@@ -304,17 +362,10 @@ export default function AnalyticsPage() {
                              <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-lg font-bold flex items-center gap-2">
                                     <Filter className="h-5 w-5 text-purple-500" /> 
-                                    {selectedCategoryId === 'ALL' ? 'All Expenses' : `${categories.find(c => c.id === selectedCategoryId)?.name} Expenses`}
+                                    {selectedCategoryId === 'ALL' ? 'All Expenses' : `All Expenses (Global List)`}
                                     <span className="text-sm font-normal text-gray-500 ml-2">({filteredTransactions.length} found)</span>
                                 </h3>
-                                {selectedCategoryId !== 'ALL' && (
-                                    <button 
-                                        onClick={() => setSelectedCategoryId('ALL')}
-                                        className="text-xs text-blue-400 hover:text-blue-300"
-                                    >
-                                        Clear Filter
-                                    </button>
-                                )}
+                                {/* Removed Clear Filter button as list is global now */}
                              </div>
 
                              <div className="space-y-3">
