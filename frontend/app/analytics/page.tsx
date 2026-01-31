@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
-import { useAnalytics } from '../../hooks/useLocalData';
+import { useAnalytics, useTransactions } from '../../hooks/useLocalData';
 import { 
     BarChart2, Calendar, TrendingUp, TrendingDown, 
     RefreshCw, Layers, PieChart as PieIcon, Activity,
-    AlertCircle, CheckCircle, Database
+    AlertCircle, CheckCircle, Database, Filter, ArrowUpRight
 } from 'lucide-react';
 import { 
     PieChart, Pie, Cell, LineChart, Line, BarChart, Bar, 
@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
+import { format } from 'date-fns';
 
 // Colors for charts
 const COLORS = ['#8b5cf6', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1', '#14b8a6'];
@@ -22,7 +23,30 @@ export default function AnalyticsPage() {
     const [range, setRange] = useState<'MONTH' | 'QUARTER' | 'YEAR'>('MONTH');
     const months = range === 'YEAR' ? 12 : range === 'QUARTER' ? 3 : 1;
     const { monthlyData, categoryData, loading, refresh } = useAnalytics(months);
+    const { transactions, loading: txLoading } = useTransactions();
     const [rebuilding, setRebuilding] = useState(false);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string>('ALL');
+    
+    // Calculate date range for filtering transactions
+    const dateRange = useMemo(() => {
+        const end = new Date();
+        const start = new Date();
+        start.setMonth(start.getMonth() - months);
+        // Normalize to verify inclusion
+        start.setHours(0,0,0,0);
+        return { start, end };
+    }, [months]);
+
+    // Filter transactions
+    const filteredTransactions = useMemo(() => {
+         return transactions.filter(t => {
+            const d = new Date(t.date);
+            const inDate = d >= dateRange.start && d <= dateRange.end;
+            const isExpense = t.type === 'EXPENSE';
+            const matchesCategory = selectedCategoryId === 'ALL' || t.categoryId === selectedCategoryId;
+            return inDate && isExpense && matchesCategory;
+        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [transactions, dateRange, selectedCategoryId]);
     
     // Placeholder network status
     const isOnline = false;
@@ -87,6 +111,16 @@ export default function AnalyticsPage() {
                             <option value="MONTH">This Month</option>
                             <option value="QUARTER">Last Quarter</option>
                             <option value="YEAR">This Year</option>
+                        </select>
+                        <select
+                            value={selectedCategoryId}
+                            onChange={(e) => setSelectedCategoryId(e.target.value)}
+                            className="bg-gray-800 border border-gray-700 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 max-w-[200px]"
+                        >
+                            <option value="ALL">All Categories</option>
+                            {categoryData.map(c => (
+                                <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
+                            ))}
                         </select>
                         <button 
                             onClick={handleRebuild} 
@@ -154,9 +188,20 @@ export default function AnalyticsPage() {
                                                 outerRadius={100}
                                                 paddingAngle={5}
                                                 dataKey="value"
+                                                onClick={(data) => {
+                                                     const cat = categoryData.find(c => c.categoryName === data.name);
+                                                     if (cat) setSelectedCategoryId(cat.categoryId);
+                                                }}
+                                                className="cursor-pointer focus:outline-none"
                                             >
                                                 {chartCategoryData.chartData.map((entry: any, index: number) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0.2)" />
+                                                    <Cell 
+                                                        key={`cell-${index}`} 
+                                                        fill={entry.color || COLORS[index % COLORS.length]} 
+                                                        stroke={selectedCategoryId !== 'ALL' && categoryData.find(c => c.categoryName === entry.name)?.categoryId === selectedCategoryId ? "#fff" : "rgba(0,0,0,0.2)"}
+                                                        strokeWidth={selectedCategoryId !== 'ALL' && categoryData.find(c => c.categoryName === entry.name)?.categoryId === selectedCategoryId ? 2 : 1}
+                                                        className="transition-all duration-200 hover:opacity-80"
+                                                    />
                                                 ))}
                                             </Pie>
                                             <Tooltip 
@@ -164,7 +209,10 @@ export default function AnalyticsPage() {
                                                 itemStyle={{ color: '#fff' }}
                                                 formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
                                             />
-                                            <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                            <Legend verticalAlign="bottom" height={36} iconType="circle" onClick={(data) => {
+                                                 const cat = categoryData.find(c => c.categoryName === data.value);
+                                                 if (cat) setSelectedCategoryId(cat.categoryId === selectedCategoryId ? 'ALL' : cat.categoryId);
+                                            }} className="cursor-pointer"/>
                                         </PieChart>
                                     </ResponsiveContainer>
                                 ) : (
@@ -198,6 +246,54 @@ export default function AnalyticsPage() {
                                     <EmptyState text="Not enough history data" />
                                 )}
                             </div>
+                        </div>
+
+                        {/* Filtered Transactions List */}
+                        <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50 mb-12">
+                             <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-lg font-bold flex items-center gap-2">
+                                    <Filter className="h-5 w-5 text-purple-500" /> 
+                                    {selectedCategoryId === 'ALL' ? 'All Expenses' : `${categoryData.find(c => c.categoryId === selectedCategoryId)?.categoryName} Expenses`}
+                                    <span className="text-sm font-normal text-gray-500 ml-2">({filteredTransactions.length} found)</span>
+                                </h3>
+                                {selectedCategoryId !== 'ALL' && (
+                                    <button 
+                                        onClick={() => setSelectedCategoryId('ALL')}
+                                        className="text-xs text-blue-400 hover:text-blue-300"
+                                    >
+                                        Clear Filter
+                                    </button>
+                                )}
+                             </div>
+
+                             <div className="space-y-3">
+                                {txLoading ? (
+                                    <div className="text-center py-8 text-gray-500">Loading transactions...</div>
+                                ) : filteredTransactions.length > 0 ? (
+                                    filteredTransactions.map(t => (
+                                        <div key={t.id} className="flex items-center justify-between p-4 bg-gray-900/50 rounded-xl border border-gray-700/30 hover:bg-gray-750 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-2 bg-red-500/10 rounded-lg">
+                                                    <ArrowUpRight className="h-4 w-4 text-red-400" />
+                                                </div>
+                                                <div>
+                                                    <div className="font-medium text-white">{t.description || 'No description'}</div>
+                                                    <div className="text-xs text-gray-400 flex items-center gap-2">
+                                                        <span>{format(new Date(t.date), 'MMM d, yyyy')}</span>
+                                                        <span>•</span>
+                                                         <span>{categoryData.find(c => c.categoryId === t.categoryId)?.categoryName || 'Uncategorized'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right font-mono font-bold text-red-400">
+                                                -₹{t.amount.toLocaleString()}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <EmptyState text="No expenses found for this selection" />
+                                )}
+                             </div>
                         </div>
                     </>
                 )}

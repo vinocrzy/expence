@@ -3,8 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import TransactionModal from '../../components/TransactionModal';
-import { useTransactions, useAccounts, useCreditCards } from '../../hooks/useLocalData';
-import { Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Trash2, Calendar, Search } from 'lucide-react';
+import { useTransactions, useAccounts, useCreditCards, useCategories } from '../../hooks/useLocalData';
+import { Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Trash2, Calendar, Search, Filter } from 'lucide-react';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 
@@ -12,6 +12,7 @@ export default function TransactionsPage() {
   const { transactions, loading: txLoading, addTransaction, deleteTransaction } = useTransactions();
   const { accounts, loading: accLoading } = useAccounts();
   const { creditCards, loading: ccLoading } = useCreditCards();
+  const { categories } = useCategories();
   const loading = txLoading || accLoading || ccLoading;
 
   const allAccounts = useMemo(() => {
@@ -37,6 +38,7 @@ export default function TransactionsPage() {
   
   // Basic filtering (can be expanded)
   const [filterType, setFilterType] = useState('ALL');
+  const [filterCategory, setFilterCategory] = useState('ALL');
 
   const handleCreate = () => {
     setIsModalOpen(true);
@@ -71,8 +73,9 @@ export default function TransactionsPage() {
   };
 
   const filteredTransactions = transactions.filter(t => {
-    if (filterType === 'ALL') return true;
-    return t.type === filterType;
+    const typeMatch = filterType === 'ALL' || t.type === filterType;
+    const catMatch = filterCategory === 'ALL' || t.categoryId === filterCategory;
+    return typeMatch && catMatch;
   });
 
   return (
@@ -94,20 +97,36 @@ export default function TransactionsPage() {
           </button>
         </div>
 
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-            {['ALL', 'INCOME', 'EXPENSE', 'TRANSFER'].map(ft => (
-                <button
-                    key={ft}
-                    onClick={() => setFilterType(ft)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                        filterType === ft 
-                        ? 'bg-purple-500 text-white' 
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
-                    }`}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {['ALL', 'INCOME', 'EXPENSE', 'TRANSFER'].map(ft => (
+                    <button
+                        key={ft}
+                        onClick={() => setFilterType(ft)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                            filterType === ft 
+                            ? 'bg-purple-500 text-white' 
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
+                        }`}
+                    >
+                        {ft}
+                    </button>
+                ))}
+            </div>
+
+            <div className="relative min-w-[200px]">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="w-full bg-gray-800 text-white text-sm rounded-lg pl-10 pr-4 py-2 border border-gray-700 focus:outline-none focus:border-purple-500 appearance-none"
                 >
-                    {ft}
-                </button>
-            ))}
+                    <option value="ALL">All Categories</option>
+                    {categories.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                </select>
+            </div>
         </div>
 
         {loading ? (
@@ -145,6 +164,10 @@ export default function TransactionsPage() {
                                         </span>
                                         <span className="hidden xs:inline text-gray-600">•</span>
                                         <span className="truncate max-w-[140px] xs:max-w-none">{accountMap[t.accountId]?.name}</span>
+                                        <span className="hidden xs:inline text-gray-600">•</span>
+                                        <span className="truncate text-purple-400">
+                                            {categories.find(c => c.id === t.categoryId)?.name || 'Uncategorized'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>

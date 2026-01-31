@@ -367,9 +367,8 @@ export function useAnalytics(months: number = 12) {
       const monthly = await calculateMonthlyStats(householdId, startDate, endDate);
       setMonthlyData(monthly);
 
-      // Load current month category breakdown
-      const currentMonthStart = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-      const categories = await calculateCategoryBreakdown(householdId, currentMonthStart, endDate);
+      // Load category breakdown for the same period
+      const categories = await calculateCategoryBreakdown(householdId, startDate, endDate);
       setCategoryData(categories);
     } catch (error) {
       console.error('Failed to load analytics:', error);
