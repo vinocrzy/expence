@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import TransactionModal from '../../components/TransactionModal';
 import { useTransactions, useAccounts, useCreditCards, useCategories } from '../../hooks/useLocalData';
-import { Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Trash2, Calendar, Search, Filter } from 'lucide-react';
+
+import { Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Trash2, Calendar, Search, Filter, Check, ChevronDown, X } from 'lucide-react';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 
@@ -38,7 +39,8 @@ export default function TransactionsPage() {
   
   // Basic filtering (can be expanded)
   const [filterType, setFilterType] = useState('ALL');
-  const [filterCategory, setFilterCategory] = useState('ALL');
+  const [filterCategories, setFilterCategories] = useState<string[]>([]); // Empty array means ALL
+  const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
 
   const handleCreate = () => {
     setIsModalOpen(true);
@@ -74,9 +76,17 @@ export default function TransactionsPage() {
 
   const filteredTransactions = transactions.filter(t => {
     const typeMatch = filterType === 'ALL' || t.type === filterType;
-    const catMatch = filterCategory === 'ALL' || t.categoryId === filterCategory;
+    const catMatch = filterCategories.length === 0 || (t.categoryId && filterCategories.includes(t.categoryId));
     return typeMatch && catMatch;
   });
+
+  const toggleCategory = (catId: string) => {
+      setFilterCategories(prev => 
+          prev.includes(catId)
+              ? prev.filter(id => id !== catId)
+              : [...prev, catId]
+      );
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
@@ -114,18 +124,55 @@ export default function TransactionsPage() {
                 ))}
             </div>
 
-            <div className="relative min-w-[200px]">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="w-full bg-gray-800 text-white text-sm rounded-lg pl-10 pr-4 py-2 border border-gray-700 focus:outline-none focus:border-purple-500 appearance-none"
+            <div className="relative min-w-[240px]">
+                <button
+                    onClick={() => setIsCatDropdownOpen(!isCatDropdownOpen)}
+                    className="w-full bg-gray-800 text-white text-sm rounded-lg px-4 py-2 border border-gray-700 focus:outline-none focus:border-purple-500 flex items-center justify-between"
                 >
-                    <option value="ALL">All Categories</option>
-                    {categories.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                </select>
+                    <div className="flex items-center gap-2 truncate">
+                        <Filter className="h-4 w-4 text-gray-500" />
+                        <span className="truncate">
+                            {filterCategories.length === 0 
+                                ? 'All Categories' 
+                                : `${filterCategories.length} Selected`}
+                        </span>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                </button>
+
+                {isCatDropdownOpen && (
+                    <>
+                        <div 
+                            className="fixed inset-0 z-10" 
+                            onClick={() => setIsCatDropdownOpen(false)}
+                        />
+                        <div className="absolute top-full mt-2 left-0 right-0 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 p-2 space-y-1">
+                            <button
+                                onClick={() => setFilterCategories([])}
+                                className={clsx(
+                                    "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
+                                    filterCategories.length === 0 ? "bg-purple-500 text-white" : "text-gray-300 hover:bg-gray-700"
+                                )}
+                            >
+                                <span>All Categories</span>
+                                {filterCategories.length === 0 && <Check className="h-4 w-4" />}
+                            </button>
+                            {categories.map(c => (
+                                <button
+                                    key={c.id}
+                                    onClick={() => toggleCategory(c.id)}
+                                    className={clsx(
+                                        "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
+                                        filterCategories.includes(c.id) ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
+                                    )}
+                                >
+                                    <span>{c.name}</span>
+                                    {filterCategories.includes(c.id) && <Check className="h-4 w-4 text-purple-400" />}
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
 

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
-import { useAnalytics, useTransactions } from '../../hooks/useLocalData';
+import { useTransactions, useCategories } from '../../hooks/useLocalData';
 import { 
     BarChart2, Calendar, TrendingUp, TrendingDown, 
     RefreshCw, Layers, PieChart as PieIcon, Activity,
@@ -22,9 +22,12 @@ const COLORS = ['#8b5cf6', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'
 export default function AnalyticsPage() {
     const [range, setRange] = useState<'MONTH' | 'QUARTER' | 'YEAR'>('MONTH');
     const months = range === 'YEAR' ? 12 : range === 'QUARTER' ? 3 : 1;
-    const { monthlyData, categoryData, loading, refresh } = useAnalytics(months);
+    
+    // Load raw data
     const { transactions, loading: txLoading } = useTransactions();
-    const [rebuilding, setRebuilding] = useState(false);
+    const { categories, loading: catLoading } = useCategories();
+    const loading = txLoading || catLoading;
+
     const [selectedCategoryId, setSelectedCategoryId] = useState<string>('ALL');
     
     // Calculate date range for filtering transactions
@@ -52,38 +55,86 @@ export default function AnalyticsPage() {
     const isOnline = false;
     const isSyncing = false;
 
-    const handleRebuild = async () => {
-        if (!confirm('Recalculate all analytics from raw transactions? This may take a moment.')) return;
-        setRebuilding(true);
-        try {
-            await refresh();
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setRebuilding(false);
+    // -- Client-Side Analytics Calculations --
+
+    // 1. Calculate Monthly Trend Data
+    const chartMonthlyData = useMemo(() => {
+        const data: Record<string, { income: number; expense: number }> = {};
+        
+        // Initialize months map
+        let current = new Date(dateRange.start);
+        const end = new Date(dateRange.end);
+        while (current <= end) {
+            const key = format(current, 'MMM yyyy');
+            data[key] = { income: 0, expense: 0 };
+            current.setMonth(current.getMonth() + 1);
         }
-    };
 
-    // Derived Stats
-    const currentMonthStats = monthlyData[monthlyData.length - 1] || { income: 0, expense: 0, net: 0 };
-    const savingsRate = currentMonthStats.income > 0 ? (currentMonthStats.net / currentMonthStats.income) * 100 : 0;
+        transactions.forEach(t => {
+            const d = new Date(t.date);
+            if (d >= dateRange.start && d <= dateRange.end) {
+                // Apply category filter ONLY if set
+                if (selectedCategoryId !== 'ALL' && t.categoryId !== selectedCategoryId) return;
 
-    // Format data for charts
-    const chartMonthlyData = {
-        data: monthlyData.map(m => ({
-            month: m.month,
-            income: m.income,
-            expense: m.expense,
-        }))
-    };
+                const key = format(d, 'MMM yyyy');
+                if (data[key]) {
+                    if (t.type === 'INCOME') data[key].income += t.amount;
+                    if (t.type === 'EXPENSE') data[key].expense += t.amount;
+                }
+            }
+        });
 
-    const chartCategoryData = {
-        chartData: categoryData.map((c, i) => ({
-            name: c.categoryName,
-            value: c.amount,
-            color: COLORS[i % COLORS.length]
-        }))
-    };
+        return {
+            data: Object.entries(data).map(([month, stats]) => ({
+                month,
+                income: stats.income,
+                expense: stats.expense
+            }))
+        };
+    }, [transactions, dateRange, selectedCategoryId]);
+
+    // 2. Calculate Category Breakdown (Pie Chart)
+    // Always shows ALL categories for context, unless filtered? 
+    // Usually Pie chart shows share of "Filtered Total" if a parent filter exists, 
+    // but here the Category Filter IS the Pie Chart selection basically.
+    // Let's keep Pie Chart showing ALL categories within the Date Range to allow re-selection.
+    const chartCategoryData = useMemo(() => {
+        const catMap = new Map<string, number>();
+        let total = 0;
+
+        transactions.forEach(t => {
+            const d = new Date(t.date);
+            // Only Date Filter applies to Pie Chart (so you can pick other categories)
+            if (d >= dateRange.start && d <= dateRange.end && t.type === 'EXPENSE') {
+                const catName = categories.find(c => c.id === t.categoryId)?.name || 'Uncategorized';
+                catMap.set(catName, (catMap.get(catName) || 0) + t.amount);
+                total += t.amount;
+            }
+        });
+
+        return {
+            chartData: Array.from(catMap.entries())
+                .map(([name, value], i) => ({
+                    name,
+                    value,
+                    color: categories.find(c => c.name === name)?.color || COLORS[i % COLORS.length]
+                }))
+                .sort((a, b) => b.value - a.value)
+        };
+    }, [transactions, dateRange, categories]);
+
+    // 3. Current Period Stats (Summary Cards)
+    const currentStats = useMemo(() => {
+        // Use chartMonthlyData to aggregate total for the selected period
+        return chartMonthlyData.data.reduce((acc, curr) => ({
+            income: acc.income + curr.income,
+            expense: acc.expense + curr.expense,
+            net: acc.net + (curr.income - curr.expense)
+        }), { income: 0, expense: 0, net: 0 });
+    }, [chartMonthlyData]);
+
+    const savingsRate = currentStats.income > 0 ? (currentStats.net / currentStats.income) * 100 : 0;
+
 
     return (
         <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
@@ -118,22 +169,22 @@ export default function AnalyticsPage() {
                             className="bg-gray-800 border border-gray-700 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 max-w-[200px]"
                         >
                             <option value="ALL">All Categories</option>
-                            {categoryData.map(c => (
-                                <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>
+                            {categories.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                         </select>
                         <button 
-                            onClick={handleRebuild} 
-                            disabled={rebuilding || !isOnline}
-                            className={`p-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:opacity-50 transition-all ${rebuilding ? 'animate-pulse' : ''}`}
+                            onClick={() => {}} 
+                            disabled={true}
+                            className={`hidden p-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:opacity-50 transition-all`}
                             title="Rebuild Analytics"
                         >
-                            {rebuilding ? <RefreshCw className="h-5 w-5 animate-spin text-blue-500" /> : <Database className="h-5 w-5 text-gray-400" />}
+                            <Database className="h-5 w-5 text-gray-400" />
                         </button>
                     </div>
                 </div>
 
-                {loading && !monthlyData ? (
+                {loading ? (
                      <div className="flex justify-center py-20"><RefreshCw className="animate-spin h-8 w-8 text-gray-500" /></div>
                 ) : (
                     <>
@@ -141,24 +192,24 @@ export default function AnalyticsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                             <SummaryCard 
                                 title="Income" 
-                                value={currentMonthStats.income} 
+                                value={currentStats.income} 
                                 icon={TrendingUp} 
                                 color="text-green-500" 
                                 bg="bg-green-500/10" 
                             />
                             <SummaryCard 
                                 title="Expense" 
-                                value={currentMonthStats.expense} 
+                                value={currentStats.expense} 
                                 icon={TrendingDown} 
                                 color="text-red-500" 
                                 bg="bg-red-500/10" 
                             />
                             <SummaryCard 
                                 title="Net Savings" 
-                                value={currentMonthStats.net} 
+                                value={currentStats.net} 
                                 icon={Layers} 
-                                color={currentMonthStats.net >= 0 ? "text-blue-500" : "text-orange-500"} 
-                                bg={currentMonthStats.net >= 0 ? "bg-blue-500/10" : "bg-orange-500/10"} 
+                                color={currentStats.net >= 0 ? "text-blue-500" : "text-orange-500"} 
+                                bg={currentStats.net >= 0 ? "bg-blue-500/10" : "bg-orange-500/10"} 
                             />
                             <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700/50 flex flex-col justify-between">
                                 <span className="text-gray-400 text-sm font-medium">Savings Rate</span>
@@ -189,8 +240,8 @@ export default function AnalyticsPage() {
                                                 paddingAngle={5}
                                                 dataKey="value"
                                                 onClick={(data) => {
-                                                     const cat = categoryData.find(c => c.categoryName === data.name);
-                                                     if (cat) setSelectedCategoryId(cat.categoryId);
+                                                 const cat = categories.find(c => c.name === data.name);
+                                                 if (cat) setSelectedCategoryId(cat.id);
                                                 }}
                                                 className="cursor-pointer focus:outline-none"
                                             >
@@ -198,8 +249,8 @@ export default function AnalyticsPage() {
                                                     <Cell 
                                                         key={`cell-${index}`} 
                                                         fill={entry.color || COLORS[index % COLORS.length]} 
-                                                        stroke={selectedCategoryId !== 'ALL' && categoryData.find(c => c.categoryName === entry.name)?.categoryId === selectedCategoryId ? "#fff" : "rgba(0,0,0,0.2)"}
-                                                        strokeWidth={selectedCategoryId !== 'ALL' && categoryData.find(c => c.categoryName === entry.name)?.categoryId === selectedCategoryId ? 2 : 1}
+                                                        stroke={selectedCategoryId !== 'ALL' && categories.find(c => c.name === entry.name)?.id === selectedCategoryId ? "#fff" : "rgba(0,0,0,0.2)"}
+                                                        strokeWidth={selectedCategoryId !== 'ALL' && categories.find(c => c.name === entry.name)?.id === selectedCategoryId ? 2 : 1}
                                                         className="transition-all duration-200 hover:opacity-80"
                                                     />
                                                 ))}
@@ -210,8 +261,8 @@ export default function AnalyticsPage() {
                                                 formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
                                             />
                                             <Legend verticalAlign="bottom" height={36} iconType="circle" onClick={(data) => {
-                                                 const cat = categoryData.find(c => c.categoryName === data.value);
-                                                 if (cat) setSelectedCategoryId(cat.categoryId === selectedCategoryId ? 'ALL' : cat.categoryId);
+                                                 const cat = categories.find(c => c.name === data.value);
+                                                 if (cat) setSelectedCategoryId(cat.id === selectedCategoryId ? 'ALL' : cat.id);
                                             }} className="cursor-pointer"/>
                                         </PieChart>
                                     </ResponsiveContainer>
@@ -253,7 +304,7 @@ export default function AnalyticsPage() {
                              <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-lg font-bold flex items-center gap-2">
                                     <Filter className="h-5 w-5 text-purple-500" /> 
-                                    {selectedCategoryId === 'ALL' ? 'All Expenses' : `${categoryData.find(c => c.categoryId === selectedCategoryId)?.categoryName} Expenses`}
+                                    {selectedCategoryId === 'ALL' ? 'All Expenses' : `${categories.find(c => c.id === selectedCategoryId)?.name} Expenses`}
                                     <span className="text-sm font-normal text-gray-500 ml-2">({filteredTransactions.length} found)</span>
                                 </h3>
                                 {selectedCategoryId !== 'ALL' && (
@@ -281,7 +332,7 @@ export default function AnalyticsPage() {
                                                     <div className="text-xs text-gray-400 flex items-center gap-2">
                                                         <span>{format(new Date(t.date), 'MMM d, yyyy')}</span>
                                                         <span>•</span>
-                                                         <span>{categoryData.find(c => c.categoryId === t.categoryId)?.categoryName || 'Uncategorized'}</span>
+                                                         <span>{categories.find(c => c.id === t.categoryId)?.name || 'Uncategorized'}</span>
                                                     </div>
                                                 </div>
                                             </div>
