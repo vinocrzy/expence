@@ -6,6 +6,8 @@ export interface Account {
   currency: string;
   isArchived?: boolean;
   householdId: string;
+  userId?: string; // ID of the user who owns/created this account
+  createdByName?: string; // Name of the creator
   createdAt?: string;
   updatedAt?: string;
   _rev?: string; // PouchDB revision
@@ -21,6 +23,9 @@ export interface Transaction {
   categoryId?: string;
   accountId: string;
   householdId: string;
+  userId?: string; // ID of the user who made the transaction
+  createdByName?: string; // Name of the user
+  userColor?: string; // Visual indicator for the user
   createdAt?: string;
   updatedAt?: string;
   _rev?: string;

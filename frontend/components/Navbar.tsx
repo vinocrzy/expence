@@ -10,17 +10,30 @@ import {
     ChartBar
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import QuickActionSheet from './QuickActionSheet';
 // import BackupStatusIndicator from './BackupStatusIndicator'; // Removed legacy
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSyncStatus } from '../hooks/useSyncStatus';
 import { useAccounts, useCreditCards } from '../hooks/useLocalData';
 import SyncStatusIndicator from './ui/SyncStatus';
+import { setCurrentUser } from '../lib/localdb-services';
 
 export default function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  
+  useEffect(() => {
+      if (user) {
+          // Map Clerk user to our local context user
+          setCurrentUser({ 
+              id: user.id, 
+              name: user.name || 'User',
+              color: 'blue' // Default color, ideally from metadata
+          });
+      }
+  }, [user]);
+
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { accounts } = useAccounts();
@@ -77,7 +90,8 @@ export default function Navbar() {
                  <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
                     Pocket
                  </span>
-                 <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                 <span 
+                 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
                     Together
                  </span>
                </Link>
@@ -133,7 +147,7 @@ export default function Navbar() {
                     Reports
                 </Link>
 
-                {/* Household Dropdown */}
+                {/* Household Dropdown - HIDDEN FOR NOW
                 <div className="relative group">
                     <button className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-white ${
                         ['/household', '/shared-dashboard'].some(p => pathname.startsWith(p)) ? 'text-white' : 'text-gray-400'
@@ -151,6 +165,7 @@ export default function Navbar() {
                         </Link>
                     </div>
                 </div>
+                */}
 
               </div>
             </div>
@@ -321,7 +336,7 @@ export default function Navbar() {
                             </Link>
                         </div>
                         
-                        {/* Group 2: Shared & Household (Promoted) */}
+                        {/* Group 2: Shared & Household (Promoted) - HIDDEN FOR NOW
                          <div className="bg-gray-900 rounded-2xl overflow-hidden mb-4 border border-white/5">
                              <Link href="/shared-dashboard" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 border-b border-white/5 active:bg-gray-800 transition-colors">
                                 <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
@@ -338,6 +353,7 @@ export default function Navbar() {
                                 <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
                             </Link>
                         </div>
+                        */}
 
                         {/* Group 3: Management */}
                         <div className="bg-gray-900 rounded-2xl overflow-hidden mb-4 border border-white/5">

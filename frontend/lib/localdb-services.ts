@@ -81,12 +81,15 @@ export const accountService = {
 
   async create(data: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<Account> {
     const householdId = await getHouseholdId();
+    const user = getCurrentUser();
     const now = new Date().toISOString();
     const id = generateId();
     const account: Account = {
       ...data,
       id,
       householdId,
+      userId: user?.id,
+      createdByName: user?.name,
       createdAt: now,
       updatedAt: now,
     };
@@ -285,6 +288,7 @@ export const transactionService = {
 
   async create(data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<Transaction> {
     const householdId = await getHouseholdId();
+    const user = getCurrentUser();
     const now = new Date().toISOString();
     
     // Update account balance
@@ -342,6 +346,9 @@ export const transactionService = {
       ...data,
       id,
       householdId,
+      userId: user?.id,
+      createdByName: user?.name,
+      userColor: user?.color,
       createdAt: now,
       updatedAt: now
     };
@@ -760,9 +767,14 @@ export const budgetPlanItemService = {
 // Mutable state to store the current household ID
 // This must be set by the application (e.g. via AuthContext/LocalFirstContext) before using services
 let currentHouseholdId: string | null = null;
+let currentUser: { id: string, name: string, color?: string } | null = null;
 
 export const setHouseholdId = (id: string | null) => {
     currentHouseholdId = id;
+};
+
+export const setCurrentUser = (user: { id: string, name: string, color?: string } | null) => {
+    currentUser = user;
 };
 
 export const getHouseholdId = async (): Promise<string> => {
@@ -775,6 +787,8 @@ export const getHouseholdId = async (): Promise<string> => {
     }
     return currentHouseholdId;
 };
+
+export const getCurrentUser = () => currentUser;
 
 // ============================================
 // HOUSEHOLD OPERATIONS
