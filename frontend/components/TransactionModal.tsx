@@ -104,7 +104,36 @@ function TransactionModal({
     }
   }, [isOpen]);
 
-  // ... (useEffect for initialData stays same) ...
+  useEffect(() => {
+    if (isOpen) {
+        if (initialData) {
+            setAmount(initialData.amount);
+            setDate(new Date(initialData.date).toISOString().split('T')[0]);
+            setAccountId(initialData.accountId);
+            setCategoryId(initialData.categoryId || '');
+            setType(initialData.type);
+            setDescription(initialData.description || '');
+            setSelectedEventId(initialData.budgetId || '');
+        } else {
+            setAmount('');
+            // If we want to allow passing a specific date for new transactions (e.g. from calendar), we can check a prop or initialData
+            // For now, if initialData contains ONLY date, we use it.
+            // But initialData is usually full transaction.
+            // Let's rely on the caller passing { date: '...' } as initialData for "New on Date" scenario or add a separate prop.
+            // Implementation: helper to reset but keep date if desired? 
+            // Simplified: Reset everything.
+            // If the user wants to pre-fill date, they can pass it in initialData even for "new" records if we treat it loosely, 
+            // OR I can add a check:
+            setAccountId('');
+            setCategoryId('');
+            setType(initialType);
+            setDescription('');
+            setSelectedEventId('');
+             // Default date to today unless provided in a "partial" initialData
+             setDate(new Date().toISOString().split('T')[0]);
+        }
+    }
+  }, [initialData, isOpen, initialType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

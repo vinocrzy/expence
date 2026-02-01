@@ -3,18 +3,32 @@
 import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import TransactionModal from '../../components/TransactionModal';
+import CalendarView from '../../components/CalendarView';
+import DayDetailsModal from '../../components/DayDetailsModal';
+import TransactionList from '../../components/TransactionList';
 import { useTransactions, useAccounts, useCreditCards, useCategories } from '../../hooks/useLocalData';
 
-import { Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Trash2, Calendar, Search, Filter, Check, ChevronDown, X } from 'lucide-react';
+import { Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Trash2, Calendar, Search, Filter, Check, ChevronDown, X, LayoutGrid, List } from 'lucide-react';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 
 export default function TransactionsPage() {
-  const { transactions, loading: txLoading, addTransaction, deleteTransaction } = useTransactions();
+  const { transactions, loading: txLoading, addTransaction, deleteTransaction, updateTransaction } = useTransactions();
   const { accounts, loading: accLoading } = useAccounts();
   const { creditCards, loading: ccLoading } = useCreditCards();
   const { categories } = useCategories();
   const loading = txLoading || accLoading || ccLoading;
+
+  const [viewMode, setViewMode] = useState<'LIST' | 'CALENDAR'>('LIST');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  // Modal States
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<any>(null);
+  
+  // Calendar Details State
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isDayDetailsOpen, setIsDayDetailsOpen] = useState(false);
 
   const allAccounts = useMemo(() => {
       const ccs = creditCards.map(c => ({
@@ -26,7 +40,6 @@ export default function TransactionsPage() {
       return [...accounts, ...ccs];
   }, [accounts, creditCards]);
 
-
   const accountMap = useMemo(() => {
     const map: Record<string, any> = {};
     allAccounts.forEach(acc => {
@@ -35,24 +48,40 @@ export default function TransactionsPage() {
     return map;
   }, [allAccounts]);
   
-  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Basic filtering (can be expanded)
   const [filterType, setFilterType] = useState('ALL');
   const [filterCategories, setFilterCategories] = useState<string[]>([]); // Empty array means ALL
   const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
 
-  const handleCreate = () => {
+  const handleCreate = (date?: Date) => {
+    setEditingTransaction(date ? { date: date.toISOString() } : null);
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (data: any) => {
-    try {
-      await addTransaction(data);
-       // List updates automatically via hook
-    } catch (error) {
-      throw error; // Let modal handle error display
-    }
+  const handleEdit = (t: any) => {
+      setEditingTransaction(t);
+      setIsModalOpen(true);
+      // If we were in Day Details, close it
+      setIsDayDetailsOpen(false);
+  };
+
+  // Re-read existing hook usage. 
+  // Line 13: const { transactions, loading: txLoading, addTransaction, deleteTransaction } = useTransactions();
+  // It does NOT have updateTransaction.
+  // I should check `useLocalData` or just import `transactionService` to perform update.
+  // And calling `mutate()` of the hook if possible.
+  // Or just rely on `TransactionModal` doing the work?
+  // `TransactionModal` takes `onSubmit`.
+  
+  const handleModalSubmit = async (data: any) => {
+      if (editingTransaction?.id) {
+          // Edit mode
+          await updateTransaction(editingTransaction.id, data);
+      } else {
+          await addTransaction(data);
+      }
+      setEditingTransaction(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -62,15 +91,6 @@ export default function TransactionsPage() {
     } catch (error) {
         console.error('Failed to delete transaction', error);
         alert('Failed to delete transaction');
-    }
-  };
-
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'INCOME': return <ArrowDownLeft className="h-5 w-5 text-green-400" />;
-      case 'EXPENSE': return <ArrowUpRight className="h-5 w-5 text-red-400" />;
-      case 'TRANSFER': return <ArrowRightLeft className="h-5 w-5 text-blue-400" />;
-      default: return <div className="h-5 w-5" />;
     }
   };
 
@@ -88,6 +108,22 @@ export default function TransactionsPage() {
       );
   };
 
+  const handleDateSelect = (date: Date) => {
+      setSelectedDate(date);
+      setIsDayDetailsOpen(true);
+  };
+
+  // transactions for the selected day
+  const selectedDayTransactions = useMemo(() => {
+      if (!selectedDate) return [];
+      return filteredTransactions.filter(t => {
+          const tDate = new Date(t.date);
+          return tDate.getDate() === selectedDate.getDate() &&
+                 tDate.getMonth() === selectedDate.getMonth() &&
+                 tDate.getFullYear() === selectedDate.getFullYear();
+      });
+  }, [selectedDate, filteredTransactions]);
+
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
       <Navbar />
@@ -98,15 +134,44 @@ export default function TransactionsPage() {
             <h1 className="text-3xl font-bold text-white mb-2">Transactions</h1>
             <p className="text-gray-400">Track and manage your financial activity</p>
           </div>
-          <button
-            onClick={handleCreate}
-            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all font-bold shadow-lg shadow-purple-500/25"
-          >
-            <Plus className="h-5 w-5" />
-            Add Transaction
-          </button>
+          
+          <div className="flex items-center gap-3">
+             {/* View Toggle */}
+             <div className="bg-gray-800 p-1 rounded-xl flex items-center border border-gray-700">
+                <button
+                    onClick={() => setViewMode('LIST')}
+                    className={clsx(
+                        "p-2 rounded-lg transition-all",
+                        viewMode === 'LIST' ? "bg-gray-700 text-white shadow-sm" : "text-gray-400 hover:text-white"
+                    )}
+                    title="List View"
+                >
+                    <List className="h-5 w-5" />
+                </button>
+                <button
+                    onClick={() => setViewMode('CALENDAR')}
+                    className={clsx(
+                        "p-2 rounded-lg transition-all",
+                        viewMode === 'CALENDAR' ? "bg-gray-700 text-white shadow-sm" : "text-gray-400 hover:text-white"
+                    )}
+                    title="Calendar View"
+                >
+                    <LayoutGrid className="h-5 w-5" />
+                </button>
+             </div>
+
+             <button
+                onClick={() => handleCreate()}
+                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all font-bold shadow-lg shadow-purple-500/25"
+            >
+                <Plus className="h-5 w-5" />
+                <span className="hidden md:inline">Add Transaction</span>
+                <span className="md:hidden">Add</span>
+            </button>
+          </div>
         </div>
 
+        {/* Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {['ALL', 'INCOME', 'EXPENSE', 'TRANSFER'].map(ft => (
@@ -176,81 +241,66 @@ export default function TransactionsPage() {
             </div>
         </div>
 
+        {/* Content */}
         {loading ? (
            <div className="text-center text-gray-400 py-12">Loading transactions...</div>
         ) : (
-          <div className="bg-gray-800/50 backdrop-blur-md rounded-2xl border border-gray-700/50 overflow-hidden">
-             
-             {filteredTransactions.length === 0 ? (
-                <div className="p-12 text-center text-gray-500">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 mb-4">
-                        <Search className="h-6 w-6 text-gray-600" />
-                    </div>
-                    <p>No transactions found.</p>
+           <>
+              {viewMode === 'LIST' ? (
+                <div className="bg-gray-800/50 backdrop-blur-md rounded-2xl border border-gray-700/50 overflow-hidden">
+                    <TransactionList 
+                        transactions={filteredTransactions}
+                        accountMap={accountMap}
+                        categories={categories}
+                        onDelete={handleDelete}
+                        onEdit={handleEdit}
+                    />
                 </div>
-             ) : (
-                <div className="divide-y divide-gray-800">
-                    {filteredTransactions.map((t) => (
-                        <div key={t.id} className="p-4 hover:bg-gray-800/50 transition-colors flex items-center justify-between group">
-                            <div className="flex items-center gap-4">
-                                <div className={clsx(
-                                    "p-3 rounded-xl",
-                                    t.type === 'INCOME' && "bg-green-500/10",
-                                    t.type === 'EXPENSE' && "bg-red-500/10",
-                                    t.type === 'TRANSFER' && "bg-blue-500/10"
-                                )}>
-                                    {getIcon(t.type)}
-                                </div>
-
-                                <div className="min-w-0 flex-1">
-                                    <div className="font-bold text-white mb-0.5 text-sm md:text-base line-clamp-1 break-all">{t.description || 'No description'}</div>
-                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400 mt-0.5">
-                                        <span className="flex items-center gap-1 shrink-0">
-                                            <Calendar className="h-3 w-3" />
-                                            {format(new Date(t.date), 'MMM d, yyyy')}
-                                        </span>
-                                        <span className="hidden xs:inline text-gray-600">•</span>
-                                        <span className="truncate max-w-[140px] xs:max-w-none">{accountMap[t.accountId]?.name}</span>
-                                        <span className="hidden xs:inline text-gray-600">•</span>
-                                        <span className="truncate text-purple-400">
-                                            {categories.find(c => c.id === t.categoryId)?.name || 'Uncategorized'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-3 md:gap-6">
-                                <div className={clsx(
-                                    "text-right font-mono font-bold text-base md:text-lg",
-                                    t.type === 'INCOME' && "text-green-400",
-                                    t.type === 'EXPENSE' && "text-red-400",
-                                    t.type === 'TRANSFER' && "text-blue-400"
-                                )}>
-                                    {t.type === 'EXPENSE' ? '-' : '+'}
-                                    {accountMap[t.accountId]?.currency} {Number(t.amount).toLocaleString()}
-                                </div>
-                                <button
-                                    onClick={() => handleDelete(t.id)}
-                                    className="p-2 text-gray-500 hover:text-red-400 transition-all active:scale-95"
-                                    title="Delete Transaction"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+              ) : (
+                <div className="h-[600px]">
+                    <CalendarView 
+                        transactions={filteredTransactions}
+                        currentMonth={currentMonth}
+                        onMonthChange={setCurrentMonth}
+                        onDaySelect={handleDateSelect}
+                    />
                 </div>
-             )}
-          </div>
+              )}
+           </>
         )}
       </main>
 
+      {/* Modals */}
       <TransactionModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSubmit}
+        onClose={() => {
+            setIsModalOpen(false);
+            setEditingTransaction(null);
+        }}
+        onSubmit={handleModalSubmit}
         accounts={allAccounts}
+        initialData={editingTransaction}
+      />
+
+      <DayDetailsModal 
+        isOpen={isDayDetailsOpen}
+        onClose={() => setIsDayDetailsOpen(false)}
+        date={selectedDate}
+        transactions={selectedDayTransactions}
+        accountMap={accountMap}
+        categories={categories}
+        onDeleteTransaction={handleDelete}
+        onEditTransaction={handleEdit}
+        onAddTransaction={() => {
+            setIsDayDetailsOpen(false);
+            if (selectedDate) {
+                handleCreate(selectedDate);
+            } else {
+                handleCreate();
+            }
+        }}
       />
     </div>
   );
 }
+
