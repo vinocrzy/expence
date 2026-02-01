@@ -168,7 +168,10 @@ export default function DashboardPage() {
                     netWorth={netWorth}
                 />
                 <TopCategories 
-                    categories={categoryBreakdown} 
+                    categories={categoryBreakdown.filter(c => {
+                        const name = c.categoryName.toLowerCase();
+                        return !name.includes('loan') && !name.includes('emi') && !name.includes('debt');
+                    })} 
                 />
             </div>
         </div>
