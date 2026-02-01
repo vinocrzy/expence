@@ -20,6 +20,8 @@ import RecentActivity from '../../components/dashboard/RecentActivity';
 import TopCategories from '../../components/dashboard/TopCategories';
 import FinancialHealth from '../../components/dashboard/FinancialHealth';
 
+import LoadingScreen from '../../components/ui/LoadingScreen';
+
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const { transactions, loading: txLoading } = useTransactions(); // Fetches all for recent activity
@@ -95,13 +97,8 @@ export default function DashboardPage() {
       return map;
   }, [categories]);
 
-
   if (authLoading || loading || txLoading || accLoading) {
-    return (
-        <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-        </div>
-    );
+    return <LoadingScreen />;
   }
 
   const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
