@@ -44,17 +44,19 @@ export default function DashboardPage() {
             }
 
             const now = new Date();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
             
-            // For Trend: Last 30 days or so
+            // Usage: Last 30 Days for all stats to ensure data visibility at start of month
             const startOfTrend = new Date();
             startOfTrend.setDate(startOfTrend.getDate() - 30);
+            startOfTrend.setHours(0, 0, 0, 0);
+            
+            const endOfTrend = new Date();
+            endOfTrend.setHours(23, 59, 59, 999);
 
             const [cf, trends, cats, nw] = await Promise.all([
-                getCashFlowSummary(householdId, startOfMonth, endOfMonth),
-                calculateTrends(householdId, startOfTrend, now, 'daily'),
-                calculateCategoryBreakdown(householdId, startOfMonth, endOfMonth),
+                getCashFlowSummary(householdId, startOfTrend, endOfTrend),
+                calculateTrends(householdId, startOfTrend, endOfTrend, 'daily'),
+                calculateCategoryBreakdown(householdId, startOfTrend, endOfTrend),
                 calculateNetWorth(householdId)
             ]);
 
@@ -115,7 +117,7 @@ export default function DashboardPage() {
             Overview
           </h1>
           <p className="text-sm md:text-base text-gray-400 mt-1">
-             Financial summary for {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+             Financial summary for the last 30 days
           </p>
         </div>
 
