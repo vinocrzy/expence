@@ -111,7 +111,7 @@ export default function Profile() {
             <div className="pt-4 border-t border-gray-700/50">
                 <p className="text-sm text-gray-500 mb-2">Household ID</p>
                 <code className="block w-full p-3 bg-gray-900/50 rounded-lg text-sm text-purple-300 font-mono break-all select-all">
-                    {(user?.publicMetadata as any)?.householdId || 'No active household'}
+                    {(user?.publicMetadata as any)?.householdId || user?.id || 'No active household'}
                 </code>
             </div>
 

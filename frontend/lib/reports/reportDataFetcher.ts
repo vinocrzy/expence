@@ -12,27 +12,51 @@ import { format } from 'date-fns';
 
 export async function fetchReportData(type: ReportType, filters: ReportFilters): Promise<ReportData> {
   const household = await householdService.getCurrent();
+  if (!household) throw new Error('Household not found');
   const householdId = household.id;
   const generatedAt = new Date().toISOString();
 
   // Common data
   const accounts = await accountService.getAll(householdId);
+  const creditCards = await creditCardService.getAll(householdId);
   const categories = await categoryService.getAll(householdId);
   
-  const accountMap = new Map(accounts.map(a => [a.id, a.name]));
+  const accountMap = new Map();
+  accounts.forEach(a => accountMap.set(a.id, a.name));
+  creditCards.forEach(c => accountMap.set(c.id, c.name));
+
   const categoryMap = new Map(categories.map(c => [c.id, c.name]));
 
   const startDate = new Date(filters.startDate);
   const endDate = new Date(filters.endDate);
+  // Set end date to end of day to include all transactions for that day
+  endDate.setHours(23, 59, 59, 999);
 
   switch (type) {
     case 'EXPENSE':
     case 'INCOME': {
       const transactions = await transactionService.getByDateRange(householdId, startDate, endDate);
-      const filtered = transactions.filter(t => t.type === type);
+      const filtered = transactions.filter(t => {
+        const matchesType = t.type === type;
+        const matchesAccount = filters.accountIds?.length 
+          ? filters.accountIds.includes(t.accountId)
+          : true;
+        const matchesCategory = filters.categoryIds?.length
+          ? filters.categoryIds.includes(t.categoryId || '')
+          : true;
+        
+        return matchesType && matchesAccount && matchesCategory;
+      });
       
       const totalAmount = filtered.reduce((sum, t) => sum + t.amount, 0);
       
+      // Calculate Category Breakdown
+      const categoryBreakdown: Record<string, number> = {};
+      filtered.forEach(t => {
+          const catName = categoryMap.get(t.categoryId || '') || 'Uncategorized';
+          categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + t.amount;
+      });
+
       return {
         title: `${type === 'EXPENSE' ? 'Expense' : 'Income'} Report`,
         subtitle: `${format(startDate, 'PP')} - ${format(endDate, 'PP')}`,
@@ -48,7 +72,8 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
         summary: {
           'Total Count': filtered.length,
           'Total Amount': totalAmount
-        }
+        },
+        categoryBreakdown
       };
     }
 
@@ -76,8 +101,8 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
     case 'LOAN': {
       const loans = await loanService.getAll(householdId);
       const activeLoans = loans.filter(l => !l.isArchived);
-      const totalPrincipal = activeLoans.reduce((sum, l) => sum + l.principalAmount, 0);
-      const totalRemaining = activeLoans.reduce((sum, l) => sum + (l.remainingBalance || 0), 0);
+      const totalPrincipal = activeLoans.reduce((sum, l) => sum + l.principal, 0);
+      const totalRemaining = activeLoans.reduce((sum, l) => sum + (l.outstandingPrincipal || 0), 0);
 
       return {
         title: 'Loan Liability Report',
@@ -85,11 +110,11 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
         headers: ['Loan Name', 'Lender', 'Principal', 'Interest Rate', 'EMI', 'Remaining Balance'],
         rows: activeLoans.map(l => [
           l.name,
-          l.lenderName || '-',
-          l.principalAmount,
+          l.lender || '-',
+          l.principal,
           `${l.interestRate}%`,
           l.emiAmount || 0,
-          l.remainingBalance || 0
+          l.outstandingPrincipal || 0
         ]),
         summary: {
           'Total Loans': activeLoans.length,
@@ -174,7 +199,7 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
       const transactions = await transactionService.getByDateRange(
         householdId, 
         new Date(year, 0, 1), 
-        new Date(year, 11, 31)
+        new Date(year, 11, 31, 23, 59, 59, 999)
       );
 
       const months = Array.from({ length: 12 }, (_, i) => {

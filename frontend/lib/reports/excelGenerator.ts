@@ -43,6 +43,32 @@ export async function generateExcel(data: ReportData, type: ReportType): Promise
     currentRow += 1; // Spacing
   }
 
+  // Category Breakdown Section
+  if (data.categoryBreakdown) {
+    const catHeader = worksheet.getCell(`A${currentRow}`);
+    catHeader.value = 'Category Breakdown';
+    catHeader.font = { bold: true };
+    currentRow++;
+
+    // Header for breakdown
+    const breakdownHeaderRow = worksheet.getRow(currentRow);
+    breakdownHeaderRow.values = ['Category', 'Amount'];
+    breakdownHeaderRow.font = { bold: true };
+    breakdownHeaderRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFEEEEEE' } 
+    };
+    currentRow++;
+
+    Object.entries(data.categoryBreakdown).sort((a,b) => b[1] - a[1]).forEach(([cat, amount]) => {
+        worksheet.getCell(`A${currentRow}`).value = cat;
+        worksheet.getCell(`B${currentRow}`).value = amount;
+        currentRow++;
+    });
+    currentRow += 2; // Spacing before main table
+  }
+
   // Table Header
   const headerRow = worksheet.getRow(currentRow);
   headerRow.values = data.headers;

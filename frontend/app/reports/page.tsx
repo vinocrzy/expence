@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileDown, FileSpreadsheet, FileText, TrendingUp, Calendar } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import ReportBuilderModal from '@/components/ReportBuilderModal';
@@ -46,6 +46,22 @@ export default function ReportsPage() {
       }
     }
   ];
+
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -144,7 +160,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Offline Warning */}
-        {typeof window !== 'undefined' && !navigator.onLine && (
+        {!isOnline && (
           <div className="mt-8 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 text-yellow-400 text-sm">
             <p className="font-medium mb-1">You are offline</p>
             <p className="text-xs text-yellow-400/80">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, memo } from 'react';
 import { X } from 'lucide-react';
-import { categoryService, transactionService, budgetService } from '../lib/localdb-services';
+import { categoryService, transactionService, budgetService, getHouseholdId } from '../lib/localdb-services';
 
 interface Account {
   id: string;
@@ -13,7 +13,7 @@ interface Account {
 interface Category {
   id: string;
   name: string;
-  kind: string;
+  type: string;
   color: string;
 }
 
@@ -67,8 +67,8 @@ function TransactionModal({
             const foundCategory = categories.find(c => c.name.toLowerCase() === data.category.toLowerCase());
             
             if (foundCategory) {
-                if (foundCategory.kind !== type) {
-                    setType(foundCategory.kind);
+                if (foundCategory.type !== type) {
+                    setType(foundCategory.type);
                 }
                 setCategoryId(foundCategory.id);
             }
@@ -83,8 +83,12 @@ function TransactionModal({
   // Fetch categories when modal opens
   useEffect(() => {
     if (isOpen) {
-        // Fetch categories
-        categoryService.getAll().then(cats => setCategories(cats as any));
+        // Fetch household and then categories
+        getHouseholdId().then(householdId => {
+            if (householdId) {
+                categoryService.getAll(householdId).then(cats => setCategories(cats as any));
+            }
+        });
 
         if (process.env.NEXT_PUBLIC_ENABLE_EVENT_BUDGETS !== 'false') {
           // Load active budgets from local database
@@ -139,7 +143,7 @@ function TransactionModal({
     }
   };
 
-  const filteredCategories = useMemo(() => categories.filter(c => c.kind === type), [categories, type]);
+  const filteredCategories = useMemo(() => categories.filter(c => c.type === type), [categories, type]);
 
   if (!isOpen) return null;
 
@@ -147,7 +151,6 @@ function TransactionModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-md shadow-xl animate-in fade-in zoom-in duration-200">
         <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
-        // ... header ...
           <h2 className="text-xl font-bold text-white">
             {initialData ? 'Edit Transaction' : 'Add Transaction'}
           </h2>

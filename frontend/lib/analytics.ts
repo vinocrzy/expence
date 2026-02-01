@@ -3,8 +3,8 @@
  * Business logic moved from backend to frontend for local-first architecture
  */
 
-import { transactionService, accountService } from './localdb-services';
-import type { Transaction } from './localdb';
+import { transactionService, accountService, categoryService } from './localdb-services';
+import type { Transaction, Category } from './db-types';
 
 // ============================================
 // ANALYTICS CALCULATIONS
@@ -20,6 +20,7 @@ export interface MonthlyStats {
 export interface CategoryBreakdown {
   categoryId: string;
   categoryName: string;
+  color?: string;
   amount: number;
   percentage: number;
   transactionCount: number;
@@ -49,7 +50,8 @@ export async function calculateMonthlyStats(
   const monthlyMap = new Map<string, { income: number; expense: number }>();
 
   transactions.forEach((t) => {
-    const monthKey = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
+    const date = new Date(t.date);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     
     if (!monthlyMap.has(monthKey)) {
       monthlyMap.set(monthKey, { income: 0, expense: 0 });
@@ -81,36 +83,42 @@ export async function calculateCategoryBreakdown(
   endDate: Date,
   type: 'INCOME' | 'EXPENSE' = 'EXPENSE'
 ): Promise<CategoryBreakdown[]> {
-  const transactions = await transactionService.getByDateRange(
-    householdId,
-    startDate,
-    endDate
-  );
+  const [transactions, categories] = await Promise.all([
+    transactionService.getByDateRange(householdId, startDate, endDate),
+    categoryService.getAll(householdId)
+  ]);
+
+  const categoryLookup = new Map(categories.map(c => [c.id, c]));
 
   const filtered = transactions.filter((t) => t.type === type);
   const total = filtered.reduce((sum, t) => sum + t.amount, 0);
 
   // Group by category
-  const categoryMap = new Map<string, { amount: number; count: number; name: string }>();
+  const categoryMap = new Map<string, { amount: number; count: number }>();
 
   filtered.forEach((t) => {
-    if (!categoryMap.has(t.categoryId)) {
-      categoryMap.set(t.categoryId, { amount: 0, count: 0, name: '' });
+    const categoryId = t.categoryId || 'uncategorized';
+    if (!categoryMap.has(categoryId)) {
+      categoryMap.set(categoryId, { amount: 0, count: 0 });
     }
-    const cat = categoryMap.get(t.categoryId)!;
+    const cat = categoryMap.get(categoryId)!;
     cat.amount += t.amount;
     cat.count += 1;
   });
 
   // Convert to array
   return Array.from(categoryMap.entries())
-    .map(([categoryId, data]) => ({
-      categoryId,
-      categoryName: data.name || 'Unknown',
-      amount: data.amount,
-      percentage: total > 0 ? (data.amount / total) * 100 : 0,
-      transactionCount: data.count,
-    }))
+    .map(([categoryId, data]) => {
+      const category = categoryLookup.get(categoryId);
+      return {
+        categoryId,
+        categoryName: category?.name || (categoryId === 'uncategorized' ? 'Uncategorized' : 'Unknown'),
+        color: category?.color,
+        amount: data.amount,
+        percentage: total > 0 ? (data.amount / total) * 100 : 0,
+        transactionCount: data.count,
+      };
+    })
     .sort((a, b) => b.amount - a.amount);
 }
 
@@ -134,12 +142,13 @@ export async function calculateTrends(
 
   transactions.forEach((t) => {
     let dateKey: string;
+    const date = new Date(t.date);
     
     if (granularity === 'daily') {
-      dateKey = t.date.toISOString().split('T')[0];
+      dateKey = date.toISOString().split('T')[0];
     } else {
       // Weekly: start of week
-      const d = new Date(t.date);
+      const d = new Date(date);
       const day = d.getDay();
       const diff = d.getDate() - day;
       const weekStart = new Date(d.setDate(diff));

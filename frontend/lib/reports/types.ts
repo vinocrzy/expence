@@ -72,4 +72,5 @@ export interface ReportData {
   headers: string[];
   rows: (string | number)[][];
   summary?: Record<string, string | number>;
+  categoryBreakdown?: Record<string, number>;
 }

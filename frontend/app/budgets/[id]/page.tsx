@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '../../../components/Navbar';
-import { budgetService, transactionService, categoryService } from '../../../lib/localdb-services';
+import { budgetService, transactionService, categoryService, accountService, creditCardService } from '../../../lib/localdb-services';
 import { 
     ArrowLeft, PieChart, TrendingUp, AlertCircle, 
     Calendar, Wallet, CheckCircle2, AlertTriangle, ArrowUpRight 
@@ -33,13 +33,16 @@ export default function BudgetDetailPage() {
       // Implementation detail: we need to filter transactions by date range of budget
       const now = new Date();
       // Assume monthly budget for simplicity or parsing budget period
-      const start = new Date(now.getFullYear(), now.getMonth(), 1); 
-      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      // Filter by Budget Date Range
+      let start = new Date(now.getFullYear(), now.getMonth(), 1); 
+      let end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       
-      // If budget has specific dates, use them
-      if (budget.startDate) {
-          // start = new Date(budget.startDate);
-          // end = new Date(budget.endDate);
+      if (budget.startDate && budget.endDate) {
+          start = new Date(budget.startDate);
+          end = new Date(budget.endDate);
+          // Set to start/end of day to be inclusive
+          start.setHours(0,0,0,0);
+          end.setHours(23,59,59,999);
       }
 
       // Fetch all transactions (optimized filter in future)
@@ -61,13 +64,23 @@ export default function BudgetDetailPage() {
       // Re-reading original `api.get('/budgets/${id}/breakdown')` -> Backend logic was likely filtering by associated tags/categories.
       
       // For now, I will fetch ALL expenses to show *something* working, rather than broken page.
-      const expenses = allTx.filter(t => t.type === 'EXPENSE');
+      const expenses = allTx.filter(t => {
+          if (t.type !== 'EXPENSE') return false;
+          const tDate = new Date(t.date);
+          return tDate >= start && tDate <= end;
+      });
       const totalSpent = expenses.reduce((sum, t) => sum + t.amount, 0);
 
       const categoryBreakdown = expenses.reduce((acc: any[], t) => {
-          const cat = acc.find(c => c.id === t.categoryId);
+          const catId = t.categoryId || 'uncategorized';
+          const cat = acc.find(c => c.id === catId);
           if (cat) cat.amount += t.amount;
-          else acc.push({ id: t.categoryId, amount: t.amount, name: t.categoryId, color: '#888' });
+          else acc.push({ 
+              id: catId, 
+              amount: t.amount, 
+              name: 'Uncategorized', 
+              color: '#6B7280' 
+          });
           return acc;
       }, []);
 
@@ -85,11 +98,40 @@ export default function BudgetDetailPage() {
       const total = categoryBreakdown.reduce((sum, c) => sum + c.amount, 0);
       categoryBreakdown.forEach(c => c.percentage = (c.amount / total) * 100);
 
+      // Payment Breakdown
+      const accounts = await accountService.getAll('household_1');
+      const creditCards = await creditCardService.getAll('household_1');
+      const allAccounts = [...accounts, ...creditCards];
+
+      const paymentBreakdown = expenses.reduce((acc: any[], t) => {
+           let accName = 'Unknown Account';
+           if (t.accountId) {
+               const foundAcc = allAccounts.find(a => a.id === t.accountId);
+               if (foundAcc) accName = foundAcc.name || (foundAcc as any).bankName || 'Account';
+           }
+           
+           const existing = acc.find(p => p.name === accName);
+           if (existing) existing.amount += t.amount;
+           else acc.push({ name: accName, amount: t.amount });
+           return acc;
+      }, []);
+      
+      // Timeline
+      const timelineMap: Record<string, number> = {};
+      expenses.forEach(t => {
+          const dateKey = new Date(t.date).toISOString().split('T')[0]; // YYYY-MM-DD
+          timelineMap[dateKey] = (timelineMap[dateKey] || 0) + t.amount;
+      });
+      
+      const timeline = Object.keys(timelineMap)
+        .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+        .map(date => ({ date, amount: timelineMap[date] }));
+
       const analytics = {
           totalSpent,
           categoryBreakdown,
-          timeline: [], // Implement if needed
-          paymentBreakdown: [],
+          timeline, 
+          paymentBreakdown,
           insights: []
       };
 
@@ -109,7 +151,7 @@ export default function BudgetDetailPage() {
   const { categoryBreakdown, timeline, paymentBreakdown, insights } = analytics;
 
   const totalSpent = analytics.totalSpent;
-  const budgetLimit = Number(budget.amount);
+  const budgetLimit = Number(budget.totalBudget || 0);
   const percentUsed = Math.min((totalSpent / budgetLimit) * 100, 100);
 
   return (
@@ -230,15 +272,16 @@ export default function BudgetDetailPage() {
                                         ))}
                                     </Pie>
                                     <ReTooltip 
-                                        contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                                        formatter={(value: any) => [`₹${value ?? 0}`, 'Spend']}
+                                        contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                        itemStyle={{ color: '#fff' }}
+                                        formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
                                     />
                                 </RePieChart>
                             </ResponsiveContainer>
                         </div>
                         <div className="space-y-2">
                              {categoryBreakdown.map((cat: any) => (
-                                 <div key={cat.name} className="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg transition-colors">
+                                 <div key={cat.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg transition-colors">
                                      <div className="flex items-center gap-3">
                                          <div className="w-3 h-3 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]" style={{ backgroundColor: cat.color }} />
                                          <span className="font-medium">{cat.name}</span>
@@ -271,8 +314,9 @@ export default function BudgetDetailPage() {
                                 <YAxis stroke="#4B5563" fontSize={12} />
                                 <ReTooltip
                                     cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                                    contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
-                                    formatter={(value: any) => [`₹${value ?? 0}`, 'Spent']}
+                                    contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                    formatter={(value: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, 'Spent']}
                                     labelFormatter={(label) => new Date(label).toLocaleDateString()}
                                 />
                                 <Bar dataKey="amount" fill="#8B5CF6" radius={[4, 4, 0, 0]} />

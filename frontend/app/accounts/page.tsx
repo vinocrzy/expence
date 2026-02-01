@@ -92,6 +92,8 @@ export default function AccountsPage() {
       if (editingAccount) {
         await updateAccount(editingAccount.id, data);
       } else {
+        console.log("Creating account");
+        
         await accountService.create(data);
         await refresh();
       }
@@ -116,15 +118,15 @@ export default function AccountsPage() {
     <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 pb-32 md:pb-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 md:gap-0">
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <Wallet className="h-8 w-8 text-purple-400" />
             Accounts
           </h1>
           <button
             onClick={handleCreate}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all font-bold shadow-lg shadow-purple-500/25"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all font-bold shadow-lg shadow-purple-500/25 w-full md:w-auto justify-center"
           >
             <Plus className="h-5 w-5" />
             Add Account
@@ -134,14 +136,14 @@ export default function AccountsPage() {
         {loading ? (
            <div className="text-center text-gray-400 py-12">Loading accounts...</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {accounts.map((account) => (
               <div key={account.id} className="group bg-gray-800/50 backdrop-blur-md p-6 rounded-2xl border border-gray-700/50 hover:border-purple-500/30 transition-all relative overflow-hidden">
                 <div className="flex items-start justify-between mb-4 relative z-10">
                   <div className="bg-gray-700 p-3 rounded-xl group-hover:bg-purple-500/20 transition-colors">
                     {getIcon(account.type)}
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 md:gap-2">
                     <button 
                         onClick={() => handleEdit(account)}
                         className="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
@@ -168,8 +170,8 @@ export default function AccountsPage() {
                 <div className="relative z-10">
                     <div className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-medium">{account.type.replace('_', ' ')}</div>
                     <div className="text-xl font-bold text-white mb-1 truncate">{account.name}</div>
-                    <div className={`text-2xl font-mono ${account.balance < 0 ? 'text-red-400' : 'text-green-400'}`}>
-                        {account.currency} {account.balance.toLocaleString()}
+                    <div className={`text-2xl font-mono ${(account.balance || 0) < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                        {account.currency} {(account.balance || 0).toLocaleString()}
                     </div>
                 </div>
               </div>

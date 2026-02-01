@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const data = {
       accounts: accounts || [],
       monthly: monthlyData.map(m => ({ month: m.month, income: m.income, expense: m.expense })) || [],
-      categories: categoryData.map(c => ({ name: c.categoryName, value: c.amount })) || [],
+      categories: categoryData.map(c => ({ name: c.categoryName, value: c.amount, color: c.color })) || [],
       context: { description: 'This Month' }
   };
 
@@ -42,9 +42,9 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 pb-32 md:pb-8">
         {/* Welcome Section */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
             Welcome back, {user?.name?.split(' ')[0]}!
           </h1>
@@ -52,7 +52,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
           <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50 shadow-lg">
             <h3 className="text-gray-400 text-sm font-medium mb-2">Total Net Worth</h3>
             <div className="text-3xl font-bold text-white">{formattedBalance}</div>
@@ -70,7 +70,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
             
             {/* Income vs Expense Chart */}
             <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50 shadow-lg">
@@ -82,8 +82,9 @@ export default function DashboardPage() {
                             <XAxis dataKey="month" stroke="#9CA3AF" />
                             <YAxis stroke="#9CA3AF" />
                             <Tooltip 
-                                contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                                itemStyle={{ color: '#E5E7EB' }}
+                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                itemStyle={{ color: '#fff' }}
+                                formatter={(value: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, '']}
                             />
                             <Legend />
                             <Bar dataKey="income" name="Income" fill="#3B82F6" radius={[4, 4, 0, 0]} />
@@ -118,8 +119,9 @@ export default function DashboardPage() {
                                     ))}
                                 </Pie>
                                 <Tooltip 
-                                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }}
-                                    itemStyle={{ color: '#E5E7EB' }}
+                                    contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                    formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
                                 />
                                 <Legend />
                             </PieChart>

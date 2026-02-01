@@ -28,10 +28,10 @@ export default function CreditCardModal({ isOpen, onClose, onSubmit }: CreditCar
     try {
       await onSubmit({
         name,
-        issuer,
-        limit: parseFloat(limit),
-        billingDay: parseInt(billingDay),
-        dueDays: parseInt(dueDays),
+        bankName: issuer,
+        creditLimit: parseFloat(limit),
+        billingCycle: parseInt(billingDay),
+        paymentDueDay: parseInt(dueDays),
         apr: parseFloat(apr)
       });
       onClose();

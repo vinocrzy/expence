@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { X, FileDown, FileSpreadsheet, FileText, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { Category, Account } from '@/lib/db-types';
+
 type ReportType = 
   | 'EXPENSE' 
   | 'INCOME' 
@@ -22,19 +24,6 @@ interface ReportFilters {
   accountIds: string[];
   categoryIds: string[];
   tags: string[];
-}
-
-interface Account {
-  id: string;
-  name: string;
-  type: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  kind: string;
-  color?: string;
 }
 
 interface ReportBuilderModalProps {
@@ -99,18 +88,24 @@ export default function ReportBuilderModal({ isOpen, onClose, onExport }: Report
 
   const fetchMetadata = async () => {
     try {
-      const { accountService, categoryService } = await import('@/lib/localdb-services');
-      const { userService } = await import('@/lib/localdb-services');
+      const { accountService, categoryService, creditCardService, getHouseholdId } = await import('@/lib/localdb-services');
       
-      const user = await userService.getCurrent();
-      if (!user?.householdId) return;
+      const householdId = await getHouseholdId();
+      if (!householdId) return;
       
-      const [accountsData, categoriesData] = await Promise.all([
-        accountService.getAll(user.householdId),
-        categoryService.getAll(user.householdId)
+      const [accountsData, categoriesData, creditCardsData] = await Promise.all([
+        accountService.getAll(householdId),
+        categoryService.getAll(householdId),
+        creditCardService.getAll(householdId)
       ]);
       
-      setAccounts(accountsData || []);
+      // Merge accounts and credit cards for the filter list
+      const allAccounts = [
+          ...(accountsData || []),
+          ...(creditCardsData || []).map(cc => ({ ...cc, type: 'Credit Card', currency: 'INR' })) // Normalize type
+      ] as any[]; // Type assertion for UI
+      
+      setAccounts(allAccounts);
       setCategories(categoriesData || []);
       // Tags can be extracted from transactions if needed
       setAvailableTags([]);

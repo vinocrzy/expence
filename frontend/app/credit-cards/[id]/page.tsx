@@ -65,7 +65,6 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
               date: new Date().toISOString(),
               accountId: id,
               categoryId: 'uncategorized', // ensure id exists or handle
-              householdId: 'household_1'
           });
           fetchData();
       }
@@ -80,11 +79,11 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
   }
 
   const limit = Number(card.creditLimit);
-  const outstanding = Number(card.outstandingAmount || 0);
+  const outstanding = Number(card.currentOutstanding || 0);
   const utilization = limit > 0 ? (outstanding / limit) * 100 : 0;
   const available = limit - outstanding;
   
-  const lastStatement = card.statements && card.statements.length > 0 ? card.statements[0] : null;
+  const lastStatement = (card.statements && card.statements.length > 0) ? card.statements[0] : null;
   const minDue = lastStatement ? Number(lastStatement.minimumDue) : 0;
   const totalDue = lastStatement ? Number(lastStatement.closingBalance) : outstanding;
 
@@ -99,8 +98,8 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
                     <CreditCardIcon className="h-6 w-6" />
                 </div>
                 <div>
-                   <h1 className="text-3xl font-bold text-white">{card.issuer}</h1>
-                   <div className="text-gray-400">{card.account.name}</div>
+                   <h1 className="text-3xl font-bold text-white">{card.bankName}</h1>
+                   <div className="text-gray-400">{card.name}</div>
                 </div>
             </div>
             
@@ -191,7 +190,7 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-700/50">
-                                {card.statements.map((stmt: any) => (
+                                {card.statements?.map((stmt: any) => (
                                     <tr key={stmt.id} className="hover:bg-gray-700/20 transition-colors">
                                         <td className="px-4 py-3 text-sm text-gray-300">{new Date(stmt.statementDate).toLocaleDateString()}</td>
                                         <td className="px-4 py-3 text-xs text-gray-500">

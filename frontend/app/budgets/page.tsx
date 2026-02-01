@@ -1,20 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import { useBudgets } from '../../hooks/useLocalData';
-import { budgetService } from '../../lib/localdb-services';
+import { budgetService, transactionService } from '../../lib/localdb-services';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { Plus, Target, Calendar, TrendingUp, AlertTriangle, CheckCircle2, Trash2, Archive, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '../../lib/motion';
-
-// ... (imports)
 import { useRouter } from 'next/navigation';
 
 export default function BudgetsPage() {
   const router = useRouter();
-  const { budgets, loading, updateBudget, deleteBudget, refresh } = useBudgets();
+  const { budgets, loading: budgetsLoading, updateBudget, deleteBudget, refresh } = useBudgets();
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [txLoading, setTxLoading] = useState(true);
+  
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState('ACTIVE'); // ACTIVE, PLANNING
   
@@ -27,51 +28,105 @@ export default function BudgetsPage() {
     confirmText: 'Confirm'
   });
 
+  useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  const loadTransactions = async () => {
+      try {
+          const txs = await transactionService.getAll('household_1');
+          setTransactions(txs);
+      } catch (e) {
+          console.error('Failed to load transactions', e);
+      } finally {
+          setTxLoading(false);
+      }
+  };
+
+  const loading = budgetsLoading || txLoading;
+
+  // Calculate spent amounts
+  const budgetsWithSpent = budgets.map(b => {
+      let spent = 0;
+      const now = new Date();
+      let start = new Date(0); // Beginning of time
+      let end = new Date(8640000000000000); // End of time
+
+      if (b.budgetMode === 'EVENT' || (b as any).type === 'EVENT') {
+          if (b.startDate) start = new Date(b.startDate);
+          if (b.endDate) end = new Date(b.endDate);
+          start.setHours(0,0,0,0);
+          end.setHours(23,59,59,999);
+      } else if (b.budgetMode === 'RECURRING' || (b as any).type === 'RECURRING') {
+          // Current Month
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          end.setHours(23,59,59,999);
+      }
+
+      spent = transactions
+        .filter(t => t.type === 'EXPENSE')
+        .filter(t => {
+            const tDate = new Date(t.date);
+            return tDate >= start && tDate <= end;
+        })
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      return { ...b, totalSpent: spent };
+  });
+
   const convertBudget = async (id: string) => {
       try {
-          await updateBudget(id, { status: 'ACTIVE' });
+          const budget = budgets.find(b => b.id === id);
+          const updates: any = { status: 'ACTIVE' };
+          
+          // Migrate legacy data if needed
+          if (budget && !budget.budgetMode && (budget as any).type) {
+              updates.budgetMode = (budget as any).type;
+          }
+          
+          await updateBudget(id, updates);
       } catch(e) {
           console.error(e);
       }
   };
 
-  const handleDeleteClick = (id: string, isDraft: boolean) => {
+  const handleDeleteClick = (id: string, action: 'DELETE' | 'ARCHIVE') => {
     setConfirmModal({
         isOpen: true,
-        title: isDraft ? 'Delete Draft Budget?' : 'Archive Active Budget?',
-        message: isDraft 
-            ? "Are you sure you want to delete this draft budget? This action cannot be undone." 
+        title: action === 'DELETE' ? 'Delete Budget?' : 'Archive Active Budget?',
+        message: action === 'DELETE' 
+            ? "Are you sure you want to permanently delete this budget? This action cannot be undone." 
             : "Are you sure you want to archive this active budget? It will be removed from your active list, but all transaction history will be preserved.",
-        isDangerous: isDraft, // Deleting is dangerous, Archiving is safer
-        confirmText: isDraft ? 'Delete Draft' : 'Archive Budget',
-        onConfirm: () => handleDeleteBudget(id, isDraft)
+        isDangerous: action === 'DELETE',
+        confirmText: action === 'DELETE' ? 'Delete Budget' : 'Archive Budget',
+        onConfirm: () => handleDeleteBudget(id, action)
     });
   };
 
-  const handleDeleteBudget = async (id: string, isDraft: boolean) => {
-      const action = isDraft ? 'delete' : 'archive';
+  const handleDeleteBudget = async (id: string, action: 'DELETE' | 'ARCHIVE') => {
       try {
-          if (isDraft) {
+          if (action === 'DELETE') {
               await deleteBudget(id);
           } else {
               await updateBudget(id, { isArchived: true });
           }
       } catch (e) {
           console.error(e);
-          alert(`Failed to ${action} budget`);
+          alert(`Failed to ${action.toLowerCase()} budget`);
       }
   };
 
-  const activeEvents = budgets.filter(b => b.type === 'EVENT' && b.isActive && b.status === 'ACTIVE');
-  const recurringBudgets = budgets.filter(b => b.type === 'RECURRING' && b.isActive && b.status === 'ACTIVE');
-  const plannedBudgets = budgets.filter(b => b.status === 'PLANNING' && b.isActive);
+  const activeEvents = budgetsWithSpent.filter(b => (b.budgetMode === 'EVENT' || (b as any).type === 'EVENT') && !b.isArchived && b.status === 'ACTIVE');
+  const recurringBudgets = budgetsWithSpent.filter(b => (b.budgetMode === 'RECURRING' || (b as any).type === 'RECURRING') && !b.isArchived && b.status === 'ACTIVE');
+  const plannedBudgets = budgetsWithSpent.filter(b => b.status === 'PLANNING' && !b.isArchived);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
       <Navbar />
       
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <main className="max-w-3xl mx-auto px-4 py-4 md:py-8 pb-32 md:pb-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 md:gap-0">
              <motion.h1 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -81,7 +136,7 @@ export default function BudgetsPage() {
             </motion.h1>
             <button 
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 transition-colors w-full md:w-auto justify-center"
                 style={{ backgroundColor: activeTab === 'PLANNING' ? '#F59E0B' : undefined }}
             >
                 <Plus className="h-5 w-5" />
@@ -130,7 +185,7 @@ export default function BudgetsPage() {
                     </div>
                 ) : (
                     plannedBudgets.map(budget => (
-                        <div key={budget.id} className="bg-gray-800 p-6 rounded-2xl border border-yellow-500/20 relative overflow-hidden group">
+                        <div key={budget.id} className="bg-gray-800 p-4 md:p-6 rounded-2xl border border-yellow-500/20 relative overflow-hidden group">
                            <div className="absolute top-0 right-0 bg-yellow-500/20 text-yellow-500 text-[10px] uppercase font-bold px-3 py-1 rounded-bl-xl">
                                Draft Mode
                            </div>
@@ -138,13 +193,13 @@ export default function BudgetsPage() {
                                 <div>
                                     <h3 className="text-xl font-bold">{budget.name}</h3>
                                     <div className="text-sm text-gray-400 mt-1">
-                                        {budget.type} • {budget.amount ? `₹${budget.amount.toLocaleString()}` : ''}
+                                        {budget.budgetMode || (budget as any).type} • {budget.totalBudget ? `₹${budget.totalBudget.toLocaleString()}` : ''}
                                     </div>
                                 </div>
                             </div>
                             <div className="flex justify-end gap-3 mt-4">
                                 <button 
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, true); }}
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'DELETE'); }}
                                     className="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-red-400 flex items-center gap-1"
                                 >
                                     <Trash2 className="h-3 w-3" /> Delete
@@ -193,16 +248,23 @@ export default function BudgetsPage() {
                                 <div>
                                     <h3 className="text-xl font-bold">{budget.name}</h3>
                                     <div className="text-sm text-gray-400 mt-1">
-                                        {new Date(budget.startDate).toLocaleDateString()} - {new Date(budget.endDate).toLocaleDateString()}
+                                        {budget.startDate && budget.endDate ? `${new Date(budget.startDate).toLocaleDateString()} - ${new Date(budget.endDate).toLocaleDateString()}` : 'No date set'}
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-2xl font-bold font-mono">₹{budget.amount.toLocaleString()}</div>
+                                    <div className="text-2xl font-bold font-mono">₹{(budget.totalBudget || 0).toLocaleString()}</div>
                                     <div className="text-xs text-gray-500 uppercase flex items-center justify-end gap-2 mt-1">
                                         Target
                                         <button 
-                                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, false); }}
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'DELETE'); }}
                                             className="p-1 hover:text-red-400 text-gray-600 transition-colors"
+                                            title="Delete Budget"
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </button>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'ARCHIVE'); }}
+                                            className="p-1 hover:text-yellow-400 text-gray-600 transition-colors"
                                             title="Archive Budget"
                                         >
                                             <Archive className="h-3 w-3" />
@@ -214,23 +276,23 @@ export default function BudgetsPage() {
                             {/* Progress Bar */}
                             <div className="mb-2">
                                 <div className="flex justify-between text-sm mb-1">
-                                    <span className="text-gray-400">Spent: ₹{budget.spent.toLocaleString()}</span>
-                                    <span className={budget.spent > budget.amount ? 'text-red-400 font-bold' : 'text-green-400'}>
-                                        {Math.round((budget.spent / budget.amount) * 100)}%
+                                    <span className="text-gray-400">Spent: ₹{(budget.totalSpent || 0).toLocaleString()}</span>
+                                    <span className={(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'text-red-400 font-bold' : 'text-green-400'}>
+                                        {Math.round(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100)}%
                                     </span>
                                 </div>
                                 <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
                                     <div 
-                                        className={`h-full rounded-full ${budget.spent > budget.amount ? 'bg-red-500' : 'bg-purple-500'}`}
-                                        style={{ width: `${Math.min((budget.spent / budget.amount) * 100, 100)}%` }}
+                                        className={`h-full rounded-full ${(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'bg-red-500' : 'bg-purple-500'}`}
+                                        style={{ width: `${Math.min(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100, 100)}%` }}
                                     />
                                 </div>
                             </div>
                             
-                            {budget.spent > budget.amount && (
+                            {(budget.totalSpent || 0) > (budget.totalBudget || 0) && (
                                 <div className="flex items-center gap-2 text-red-400 text-sm mt-2 font-bold bg-red-500/10 p-2 rounded-lg">
                                     <AlertTriangle className="h-4 w-4" />
-                                    Over Budget by ₹{(budget.spent - budget.amount).toLocaleString()}
+                                    Over Budget by ₹{((budget.totalSpent || 0) - (budget.totalBudget || 0)).toLocaleString()}
                                 </div>
                             )}
 
@@ -257,10 +319,70 @@ export default function BudgetsPage() {
             ) : (
                 <div className="grid gap-4">
                      {/* Render recurring budgets here similarly */}
-                     {recurringBudgets.map(b => (
-                         <div key={b.id} className="bg-gray-800 p-4 rounded-xl">
-                             {b.name} - ₹{b.amount}
-                         </div>
+                     {recurringBudgets.map(budget => (
+                         <motion.div 
+                             variants={fadeInUp} 
+                             key={budget.id} 
+                             onClick={() => router.push(`/budgets/${budget.id}`)}
+                             className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50 cursor-pointer hover:border-gray-600 transition-colors"
+                         >
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="text-xl font-bold">{budget.name}</h3>
+                                    <div className="text-sm text-gray-400 mt-1">
+                                        Recurring • Monthly Reset
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-2xl font-bold font-mono">₹{(budget.totalBudget || 0).toLocaleString()}</div>
+                                    <div className="text-xs text-gray-500 uppercase flex items-center justify-end gap-2 mt-1">
+                                        Target
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'DELETE'); }}
+                                            className="p-1 hover:text-red-400 text-gray-600 transition-colors"
+                                            title="Delete Budget"
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </button>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'ARCHIVE'); }}
+                                            className="p-1 hover:text-yellow-400 text-gray-600 transition-colors"
+                                            title="Archive Budget"
+                                        >
+                                            <Archive className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Progress Bar */}
+                            <div className="mb-2">
+                                <div className="flex justify-between text-sm mb-1">
+                                    <span className="text-gray-400">Spent: ₹{(budget.totalSpent || 0).toLocaleString()}</span>
+                                    <span className={(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'text-red-400 font-bold' : 'text-green-400'}>
+                                        {Math.round(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100)}%
+                                    </span>
+                                </div>
+                                <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full rounded-full ${(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'bg-red-500' : 'bg-purple-500'}`}
+                                        style={{ width: `${Math.min(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100, 100)}%` }}
+                                    />
+                                </div>
+                            </div>
+                            
+                            {(budget.totalSpent || 0) > (budget.totalBudget || 0) && (
+                                <div className="flex items-center gap-2 text-red-400 text-sm mt-2 font-bold bg-red-500/10 p-2 rounded-lg">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    Over Budget by ₹{((budget.totalSpent || 0) - (budget.totalBudget || 0)).toLocaleString()}
+                                </div>
+                            )}
+
+                             {/* Hint Text */}
+                            <div className="text-xs text-gray-500 mt-4 text-center">
+                                Tap to view full breakdown
+                            </div>
+                         </motion.div>
                      ))}
                 </div>
             )}
@@ -351,7 +473,9 @@ function CreateBudgetModal({ onClose, onSuccess, initialStatus }: any) {
         setLoading(true);
         try {
             await budgetService.create({
-                name, type, amount: parseFloat(amount), startDate, endDate, status
+                name, budgetMode: type, totalBudget: parseFloat(amount), startDate, endDate, status,
+                planItems: [], // Initialize plan items
+                totalSpent: 0
             });
             onClose(); // Close first
             await onSuccess(); // Then refresh

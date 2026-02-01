@@ -1,22 +1,46 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import TransactionModal from '../../components/TransactionModal';
-import { useTransactions, useAccounts } from '../../hooks/useLocalData';
-import { Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Trash2, Calendar, Search } from 'lucide-react';
+import { useTransactions, useAccounts, useCreditCards, useCategories } from '../../hooks/useLocalData';
+
+import { Plus, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Trash2, Calendar, Search, Filter, Check, ChevronDown, X } from 'lucide-react';
 import clsx from 'clsx';
 import { format } from 'date-fns';
 
 export default function TransactionsPage() {
   const { transactions, loading: txLoading, addTransaction, deleteTransaction } = useTransactions();
   const { accounts, loading: accLoading } = useAccounts();
-  const loading = txLoading || accLoading;
+  const { creditCards, loading: ccLoading } = useCreditCards();
+  const { categories } = useCategories();
+  const loading = txLoading || accLoading || ccLoading;
+
+  const allAccounts = useMemo(() => {
+      const ccs = creditCards.map(c => ({
+          id: c.id,
+          name: c.name || c.bankName || 'Credit Card',
+          currency: 'INR', // Default/Fallback
+          type: 'CREDIT_CARD'
+      }));
+      return [...accounts, ...ccs];
+  }, [accounts, creditCards]);
+
+
+  const accountMap = useMemo(() => {
+    const map: Record<string, any> = {};
+    allAccounts.forEach(acc => {
+      map[acc.id] = acc;
+    });
+    return map;
+  }, [allAccounts]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Basic filtering (can be expanded)
   const [filterType, setFilterType] = useState('ALL');
+  const [filterCategories, setFilterCategories] = useState<string[]>([]); // Empty array means ALL
+  const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
 
   const handleCreate = () => {
     setIsModalOpen(true);
@@ -51,15 +75,24 @@ export default function TransactionsPage() {
   };
 
   const filteredTransactions = transactions.filter(t => {
-    if (filterType === 'ALL') return true;
-    return t.type === filterType;
+    const typeMatch = filterType === 'ALL' || t.type === filterType;
+    const catMatch = filterCategories.length === 0 || (t.categoryId && filterCategories.includes(t.categoryId));
+    return typeMatch && catMatch;
   });
+
+  const toggleCategory = (catId: string) => {
+      setFilterCategories(prev => 
+          prev.includes(catId)
+              ? prev.filter(id => id !== catId)
+              : [...prev, catId]
+      );
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 pb-32 md:pb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Transactions</h1>
@@ -74,20 +107,73 @@ export default function TransactionsPage() {
           </button>
         </div>
 
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-            {['ALL', 'INCOME', 'EXPENSE', 'TRANSFER'].map(ft => (
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {['ALL', 'INCOME', 'EXPENSE', 'TRANSFER'].map(ft => (
+                    <button
+                        key={ft}
+                        onClick={() => setFilterType(ft)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                            filterType === ft 
+                            ? 'bg-purple-500 text-white' 
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
+                        }`}
+                    >
+                        {ft}
+                    </button>
+                ))}
+            </div>
+
+            <div className="relative min-w-[240px]">
                 <button
-                    key={ft}
-                    onClick={() => setFilterType(ft)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                        filterType === ft 
-                        ? 'bg-purple-500 text-white' 
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
-                    }`}
+                    onClick={() => setIsCatDropdownOpen(!isCatDropdownOpen)}
+                    className="w-full bg-gray-800 text-white text-sm rounded-lg px-4 py-2 border border-gray-700 focus:outline-none focus:border-purple-500 flex items-center justify-between"
                 >
-                    {ft}
+                    <div className="flex items-center gap-2 truncate">
+                        <Filter className="h-4 w-4 text-gray-500" />
+                        <span className="truncate">
+                            {filterCategories.length === 0 
+                                ? 'All Categories' 
+                                : `${filterCategories.length} Selected`}
+                        </span>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
                 </button>
-            ))}
+
+                {isCatDropdownOpen && (
+                    <>
+                        <div 
+                            className="fixed inset-0 z-10" 
+                            onClick={() => setIsCatDropdownOpen(false)}
+                        />
+                        <div className="absolute top-full mt-2 left-0 right-0 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 p-2 space-y-1">
+                            <button
+                                onClick={() => setFilterCategories([])}
+                                className={clsx(
+                                    "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
+                                    filterCategories.length === 0 ? "bg-purple-500 text-white" : "text-gray-300 hover:bg-gray-700"
+                                )}
+                            >
+                                <span>All Categories</span>
+                                {filterCategories.length === 0 && <Check className="h-4 w-4" />}
+                            </button>
+                            {categories.map(c => (
+                                <button
+                                    key={c.id}
+                                    onClick={() => toggleCategory(c.id)}
+                                    className={clsx(
+                                        "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
+                                        filterCategories.includes(c.id) ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
+                                    )}
+                                >
+                                    <span>{c.name}</span>
+                                    {filterCategories.includes(c.id) && <Check className="h-4 w-4 text-purple-400" />}
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
 
         {loading ? (
@@ -115,32 +201,37 @@ export default function TransactionsPage() {
                                 )}>
                                     {getIcon(t.type)}
                                 </div>
-                                <div>
-                                    <div className="font-bold text-white mb-0.5">{t.description || 'No description'}</div>
-                                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                                        <span className="flex items-center gap-1">
+
+                                <div className="min-w-0 flex-1">
+                                    <div className="font-bold text-white mb-0.5 text-sm md:text-base line-clamp-1 break-all">{t.description || 'No description'}</div>
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400 mt-0.5">
+                                        <span className="flex items-center gap-1 shrink-0">
                                             <Calendar className="h-3 w-3" />
                                             {format(new Date(t.date), 'MMM d, yyyy')}
                                         </span>
-                                        <span>•</span>
-                                        <span>{t.account?.name}</span>
+                                        <span className="hidden xs:inline text-gray-600">•</span>
+                                        <span className="truncate max-w-[140px] xs:max-w-none">{accountMap[t.accountId]?.name}</span>
+                                        <span className="hidden xs:inline text-gray-600">•</span>
+                                        <span className="truncate text-purple-400">
+                                            {categories.find(c => c.id === t.categoryId)?.name || 'Uncategorized'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-3 md:gap-6">
                                 <div className={clsx(
-                                    "text-right font-mono font-bold text-lg",
+                                    "text-right font-mono font-bold text-base md:text-lg",
                                     t.type === 'INCOME' && "text-green-400",
                                     t.type === 'EXPENSE' && "text-red-400",
                                     t.type === 'TRANSFER' && "text-blue-400"
                                 )}>
                                     {t.type === 'EXPENSE' ? '-' : '+'}
-                                    {t.account?.currency} {Number(t.amount).toLocaleString()}
+                                    {accountMap[t.accountId]?.currency} {Number(t.amount).toLocaleString()}
                                 </div>
                                 <button
                                     onClick={() => handleDelete(t.id)}
-                                    className="p-2 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                    className="p-2 text-gray-500 hover:text-red-400 transition-all active:scale-95"
                                     title="Delete Transaction"
                                 >
                                     <Trash2 className="h-4 w-4" />
@@ -158,7 +249,7 @@ export default function TransactionsPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSubmit}
-        accounts={accounts}
+        accounts={allAccounts}
       />
     </div>
   );

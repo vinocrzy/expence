@@ -25,6 +25,11 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#111827",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 import { ClerkProvider } from '@clerk/nextjs';
@@ -44,14 +49,13 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <LocalFirstProvider>
-            {/* Keeping AuthProvider for now if it provides custom logic, but wrapping with Clerk */}
-            <AuthProvider>
+          <AuthProvider>
+            <LocalFirstProvider>
               {children}
-              <SyncStatusIndicator />
+              {/* <SyncStatusIndicator /> - Moved to Navbar */}
               <IOSInstallPrompt />
-            </AuthProvider>
-          </LocalFirstProvider>
+            </LocalFirstProvider>
+          </AuthProvider>
         </body>
       </html>
     </ClerkProvider>

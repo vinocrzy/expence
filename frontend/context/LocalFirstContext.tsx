@@ -8,7 +8,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 // import { checkMigrationStatus, type MigrationStatus } from '@/lib/migration'; // Removed legacy
 // import MigrationWizard from '@/components/MigrationWizard'; // Removed legacy
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '@/context/AuthContext'; // Use local AuthContext
+import { setHouseholdId } from '@/lib/localdb-services';
 
 interface LocalFirstContextValue {
   isReady: boolean;
@@ -22,34 +23,81 @@ export function useLocalFirst() {
   return useContext(LocalFirstContext);
 }
 
+import { useHouseholdPublisher } from '@/hooks/useHouseholdPublisher';
+
 export function LocalFirstProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
-  const { getToken } = useAuth(); // Clerk Auth
+  const { getToken, user, loading } = useAuth(); // Custom AuthContext
 
+  // Determine role for publisher
+  const [role, setRole] = useState<'OWNER' | 'GUEST'>('OWNER');
+  
   useEffect(() => {
-    initializeLocalFirst();
+      if (typeof window !== 'undefined') {
+          const r = localStorage.getItem('household_role');
+          if (r === 'GUEST') setRole('GUEST');
+      }
   }, []);
 
+  useHouseholdPublisher(role === 'OWNER');
+
+  useEffect(() => {
+    if (!loading) {
+        if (user) {
+             initializeLocalFirst();
+        } else {
+             handleLogout();
+        }
+    }
+  }, [loading, user]);
+
+  const handleLogout = async () => {
+      setIsReady(false);
+      const { resetReplicationState } = await import('@/lib/replication');
+      resetReplicationState();
+      setHouseholdId(null);
+      setIsReady(true); // Ready (but empty/logged out)
+  };
+
   const initializeLocalFirst = async () => {
-    // Run migration V2 (Dexie -> RxDB)
-    const { runMigration } = await import('@/lib/migration-runner');
-    await runMigration();
+    // If we are guest, we might ignore user.householdId check? 
+    // But we need to be logged in (user exists).
     
+    // Determine target ID and Role
+    let activeViewingId: string | undefined = undefined;
+    
+    if (typeof window !== 'undefined') {
+        const guestRole = localStorage.getItem('household_role');
+        const joinedId = localStorage.getItem('joined_household_id');
+        if (guestRole === 'GUEST' && joinedId) {
+             activeViewingId = joinedId;
+             setRole('GUEST');
+        }
+    }
+
+    if (!user || !user.householdId) return;
+    const currentUserHouseholdId = user.householdId;
+
     // Initialize Replication
-    const { getDatabase } = await import('@/lib/rxdb');
+    const { initDB } = await import('@/lib/pouchdb');
     const { initializeReplication } = await import('@/lib/replication');
-    const db = await getDatabase();
     
-    // Pass token getter
-    await initializeReplication(db, async () => {
+    // Ensure indexes are created
+    await initDB();
+    
+    // Set context for services
+    setHouseholdId(currentUserHouseholdId); // ALWAYS personal ID for write ops
+
+    // Pass token getter and householdId
+    await initializeReplication(async () => {
         return await getToken();
-    });
+    }, currentUserHouseholdId, activeViewingId);
 
     setIsReady(true);
   };
   
   // Show loading while checking
-  if (!isReady) {
+  if (!isReady && user) { // Only show loading if we have a user and expect to init
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

@@ -13,7 +13,8 @@ import {
   creditCardService,
   loanService,
   budgetService,
-  userService,
+  sharedDataService,
+  getHouseholdId,
 } from '@/lib/localdb-services';
 import {
   calculateMonthlyStats,
@@ -22,24 +23,25 @@ import {
   type CategoryBreakdown,
 } from '@/lib/analytics';
 import type { 
-  TransactionDocType as Transaction, 
-  AccountDocType as Account, 
-  CategoryDocType as Category,
-  CreditCardDocType as CreditCard,
-  LoanDocType as Loan,
-  BudgetDocType as Budget,
-} from '@/lib/schema';
+  Transaction, 
+  Account, 
+  Category,
+  CreditCard,
+  Loan,
+  Budget,
+} from '@/lib/db-types';
 
-// Helper to get householdId from local storage or user
-async function getHouseholdId(): Promise<string> {
-  // userService.getCurrent() is a stub for now, update when Auth is fully integrated
-  const user = await userService.getCurrent();
-  if (!user?.householdId) {
-     return 'household_1'; // Failover for development until Auth is ready
-    // throw new Error('No household found. Please complete setup.');
-  }
-  return user.householdId;
-}
+// Helper to get role
+const getUserRole = () => {
+    if (typeof window !== 'undefined') {
+        return localStorage.getItem('household_role') || 'OWNER';
+    }
+    return 'OWNER';
+};
+
+// ============================================
+// TRANSACTION HOOKS
+// ============================================
 
 // ============================================
 // TRANSACTION HOOKS
@@ -65,9 +67,8 @@ export function useTransactions() {
     loadTransactions();
   }, [loadTransactions]);
 
-  const addTransaction = useCallback(async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const transaction = await transactionService.create({ ...data, householdId });
+  const addTransaction = useCallback(async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    const transaction = await transactionService.create(data);
     await loadTransactions();
     return transaction;
   }, [loadTransactions]);
@@ -116,9 +117,8 @@ export function useAccounts() {
     loadAccounts();
   }, [loadAccounts]);
 
-  const addAccount = useCallback(async (data: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const account = await accountService.create({ ...data, householdId });
+  const addAccount = useCallback(async (data: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    const account = await accountService.create(data);
     await loadAccounts();
     return account;
   }, [loadAccounts]);
@@ -167,9 +167,9 @@ export function useCategories() {
     loadCategories();
   }, [loadCategories]);
 
-  const addCategory = useCallback(async (data: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const category = await categoryService.create({ ...data, householdId });
+  const addCategory = useCallback(async (data: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    // householdId is handled by the service internally
+    const category = await categoryService.create(data);
     await loadCategories();
     return category;
   }, [loadCategories]);
@@ -218,9 +218,9 @@ export function useCreditCards() {
     loadCreditCards();
   }, [loadCreditCards]);
 
-  const addCreditCard = useCallback(async (data: Omit<CreditCard, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const creditCard = await creditCardService.create({ ...data, householdId });
+  const addCreditCard = useCallback(async (data: Omit<CreditCard, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    // householdId is handled by the service internally
+    const creditCard = await creditCardService.create(data);
     await loadCreditCards();
     return creditCard;
   }, [loadCreditCards]);
@@ -269,9 +269,9 @@ export function useLoans() {
     loadLoans();
   }, [loadLoans]);
 
-  const addLoan = useCallback(async (data: Omit<Loan, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const loan = await loanService.create({ ...data, householdId });
+  const addLoan = useCallback(async (data: Omit<Loan, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    // householdId is handled by the service internally
+    const loan = await loanService.create(data);
     await loadLoans();
     return loan;
   }, [loadLoans]);
@@ -320,9 +320,9 @@ export function useBudgets() {
     loadBudgets();
   }, [loadBudgets]);
 
-  const addBudget = useCallback(async (data: Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const householdId = await getHouseholdId();
-    const budget = await budgetService.create({ ...data, householdId });
+  const addBudget = useCallback(async (data: Omit<Budget, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
+    // householdId is handled by the service internally
+    const budget = await budgetService.create(data);
     await loadBudgets();
     return budget;
   }, [loadBudgets]);
@@ -367,9 +367,8 @@ export function useAnalytics(months: number = 12) {
       const monthly = await calculateMonthlyStats(householdId, startDate, endDate);
       setMonthlyData(monthly);
 
-      // Load current month category breakdown
-      const currentMonthStart = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-      const categories = await calculateCategoryBreakdown(householdId, currentMonthStart, endDate);
+      // Load category breakdown for the same period
+      const categories = await calculateCategoryBreakdown(householdId, startDate, endDate);
       setCategoryData(categories);
     } catch (error) {
       console.error('Failed to load analytics:', error);

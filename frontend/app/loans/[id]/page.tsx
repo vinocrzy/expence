@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useRef, useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '../../../components/Navbar';
 import PrepaymentModal from '../../../components/PrepaymentModal';
 import { loanService } from '../../../lib/localdb-services';
 import { 
-    Calendar, Percent, Landmark, TrendingDown, ArrowRight, CheckCircle, Clock, AlertCircle, RefreshCw 
+    Calendar, Percent, Landmark, TrendingDown, ArrowRight, CheckCircle, Clock, AlertCircle, RefreshCw, Trash2 
 } from 'lucide-react';
 import { 
     PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid 
@@ -14,6 +15,7 @@ import {
 export default function LoanDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
+  const router = useRouter();
   
   const [loan, setLoan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -27,16 +29,49 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
   const fetchLoan = async () => {
     try {
       const data = await loanService.getById(id);
-      // Mock emis if not in data (schema didn't have emis array, so likely missing)
-      if (data && !(data as any).emis) {
-          (data as any).emis = []; // Populate with dummy schedule?
+      if (data) {
+          // Generate EMI schedule if missing
+          const fullLoan: any = { ...data };
+          if (!fullLoan.emis || fullLoan.emis.length === 0) {
+              fullLoan.emis = generateEmiSchedule(data);
+          }
+          setLoan(fullLoan);
       }
-      setLoan(data);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateEmiSchedule = (loan: any) => {
+      const emis = [];
+      const p = loan.principal;
+      const r = loan.interestRate / 12 / 100;
+      const n = loan.tenureMonths;
+      const emiAmount = loan.emiAmount || (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      
+      let outstanding = p;
+      const startDate = new Date(loan.startDate);
+
+      for (let i = 1; i <= n; i++) {
+        const interest = outstanding * r;
+        const principalComponent = emiAmount - interest;
+        const dueDate = new Date(startDate);
+        dueDate.setMonth(startDate.getMonth() + i);
+        
+        emis.push({
+            id: `emi_${i}`,
+            emiNumber: i,
+            dueDate: dueDate.toISOString(),
+            totalAmount: emiAmount,
+            principalComponent,
+            interestComponent: interest,
+            status: i <= (loan.initialPaidEmis || 0) ? 'PAID' : 'PENDING'
+        });
+        outstanding -= principalComponent;
+      }
+      return emis;
   };
 
   const handlePayEmi = async (emiNumber: number) => {
@@ -57,6 +92,18 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
   const handlePrepayment = async (data: any) => {
       // await api.post(`/loans/${id}/prepay`, data);
       await fetchLoan();
+  };
+
+  const handleDelete = async () => {
+    if (confirm('Are you sure you want to delete this loan? This action cannot be undone.')) {
+        try {
+            await loanService.delete(id);
+            router.push('/loans');
+        } catch (error) {
+            console.error('Failed to delete loan:', error);
+            alert('Failed to delete loan');
+        }
+    }
   };
 
   if (loading || !loan) {
@@ -106,6 +153,13 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
             </div>
             
             <div className="flex items-center gap-3">
+                <button 
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-900/20 border border-red-500/50 text-red-400 rounded-xl hover:bg-red-900/40 transition-colors font-medium flex items-center gap-2"
+                >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                </button>
                 <button 
                   onClick={() => setIsPrepaymentOpen(true)}
                   className="px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-xl hover:bg-gray-700 transition-colors font-medium flex items-center gap-2"
@@ -181,7 +235,11 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                                     <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                             </Pie>
-                            <Tooltip contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff' }} />
+                            <Tooltip 
+                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                itemStyle={{ color: '#fff' }}
+                                formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
+                            />
                             <Legend wrapperStyle={{ paddingTop: '20px' }} />
                         </PieChart>
                     </ResponsiveContainer>
