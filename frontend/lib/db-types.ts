@@ -44,6 +44,18 @@ export interface Category {
   _rev?: string;
 }
 
+export interface CreditCardStatement {
+  id: string;
+  statementDate: string;
+  cycleStart: string;
+  cycleEnd: string;
+  dueDate: string;
+  closingBalance: number;
+  minimumDue: number;
+  totalPayments: number;
+  status: 'PAID' | 'UNPAID' | 'OVERDUE' | 'PARTIAL';
+}
+
 export interface CreditCard {
   id: string;
   name: string;
@@ -54,6 +66,7 @@ export interface CreditCard {
   creditLimit?: number;
   currentOutstanding?: number;
   apr?: number;
+  statements?: CreditCardStatement[];
   isArchived?: boolean;
   householdId: string;
   createdAt?: string;

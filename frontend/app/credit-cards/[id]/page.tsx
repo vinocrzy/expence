@@ -27,14 +27,13 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
       setLoading(true);
       const cardData = await creditCardService.getById(id);
       const allAccounts = await accountService.getAll('household_1');
-      const allTx = await transactionService.getAll('household_1');
+      // Use getByAccount for better performance and to ensure we get transactions even if limit was an issue before
+      const myTx = await transactionService.getByAccount(id);
 
       setCard(cardData);
       setAccounts(allAccounts.filter((a: any) => a.type !== 'CREDIT_CARD'));
       
-      // Filter transactions for this card (assuming accountId matches card's linked account or card id itself)
-      const myTx = allTx.filter((t: any) => t.accountId === id);
-      setTransactions(myTx.slice(0, 20));
+      setTransactions(myTx.slice(0, 50)); // Show more
       
     } catch (e) {
       console.error(e);
@@ -50,8 +49,15 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
   };
   
   const handleGenerateStatement = async () => {
-      if(confirm('Generate statement? (Mock)')) {
-          await fetchData();
+      if(confirm('Generate statement for the last cycle?')) {
+          try {
+              await creditCardService.generateStatement(id);
+              await fetchData();
+              alert('Statement generated successfully');
+          } catch (e: any) {
+              console.error(e);
+              alert('Failed to generate statement: ' + e.message);
+          }
       }
   };
 

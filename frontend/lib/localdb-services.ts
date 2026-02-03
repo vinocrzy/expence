@@ -561,6 +561,91 @@ export const creditCardService = {
     return this.update(id, { isArchived: true });
   },
 
+  async generateStatement(creditCardId: string): Promise<void> {
+    const card = await this.getById(creditCardId);
+    if (!card) throw new Error('Card not found');
+
+    const billingDay = card.billingCycle || 1;
+    const dueDay = card.paymentDueDay || 5;
+
+    const now = new Date();
+    // Default to generating for the LAST finished cycle
+    // If today is 5th, and billing day is 1st, we generate for cycle ending 1st.
+    // Cycle runs from Previous Month (billingDay) to This Month (billingDay - 1).
+    
+    // Simplification: We generate statement for the immediate past cycle.
+    let cycleEndDetails = new Date();
+    cycleEndDetails.setDate(billingDay - 1); // End of cycle date
+    if (now.getDate() < billingDay) {
+        cycleEndDetails.setMonth(cycleEndDetails.getMonth() - 1);
+    }
+    // ensure clear time
+    cycleEndDetails.setHours(23, 59, 59, 999);
+
+    let cycleStartDetails = new Date(cycleEndDetails);
+    cycleStartDetails.setMonth(cycleStartDetails.getMonth() - 1);
+    cycleStartDetails.setDate(billingDay);
+    cycleStartDetails.setHours(0, 0, 0, 0);
+
+    // Filter transactions
+    const txs = await transactionService.getByAccount(creditCardId);
+    
+    // Calculate stats in this range
+    const cycleTxs = txs.filter(t => {
+        const d = new Date(t.date);
+        return d >= cycleStartDetails && d <= cycleEndDetails;
+    });
+
+    const expenses = cycleTxs
+        .filter(t => t.type === 'EXPENSE')
+        .reduce((sum, t) => sum + t.amount, 0);
+    
+    const payments = cycleTxs
+        .filter(t => t.type === 'INCOME')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    // Closing balance = Previous Balance? For now, let's assume sum of cycle expenses for simplicity or if we track running balance properly.
+    // If we want running balance of that day:
+    // Ideally we should look at previous statement closing balance + new expenses - new payments.
+    // For first statement, it's just expenses - payments.
+    
+    // Check if statement already exists
+    const existing = (card.statements || []).find(s => 
+        new Date(s.cycleEnd).toDateString() === cycleEndDetails.toDateString()
+    );
+    if (existing) {
+        // Update existing? Or skip.
+        console.log('Statement already exists for this cycle.');
+        return;
+    }
+
+    const previousStatement = (card.statements || [])[0]; // Assuming sorted desc
+    const prevBalance = previousStatement ? previousStatement.closingBalance : 0;
+    
+    const closingBalance = prevBalance + expenses - payments;
+    const minimumDue = Math.round(closingBalance * 0.05); // 5% min due
+
+    // Due Date: usually X days after cycle end
+    const dueDate = new Date(cycleEndDetails);
+    dueDate.setDate(dueDate.getDate() + 20); // 20 day grace period
+
+    const newStatement: any = { // Using any cast to avoid import loop for type if defined elsewhere or strict check
+        id: uuidv4(),
+        statementDate: new Date().toISOString(),
+        cycleStart: cycleStartDetails.toISOString(),
+        cycleEnd: cycleEndDetails.toISOString(),
+        dueDate: dueDate.toISOString(),
+        closingBalance: Math.max(0, closingBalance),
+        minimumDue: Math.max(0, minimumDue),
+        totalPayments: 0, // Payments made AFTER statement generation towards this bill
+        status: closingBalance <= 0 ? 'PAID' : 'UNPAID'
+    };
+
+    const updatedStatements = [newStatement, ...(card.statements || [])];
+    
+    await this.update(creditCardId, { statements: updatedStatements });
+  },
+
   async calculateOutstanding(creditCardId: string): Promise<number> {
     return 0; // Placeholder
   },
