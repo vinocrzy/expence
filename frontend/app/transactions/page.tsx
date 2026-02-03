@@ -52,7 +52,9 @@ export default function TransactionsPage() {
   // Basic filtering (can be expanded)
   const [filterType, setFilterType] = useState('ALL');
   const [filterCategories, setFilterCategories] = useState<string[]>([]); // Empty array means ALL
+  const [filterAccounts, setFilterAccounts] = useState<string[]>([]); // Empty array means ALL
   const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
+  const [isAccDropdownOpen, setIsAccDropdownOpen] = useState(false);
 
   const handleCreate = (date?: Date) => {
     setEditingTransaction(date ? { date: date.toISOString() } : null);
@@ -66,14 +68,6 @@ export default function TransactionsPage() {
       setIsDayDetailsOpen(false);
   };
 
-  // Re-read existing hook usage. 
-  // Line 13: const { transactions, loading: txLoading, addTransaction, deleteTransaction } = useTransactions();
-  // It does NOT have updateTransaction.
-  // I should check `useLocalData` or just import `transactionService` to perform update.
-  // And calling `mutate()` of the hook if possible.
-  // Or just rely on `TransactionModal` doing the work?
-  // `TransactionModal` takes `onSubmit`.
-  
   const handleModalSubmit = async (data: any) => {
       if (editingTransaction?.id) {
           // Edit mode
@@ -97,7 +91,8 @@ export default function TransactionsPage() {
   const filteredTransactions = transactions.filter(t => {
     const typeMatch = filterType === 'ALL' || t.type === filterType;
     const catMatch = filterCategories.length === 0 || (t.categoryId && filterCategories.includes(t.categoryId));
-    return typeMatch && catMatch;
+    const accMatch = filterAccounts.length === 0 || filterAccounts.includes(t.accountId);
+    return typeMatch && catMatch && accMatch;
   });
 
   const toggleCategory = (catId: string) => {
@@ -105,6 +100,14 @@ export default function TransactionsPage() {
           prev.includes(catId)
               ? prev.filter(id => id !== catId)
               : [...prev, catId]
+      );
+  };
+
+  const toggleAccount = (accId: string) => {
+      setFilterAccounts(prev => 
+          prev.includes(accId)
+              ? prev.filter(id => id !== accId)
+              : [...prev, accId]
       );
   };
 
@@ -189,55 +192,108 @@ export default function TransactionsPage() {
                 ))}
             </div>
 
-            <div className="relative min-w-[240px]">
-                <button
-                    onClick={() => setIsCatDropdownOpen(!isCatDropdownOpen)}
-                    className="w-full bg-gray-800 text-white text-sm rounded-lg px-4 py-2 border border-gray-700 focus:outline-none focus:border-purple-500 flex items-center justify-between"
-                >
-                    <div className="flex items-center gap-2 truncate">
-                        <Filter className="h-4 w-4 text-gray-500" />
-                        <span className="truncate">
-                            {filterCategories.length === 0 
-                                ? 'All Categories' 
-                                : `${filterCategories.length} Selected`}
-                        </span>
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                </button>
+            <div className="flex flex-wrap gap-4 w-full md:w-auto">
+                <div className="relative min-w-[200px]">
+                    <button
+                        onClick={() => setIsAccDropdownOpen(!isAccDropdownOpen)}
+                        className="w-full bg-gray-800 text-white text-sm rounded-lg px-4 py-2 border border-gray-700 focus:outline-none focus:border-purple-500 flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-2 truncate">
+                            <Filter className="h-4 w-4 text-gray-500" />
+                            <span className="truncate">
+                                {filterAccounts.length === 0 
+                                    ? 'All Accounts' 
+                                    : `${filterAccounts.length} Account${filterAccounts.length > 1 ? 's' : ''}`}
+                            </span>
+                        </div>
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                    </button>
 
-                {isCatDropdownOpen && (
-                    <>
-                        <div 
-                            className="fixed inset-0 z-10" 
-                            onClick={() => setIsCatDropdownOpen(false)}
-                        />
-                        <div className="absolute top-full mt-2 left-0 right-0 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 p-2 space-y-1">
-                            <button
-                                onClick={() => setFilterCategories([])}
-                                className={clsx(
-                                    "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
-                                    filterCategories.length === 0 ? "bg-purple-500 text-white" : "text-gray-300 hover:bg-gray-700"
-                                )}
-                            >
-                                <span>All Categories</span>
-                                {filterCategories.length === 0 && <Check className="h-4 w-4" />}
-                            </button>
-                            {categories.map(c => (
+                    {isAccDropdownOpen && (
+                        <>
+                            <div 
+                                className="fixed inset-0 z-10" 
+                                onClick={() => setIsAccDropdownOpen(false)}
+                            />
+                            <div className="absolute top-full mt-2 left-0 right-0 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 p-2 space-y-1">
                                 <button
-                                    key={c.id}
-                                    onClick={() => toggleCategory(c.id)}
+                                    onClick={() => setFilterAccounts([])}
                                     className={clsx(
                                         "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
-                                        filterCategories.includes(c.id) ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
+                                        filterAccounts.length === 0 ? "bg-purple-500 text-white" : "text-gray-300 hover:bg-gray-700"
                                     )}
                                 >
-                                    <span>{c.name}</span>
-                                    {filterCategories.includes(c.id) && <Check className="h-4 w-4 text-purple-400" />}
+                                    <span>All Accounts</span>
+                                    {filterAccounts.length === 0 && <Check className="h-4 w-4" />}
                                 </button>
-                            ))}
+                                {allAccounts.map(a => (
+                                    <button
+                                        key={a.id}
+                                        onClick={() => toggleAccount(a.id)}
+                                        className={clsx(
+                                            "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
+                                            filterAccounts.includes(a.id) ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
+                                        )}
+                                    >
+                                        <span>{a.name}</span>
+                                        {filterAccounts.includes(a.id) && <Check className="h-4 w-4 text-purple-400" />}
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                <div className="relative min-w-[200px]">
+                    <button
+                        onClick={() => setIsCatDropdownOpen(!isCatDropdownOpen)}
+                        className="w-full bg-gray-800 text-white text-sm rounded-lg px-4 py-2 border border-gray-700 focus:outline-none focus:border-purple-500 flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-2 truncate">
+                            <Filter className="h-4 w-4 text-gray-500" />
+                            <span className="truncate">
+                                {filterCategories.length === 0 
+                                    ? 'All Categories' 
+                                    : `${filterCategories.length} Cat${filterCategories.length > 1 ? 's' : ''}`}
+                            </span>
                         </div>
-                    </>
-                )}
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                    </button>
+
+                    {isCatDropdownOpen && (
+                        <>
+                            <div 
+                                className="fixed inset-0 z-10" 
+                                onClick={() => setIsCatDropdownOpen(false)}
+                            />
+                            <div className="absolute top-full mt-2 left-0 right-0 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 p-2 space-y-1">
+                                <button
+                                    onClick={() => setFilterCategories([])}
+                                    className={clsx(
+                                        "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
+                                        filterCategories.length === 0 ? "bg-purple-500 text-white" : "text-gray-300 hover:bg-gray-700"
+                                    )}
+                                >
+                                    <span>All Categories</span>
+                                    {filterCategories.length === 0 && <Check className="h-4 w-4" />}
+                                </button>
+                                {categories.map(c => (
+                                    <button
+                                        key={c.id}
+                                        onClick={() => toggleCategory(c.id)}
+                                        className={clsx(
+                                            "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
+                                            filterCategories.includes(c.id) ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
+                                        )}
+                                    >
+                                        <span>{c.name}</span>
+                                        {filterCategories.includes(c.id) && <Check className="h-4 w-4 text-purple-400" />}
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
 

@@ -225,7 +225,8 @@ export const transactionService = {
         householdId: { $eq: householdId },
         date: { $gt: null }
       },
-      sort: [{ date: 'desc' }]
+      sort: [{ date: 'desc' }],
+      limit: 10000
     });
     return result.docs as unknown as Transaction[];
   },
@@ -246,7 +247,8 @@ export const transactionService = {
           $lte: endStr
         }
       },
-      sort: [{ date: 'desc' }]
+      sort: [{ date: 'desc' }],
+      limit: 10000
     });
     return result.docs as unknown as Transaction[];
   },
@@ -262,7 +264,8 @@ export const transactionService = {
         date: { $gt: null } // Trick to use date index if compound? 
                             // Actually PouchDB requires 'date' in selector to sort by 'date'.
       },
-      sort: [{ date: 'desc' }] // This requires an index on date.
+      sort: [{ date: 'desc' }], // This requires an index on date.
+      limit: 10000
     });
     // Fallback sort if needed, but let's try relying on PouchDB first.
     // Actually, PouchDB find implementation often requires all sort fields to be in selector.
@@ -277,7 +280,8 @@ export const transactionService = {
     const result = await transactionsDB.find({
       selector: {
         categoryId: { $eq: categoryId }
-      }
+      },
+      limit: 10000
     });
     return (result.docs as unknown as Transaction[]).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   },
