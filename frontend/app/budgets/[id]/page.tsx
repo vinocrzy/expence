@@ -7,7 +7,7 @@ import { budgetService, transactionService, categoryService, accountService, cre
 import { 
     ArrowLeft, PieChart, TrendingUp, AlertCircle, 
     Calendar, Wallet, CheckCircle2, AlertTriangle, ArrowUpRight,
-    ChevronLeft, ChevronRight
+    ChevronLeft, ChevronRight, Edit2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
@@ -90,25 +90,11 @@ export default function BudgetDetailPage() {
     end.setHours(23,59,59,999);
 
     // 2. Filter Transactions
-    console.log('--- Budget Calc Debug ---');
-    console.log('View Date:', viewDate.toISOString());
-    console.log('Range:', start.toISOString(), 'to', end.toISOString());
-    console.log('Total Transactions Fetched:', allTransactions.length);
-
     const expenses = allTransactions.filter((t) => {
         if (t.type !== 'EXPENSE') return false;
         const tDate = new Date(t.date);
-        const inRange = tDate >= start && tDate <= end;
-        if (!inRange && allTransactions.length < 50) { // Log filtered out items if dataset small
-             console.log('Excluded Tx:', t.date, t.amount, t.categoryId, 'Reason: Date/Type');
-        }
-        return inRange;
+        return tDate >= start && tDate <= end;
     });
-
-    console.log('Matching Expenses:', expenses.length);
-    if (expenses.length > 0) {
-        console.log('Sample Expense:', expenses[0]);
-    }
     
     const totalSpent = expenses.reduce((sum, t) => sum + t.amount, 0);
 
@@ -158,37 +144,10 @@ export default function BudgetDetailPage() {
         entry.transactions.push(t);
     });
 
-    // 4. Projections
-    const now = new Date();
-    const nowTime = now.getTime();
-    const startTime = start.getTime();
-    const endTime = end.getTime();
-    const totalDuration = endTime - startTime;
-    // Calculate elapsed time within the target window
-    // If looking at a past month, elapsed is full duration
-    // If future, 0. If current, partial.
-    let elapsed = 0;
-    
-    if (nowTime > endTime) {
-        elapsed = totalDuration; // Past period completed
-    } else if (nowTime < startTime) {
-        elapsed = 0; // Future period not started
-    } else {
-        elapsed = nowTime - startTime; // Current period in progress
-    }
-    
-    const progressFactor = totalDuration > 0 ? (elapsed / totalDuration) : 1; 
-
+    // 4. Formatting
     const categoryBreakdown = Array.from(breakdownMap.values()).map(item => {
-        let projected = item.spent;
-        // Only project if current active period
-        if (progressFactor > 0 && progressFactor < 1 && nowTime <= endTime && nowTime >= startTime) {
-            projected = item.spent / progressFactor;
-        }
-
         return {
             ...item,
-            projected: Math.round(projected),
             percentage: item.limit > 0 ? (item.spent / item.limit) * 100 : 0,
             isOverBudget: item.limit > 0 && item.spent > item.limit
         };
@@ -219,17 +178,7 @@ export default function BudgetDetailPage() {
       .map(date => ({ date, amount: timelineMap[date] }));
 
     // 6. Insights
-    const insights = [];
-    const totalBudget = Number(budget.totalBudget || 0);
-    const mainProjection = (progressFactor > 0 && progressFactor < 1 && nowTime <= endTime && nowTime >= startTime) ? (totalSpent / progressFactor) : totalSpent;
-    
-    if (mainProjection > totalBudget && totalBudget > 0) {
-        insights.push({
-            title: 'Projected Over Budget',
-            description: `Based on current spending, you might end up spending ₹${Math.round(mainProjection).toLocaleString()}, exceeding your budget by ₹${Math.round(mainProjection - totalBudget).toLocaleString()}.`,
-            severity: 'warning'
-        });
-    }
+    const insights: any[] = [];
     
     categoryBreakdown.filter(c => c.isOverBudget).forEach(c => {
          insights.push({
@@ -239,15 +188,12 @@ export default function BudgetDetailPage() {
          });
     });
 
-    const daysLeft = Math.ceil((endTime - nowTime) / (1000 * 60 * 60 * 24));
-
     return {
         totalSpent,
         categoryBreakdown,
         timeline,
         paymentBreakdown,
         insights,
-        daysLeft: daysLeft > 0 ? daysLeft : 0,
         start,
         end
     };
@@ -260,7 +206,7 @@ export default function BudgetDetailPage() {
       setViewDate(newDate);
   };
 
-  const isRecurring = budget?.budgetMode === 'RECURRING' || !budget?.budgetMode; // Default to recurring if undefined?
+  const isRecurring = budget?.budgetMode === 'RECURRING' || !budget?.budgetMode; 
   
   if (loading || !budget || !analytics) return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading breakdown...</div>;
 
@@ -281,7 +227,15 @@ export default function BudgetDetailPage() {
                     <ArrowLeft className="h-6 w-6" />
                 </button>
                 <div>
-                    <h1 className="text-3xl font-bold">{budget.name}</h1>
+                     <h1 className="text-3xl font-bold flex items-center gap-3">
+                        {budget.name}
+                        <button 
+                            onClick={() => router.push(`/budgets/edit/${budget.id}`)}
+                            className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors"
+                        >
+                            <Edit2 className="h-4 w-4" />
+                        </button>
+                    </h1>
                     <div className="flex items-center gap-2 text-gray-400 text-sm">
                         <Calendar className="h-4 w-4" />
                         <span>Recurring Budget Plan</span>
@@ -400,16 +354,15 @@ export default function BudgetDetailPage() {
                     
                     {/* Header Row */}
                     <div className="grid grid-cols-12 text-xs text-gray-500 uppercase font-bold mb-4 px-2">
-                        <div className="col-span-5">Category</div>
-                        <div className="col-span-3 text-right">Spent / Limit</div>
-                        <div className="col-span-4 text-right">Projection</div>
+                        <div className="col-span-8">Category</div>
+                        <div className="col-span-4 text-right">Spent / Limit</div>
                     </div>
 
                     <div className="space-y-4">
                         {categoryBreakdown.map((cat: any) => (
                             <div key={cat.id} className="p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
                                 <div className="grid grid-cols-12 items-center mb-2">
-                                    <div className="col-span-5 flex items-center gap-3">
+                                    <div className="col-span-8 flex items-center gap-3">
                                         <div 
                                             className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
                                             style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
@@ -421,13 +374,9 @@ export default function BudgetDetailPage() {
                                             {cat.limit === 0 && <div className="text-[10px] text-gray-500">Unplanned</div>}
                                         </div>
                                     </div>
-                                    <div className="col-span-3 text-right">
+                                    <div className="col-span-4 text-right">
                                         <div className="font-mono text-sm">₹{cat.spent.toLocaleString()}</div>
                                         {cat.limit > 0 && <div className="text-[10px] text-gray-500">of ₹{cat.limit.toLocaleString()}</div>}
-                                    </div>
-                                    <div className="col-span-4 text-right">
-                                        <div className="font-mono text-sm text-gray-300">₹{cat.projected.toLocaleString()}</div>
-                                        <div className="text-[10px] text-gray-500">Est. Month End</div>
                                     </div>
                                 </div>
                                 

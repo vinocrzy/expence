@@ -19,12 +19,13 @@ import CashFlowChart from '../../components/dashboard/CashFlowChart';
 import RecentActivity from '../../components/dashboard/RecentActivity';
 import TopCategories from '../../components/dashboard/TopCategories';
 import FinancialHealth from '../../components/dashboard/FinancialHealth';
+import BudgetWidget from '../../components/dashboard/BudgetWidget';
 
 import LoadingScreen from '../../components/ui/LoadingScreen';
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
-  const { transactions, loading: txLoading } = useTransactions(); // Fetches all for recent activity
+  const { transactions, loading: txLoading } = useTransactions(); 
   const { accounts, loading: accLoading } = useAccounts();
   const [loading, setLoading] = useState(true);
 
@@ -74,7 +75,7 @@ export default function DashboardPage() {
     }
 
     loadDashboardData();
-  }, [authLoading, transactions, accounts]); // Reload when data changes
+  }, [authLoading, transactions, accounts]); 
 
   // Prepare Account Map for Recent Activity
   const accountMap = useMemo(() => {
@@ -83,13 +84,6 @@ export default function DashboardPage() {
     return map;
   }, [accounts]);
 
-  // Use imported helper for categories is better, but creating simple inline map if needed or use hook
-  // We can fetch categories separately or just rely on what we have. 
-  // Let's use `useCategories` hook? No, unnecessary network call if we can avoid. 
-  // Getting category names might be needed for transactions list.
-  // Actually RecentActivity needs category names. 
-  // Let's just create a quick map if we have categories, or pass a fetcher.
-  // Simplest: fetch all categories
   const { categories } = useCategories();
   const categoryMap = useMemo(() => {
       const map: Record<string, any> = {};
@@ -160,6 +154,7 @@ export default function DashboardPage() {
             
             {/* Right Column: Insights */}
             <div className="space-y-4 md:space-y-6">
+                <BudgetWidget />
                 <FinancialHealth 
                     savingsRate={cashFlow?.savingsRate || 0}
                     netWorth={netWorth}
