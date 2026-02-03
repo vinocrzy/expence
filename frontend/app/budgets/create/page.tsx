@@ -71,7 +71,7 @@ export default function CreateBudgetPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
+        <div className="min-h-screen bg-gray-900 text-white font-sans pb-48">
             <Navbar />
             <main className="max-w-2xl mx-auto px-4 py-8">
                 <div className="flex items-center gap-4 mb-8">
@@ -212,8 +212,8 @@ export default function CreateBudgetPage() {
                         </button>
                     </div>
 
-                    {/* Submit Bar */}
-                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-900 border-t border-gray-800 flex justify-center z-10">
+            {/* Submit Bar */}
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-900 border-t border-gray-800 flex justify-center z-30 mb-24 md:mb-0">
                          <div className="w-full max-w-2xl flex gap-4">
                              <button 
                                 type="button" 

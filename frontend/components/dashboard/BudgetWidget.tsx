@@ -6,60 +6,53 @@ import { motion } from 'framer-motion';
 import { PieChart, TrendingUp, AlertCircle, ChevronRight, Plus } from 'lucide-react';
 import { budgetService, transactionService, getHouseholdId } from '@/lib/localdb-services';
 import { Budget, Transaction } from '@/lib/db-types';
+import { useBudgets, useTransactions } from '@/hooks/useLocalData';
 
 export default function BudgetWidget() {
   const router = useRouter();
+  const { budgets, loading: budgetsLoading } = useBudgets();
+  const { transactions, loading: txLoading } = useTransactions();
   const [budget, setBudget] = useState<Budget | null>(null);
   const [spent, setSpent] = useState(0);
-  const [loading, setLoading] = useState(true);
+
+  const loading = budgetsLoading || txLoading;
 
   useEffect(() => {
-    async function loadBudget() {
-      try {
-        const householdId = await getHouseholdId();
-        const allBudgets = await budgetService.getAll(householdId);
-        // Prioritize Active Recurring Budget
-        const activeBudget = allBudgets.find(b => b.status === 'ACTIVE' && b.budgetMode === 'RECURRING');
+    if (budgetsLoading || txLoading) return;
+
+    // Prioritize Active Recurring Budget
+    const activeBudget = budgets.find(b => b.status === 'ACTIVE' && b.budgetMode === 'RECURRING');
+    
+    if (activeBudget) {
+        setBudget(activeBudget);
         
-        if (activeBudget) {
-            setBudget(activeBudget);
-            
-            // Calculate Spend for Current Month
-            const now = new Date();
-            const start = new Date(now.getFullYear(), now.getMonth(), 1);
-            const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-            end.setHours(23, 59, 59, 999);
+        // Calculate Spend for Current Month
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        end.setHours(23, 59, 59, 999);
 
-            const txs = await transactionService.getAll(householdId);
-            const relativeExpenses = txs.filter(t => {
-                const tDate = new Date(t.date);
-                return t.type === 'EXPENSE' && tDate >= start && tDate <= end;
-            });
+        const relativeExpenses = transactions.filter(t => {
+            const tDate = new Date(t.date);
+            return t.type === 'EXPENSE' && tDate >= start && tDate <= end;
+        });
 
-            // Filter by budget categories if specific config exists
-            let relevantAmount = 0;
-            if (activeBudget.budgetLimitConfig && activeBudget.budgetLimitConfig.length > 0) {
-                const categoryIds = activeBudget.budgetLimitConfig.map(c => c.categoryId);
-                relevantAmount = relativeExpenses
-                    .filter(t => categoryIds.includes(t.categoryId || ''))
-                    .reduce((sum, t) => sum + t.amount, 0);
-            } else {
-                // If no specific config, maybe all expenses? Or 0? 
-                // Usually "Monthly Budget" implies all expenses unless specified.
-                // But our Create flow forces category selection.
-                // Fallback to all if empty config? Let's stick to config match for accuracy.
-                relevantAmount = relativeExpenses.reduce((sum, t) => sum + t.amount, 0);
-            }
-            setSpent(relevantAmount);
+        // Filter by budget categories if specific config exists
+        let relevantAmount = 0;
+        if (activeBudget.budgetLimitConfig && activeBudget.budgetLimitConfig.length > 0) {
+            const categoryIds = activeBudget.budgetLimitConfig.map(c => c.categoryId);
+            relevantAmount = relativeExpenses
+                .filter(t => categoryIds.includes(t.categoryId || ''))
+                .reduce((sum, t) => sum + t.amount, 0);
+        } else {
+            relevantAmount = relativeExpenses.reduce((sum, t) => sum + t.amount, 0);
         }
-      } catch (e) {
-        console.error('Failed to load budget widget', e);
-      } finally {
-        setLoading(false);
-      }
+        setSpent(relevantAmount);
+    } else {
+        setBudget(null);
+        setSpent(0);
     }
-    loadBudget();
-  }, []);
+  }, [budgets, transactions, budgetsLoading, txLoading]);
 
   if (loading) return (
     <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50 animate-pulse h-48">

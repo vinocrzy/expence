@@ -30,6 +30,7 @@ import type {
   Loan,
   Budget,
 } from '@/lib/db-types';
+import { events, EVENTS } from '@/lib/events';
 
 // Helper to get role
 const getUserRole = () => {
@@ -65,23 +66,27 @@ export function useTransactions() {
 
   useEffect(() => {
     loadTransactions();
+    return events.on(EVENTS.TRANSACTIONS_CHANGED, loadTransactions);
   }, [loadTransactions]);
 
   const addTransaction = useCallback(async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
     const transaction = await transactionService.create(data);
-    await loadTransactions();
+    events.emit(EVENTS.TRANSACTIONS_CHANGED);
+    events.emit(EVENTS.ACCOUNTS_CHANGED); // Adding transaction might change account balance
     return transaction;
-  }, [loadTransactions]);
+  }, []);
 
   const updateTransaction = useCallback(async (id: string, data: Partial<Transaction>) => {
     await transactionService.update(id, data);
-    await loadTransactions();
-  }, [loadTransactions]);
+    events.emit(EVENTS.TRANSACTIONS_CHANGED);
+    events.emit(EVENTS.ACCOUNTS_CHANGED);
+  }, []);
 
   const deleteTransaction = useCallback(async (id: string) => {
     await transactionService.delete(id);
-    await loadTransactions();
-  }, [loadTransactions]);
+    events.emit(EVENTS.TRANSACTIONS_CHANGED);
+    events.emit(EVENTS.ACCOUNTS_CHANGED);
+  }, []);
 
   return {
     transactions,
@@ -115,23 +120,24 @@ export function useAccounts() {
 
   useEffect(() => {
     loadAccounts();
+    return events.on(EVENTS.ACCOUNTS_CHANGED, loadAccounts);
   }, [loadAccounts]);
 
   const addAccount = useCallback(async (data: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
     const account = await accountService.create(data);
-    await loadAccounts();
+    events.emit(EVENTS.ACCOUNTS_CHANGED);
     return account;
-  }, [loadAccounts]);
+  }, []);
 
   const updateAccount = useCallback(async (id: string, data: Partial<Account>) => {
     await accountService.update(id, data);
-    await loadAccounts();
-  }, [loadAccounts]);
+    events.emit(EVENTS.ACCOUNTS_CHANGED);
+  }, []);
 
   const deleteAccount = useCallback(async (id: string) => {
     await accountService.delete(id);
-    await loadAccounts();
-  }, [loadAccounts]);
+    events.emit(EVENTS.ACCOUNTS_CHANGED);
+  }, []);
 
   return {
     accounts,
@@ -165,24 +171,25 @@ export function useCategories() {
 
   useEffect(() => {
     loadCategories();
+    return events.on(EVENTS.CATEGORIES_CHANGED, loadCategories);
   }, [loadCategories]);
 
   const addCategory = useCallback(async (data: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
     // householdId is handled by the service internally
     const category = await categoryService.create(data);
-    await loadCategories();
+    events.emit(EVENTS.CATEGORIES_CHANGED);
     return category;
-  }, [loadCategories]);
+  }, []);
 
   const updateCategory = useCallback(async (id: string, data: Partial<Category>) => {
     await categoryService.update(id, data);
-    await loadCategories();
-  }, [loadCategories]);
+    events.emit(EVENTS.CATEGORIES_CHANGED);
+  }, []);
 
   const deleteCategory = useCallback(async (id: string) => {
     await categoryService.delete(id);
-    await loadCategories();
-  }, [loadCategories]);
+    events.emit(EVENTS.CATEGORIES_CHANGED);
+  }, []);
 
   return {
     categories,
@@ -216,24 +223,25 @@ export function useCreditCards() {
 
   useEffect(() => {
     loadCreditCards();
+    return events.on(EVENTS.CREDIT_CARDS_CHANGED, loadCreditCards);
   }, [loadCreditCards]);
 
   const addCreditCard = useCallback(async (data: Omit<CreditCard, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
     // householdId is handled by the service internally
     const creditCard = await creditCardService.create(data);
-    await loadCreditCards();
+    events.emit(EVENTS.CREDIT_CARDS_CHANGED);
     return creditCard;
-  }, [loadCreditCards]);
+  }, []);
 
   const updateCreditCard = useCallback(async (id: string, data: Partial<CreditCard>) => {
     await creditCardService.update(id, data);
-    await loadCreditCards();
-  }, [loadCreditCards]);
+    events.emit(EVENTS.CREDIT_CARDS_CHANGED);
+  }, []);
 
   const deleteCreditCard = useCallback(async (id: string) => {
     await creditCardService.delete(id);
-    await loadCreditCards();
-  }, [loadCreditCards]);
+    events.emit(EVENTS.CREDIT_CARDS_CHANGED);
+  }, []);
 
   return {
     creditCards,
@@ -267,24 +275,25 @@ export function useLoans() {
 
   useEffect(() => {
     loadLoans();
+    return events.on(EVENTS.LOANS_CHANGED, loadLoans);
   }, [loadLoans]);
 
   const addLoan = useCallback(async (data: Omit<Loan, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
     // householdId is handled by the service internally
     const loan = await loanService.create(data);
-    await loadLoans();
+    events.emit(EVENTS.LOANS_CHANGED);
     return loan;
-  }, [loadLoans]);
+  }, []);
 
   const updateLoan = useCallback(async (id: string, data: Partial<Loan>) => {
     await loanService.update(id, data);
-    await loadLoans();
-  }, [loadLoans]);
+    events.emit(EVENTS.LOANS_CHANGED);
+  }, []);
 
   const deleteLoan = useCallback(async (id: string) => {
     await loanService.delete(id);
-    await loadLoans();
-  }, [loadLoans]);
+    events.emit(EVENTS.LOANS_CHANGED);
+  }, []);
 
   return {
     loans,
@@ -318,24 +327,25 @@ export function useBudgets() {
 
   useEffect(() => {
     loadBudgets();
+    return events.on(EVENTS.BUDGETS_CHANGED, loadBudgets);
   }, [loadBudgets]);
 
   const addBudget = useCallback(async (data: Omit<Budget, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>) => {
     // householdId is handled by the service internally
     const budget = await budgetService.create(data);
-    await loadBudgets();
+    events.emit(EVENTS.BUDGETS_CHANGED);
     return budget;
-  }, [loadBudgets]);
+  }, []);
 
   const updateBudget = useCallback(async (id: string, data: Partial<Budget>) => {
     await budgetService.update(id, data);
-    await loadBudgets();
-  }, [loadBudgets]);
+    events.emit(EVENTS.BUDGETS_CHANGED);
+  }, []);
 
   const deleteBudget = useCallback(async (id: string) => {
     await budgetService.delete(id);
-    await loadBudgets();
-  }, [loadBudgets]);
+    events.emit(EVENTS.BUDGETS_CHANGED);
+  }, []);
 
   return {
     budgets,
