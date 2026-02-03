@@ -103,10 +103,17 @@ export interface BudgetPlanItem {
   totalAmount?: number;
 }
 
+export interface BudgetCategoryLimit {
+  categoryId: string;
+  amount: number;
+}
+
 export interface Budget {
   id: string;
   name: string;
-  budgetMode?: string;
+  budgetMode?: 'EVENT' | 'RECURRING' | 'CATEGORY';
+  categoryId?: string; // Legacy/Single Mode
+  budgetLimitConfig?: BudgetCategoryLimit[]; // New Multi-Category Mode
   period?: string;
   startDate?: string;
   endDate?: string;

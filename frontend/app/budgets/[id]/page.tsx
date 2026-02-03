@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Navbar from '../../../components/Navbar';
-import { budgetService, transactionService, categoryService, accountService, creditCardService } from '../../../lib/localdb-services';
+import Navbar from '@/components/Navbar';
+import { budgetService, transactionService, categoryService, accountService, creditCardService, getHouseholdId } from '@/lib/localdb-services';
 import { 
     ArrowLeft, PieChart, TrendingUp, AlertCircle, 
     Calendar, Wallet, CheckCircle2, AlertTriangle, ArrowUpRight 
@@ -13,6 +13,7 @@ import {
     PieChart as RePieChart, Pie, Cell, ResponsiveContainer, 
     Tooltip as ReTooltip, BarChart, Bar, XAxis, YAxis 
 } from 'recharts';
+import { Transaction, Budget, Category, Account, CreditCard, BudgetCategoryLimit } from '@/lib/db-types';
 
 export default function BudgetDetailPage() {
   const { id } = useParams();
@@ -22,6 +23,7 @@ export default function BudgetDetailPage() {
 
   useEffect(() => {
     if (id) fetchBudgetDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchBudgetDetails = async () => {
@@ -29,116 +31,168 @@ export default function BudgetDetailPage() {
       const budget = await budgetService.getById(id as string);
       if (!budget) throw new Error('Budget not found');
 
-      // Fetch transactions for this budget period
-      // Implementation detail: we need to filter transactions by date range of budget
+      // 0. Get Dynamic Household ID
+      const householdId = await getHouseholdId();
+
+      // 1. Determine Date Range
       const now = new Date();
-      // Assume monthly budget for simplicity or parsing budget period
-      // Filter by Budget Date Range
       let start = new Date(now.getFullYear(), now.getMonth(), 1); 
       let end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       
       if (budget.startDate && budget.endDate) {
           start = new Date(budget.startDate);
           end = new Date(budget.endDate);
-          // Set to start/end of day to be inclusive
-          start.setHours(0,0,0,0);
-          end.setHours(23,59,59,999);
       }
+      // Inclusive timing
+      start.setHours(0,0,0,0);
+      end.setHours(23,59,59,999);
 
-      // Fetch all transactions (optimized filter in future)
-      const allTx = await transactionService.getAll('household_1'); // hardcoded household for now
-      
-      // Filter by Budget Category if applicable, or generic logic
-      // Budget usually linked to category or tag? Schema has 'budgetMode'.
-      // If 'EVENT', assumes manual tagging or specific period?
-      // For migration safety, I'll assume we show total spend for now or filter if possible.
-      // Let's assume budget is Global or Category based? 
-      // Schema: name, budgetMode, period, totalBudget...
-      
-      // Simple logic: Sum expense transactions in period
-      // Ideally we Filter by category if budget has categoryId? Schema doesn't show categoryId.
-      // Maybe it's an "Event" budget. 
-      
-      // Let's just sum ALL expenses for the "Project Breakdown" visual matching the screenshot/code.
-      // Or if it's specific, we might be missing the link.
-      // Re-reading original `api.get('/budgets/${id}/breakdown')` -> Backend logic was likely filtering by associated tags/categories.
-      
-      // For now, I will fetch ALL expenses to show *something* working, rather than broken page.
-      const expenses = allTx.filter(t => {
+      // 2. Fetch Data using Dynamic ID
+      const allTx = await transactionService.getAll(householdId); 
+      const categories: Category[] = await categoryService.getAll(householdId);
+      const accounts: Account[] = await accountService.getAll(householdId);
+      const creditCards: CreditCard[] = await creditCardService.getAll(householdId);
+
+      // 3. Filter Expenses
+      const expenses = allTx.filter((t: any) => {
           if (t.type !== 'EXPENSE') return false;
           const tDate = new Date(t.date);
           return tDate >= start && tDate <= end;
       });
-      const totalSpent = expenses.reduce((sum, t) => sum + t.amount, 0);
+      const totalSpent = expenses.reduce((sum: number, t: any) => sum + t.amount, 0);
 
-      const categoryBreakdown = expenses.reduce((acc: any[], t) => {
-          const catId = t.categoryId || 'uncategorized';
-          const cat = acc.find(c => c.id === catId);
-          if (cat) cat.amount += t.amount;
-          else acc.push({ 
-              id: catId, 
-              amount: t.amount, 
-              name: 'Uncategorized', 
-              color: '#6B7280' 
+      // 4. Build Detailed Breakdown (Spent vs Limit)
+      // Initialize with Configured Limits
+      const breakdownMap = new Map<string, {
+          id: string;
+          name: string;
+          color: string;
+          limit: number;
+          spent: number;
+          transactions: Transaction[];
+      }>();
+
+      if (budget.budgetLimitConfig && budget.budgetLimitConfig.length > 0) {
+          budget.budgetLimitConfig.forEach((limit: BudgetCategoryLimit) => {
+              const cat = categories.find(c => c.id === limit.categoryId);
+              breakdownMap.set(limit.categoryId, {
+                  id: limit.categoryId,
+                  name: cat?.name || 'Unknown',
+                  color: cat?.color || '#64748b',
+                  limit: limit.amount,
+                  spent: 0,
+                  transactions: []
+              });
           });
-          return acc;
-      }, []);
+      }
 
-      // Enhance category names
-      const categories = await categoryService.getAll('household_1');
-      categoryBreakdown.forEach(c => {
-          const found = categories.find(cat => cat.id === c.id);
-          if(found) {
-              c.name = found.name;
-              c.color = found.color;
+      // Add Actuals (and handle unplanned)
+      expenses.forEach((t: any) => {
+          const catId = t.categoryId || 'uncategorized';
+          
+          if (!breakdownMap.has(catId)) {
+              // Add Unplanned Category
+              const cat = categories.find(c => c.id === catId);
+              breakdownMap.set(catId, {
+                  id: catId,
+                  name: cat?.name || 'Uncategorized',
+                  color: cat?.color || '#94a3b8',
+                  limit: 0, // No limit set
+                  spent: 0,
+                  transactions: []
+              });
           }
+
+          const entry = breakdownMap.get(catId)!;
+          entry.spent += t.amount;
+          entry.transactions.push(t);
       });
+
+      // 5. Calculate Projections & Formatting
+      const nowTime = now.getTime();
+      const startTime = start.getTime();
+      const endTime = end.getTime();
+      const totalDuration = endTime - startTime;
+      const elapsed = Math.max(0, Math.min(nowTime - startTime, totalDuration));
       
-      // Calculate %
-      const total = categoryBreakdown.reduce((sum, c) => sum + c.amount, 0);
-      categoryBreakdown.forEach(c => c.percentage = (c.amount / total) * 100);
+      const progressFactor = totalDuration > 0 ? (elapsed / totalDuration) : 1; 
 
-      // Payment Breakdown
-      const accounts = await accountService.getAll('household_1');
-      const creditCards = await creditCardService.getAll('household_1');
-      const allAccounts = [...accounts, ...creditCards];
+      const categoryBreakdown = Array.from(breakdownMap.values()).map(item => {
+          // Linear Projection
+          let projected = item.spent;
+          if (progressFactor > 0 && progressFactor < 1 && nowTime <= endTime) {
+              projected = item.spent / progressFactor;
+          }
 
-      const paymentBreakdown = expenses.reduce((acc: any[], t) => {
+          return {
+              ...item,
+              projected: Math.round(projected),
+              percentage: item.limit > 0 ? (item.spent / item.limit) * 100 : 0,
+              isOverBudget: item.limit > 0 && item.spent > item.limit
+          };
+      });
+
+      // Sort: Overbudget first, then higher spend
+      categoryBreakdown.sort((a,b) => (b.spent - a.spent));
+
+      // 6. Payment Breakdown (Existing Logic)
+      const allAccountsCombined = [...accounts, ...creditCards];
+      const paymentBreakdown = expenses.reduce((acc: any[], t: any) => {
            let accName = 'Unknown Account';
            if (t.accountId) {
-               const foundAcc = allAccounts.find(a => a.id === t.accountId);
+               const foundAcc = allAccountsCombined.find((a: any) => a.id === t.accountId);
                if (foundAcc) accName = foundAcc.name || (foundAcc as any).bankName || 'Account';
            }
-           
-           const existing = acc.find(p => p.name === accName);
+           const existing = acc.find((p: any) => p.name === accName);
            if (existing) existing.amount += t.amount;
            else acc.push({ name: accName, amount: t.amount });
            return acc;
       }, []);
       
-      // Timeline
+      // 7. Timeline (Existing Logic)
       const timelineMap: Record<string, number> = {};
-      expenses.forEach(t => {
-          const dateKey = new Date(t.date).toISOString().split('T')[0]; // YYYY-MM-DD
+      expenses.forEach((t: any) => {
+          const dateKey = new Date(t.date).toISOString().split('T')[0];
           timelineMap[dateKey] = (timelineMap[dateKey] || 0) + t.amount;
       });
-      
       const timeline = Object.keys(timelineMap)
         .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
         .map(date => ({ date, amount: timelineMap[date] }));
 
-      const analytics = {
-          totalSpent,
-          categoryBreakdown,
-          timeline, 
-          paymentBreakdown,
-          insights: []
-      };
+      // 8. Generate Insights
+      const insights = [];
+      const totalBudget = Number(budget.totalBudget || 0);
+      const mainProjection = (progressFactor > 0 && progressFactor < 1 && nowTime <= endTime) ? (totalSpent / progressFactor) : totalSpent;
+      
+      if (mainProjection > totalBudget && totalBudget > 0) {
+          insights.push({
+              title: 'Projected Over Budget',
+              description: `Based on current spending, you might end up spending ₹${Math.round(mainProjection).toLocaleString()}, exceeding your budget by ₹${Math.round(mainProjection - totalBudget).toLocaleString()}.`,
+              severity: 'warning'
+          });
+      }
+      
+      categoryBreakdown.filter(c => c.isOverBudget).forEach(c => {
+           insights.push({
+               title: `${c.name} Over Limit`,
+               description: `You have exceeded the set limit for ${c.name} by ₹${(c.spent - c.limit).toLocaleString()}.`,
+               severity: 'error'
+           });
+      });
 
-      setData({ budget, analytics });
+      setData({ 
+          budget, 
+          analytics: {
+              totalSpent,
+              categoryBreakdown,
+              timeline, 
+              paymentBreakdown,
+              insights,
+              daysLeft: Math.ceil((endTime - nowTime) / (1000 * 60 * 60 * 24))
+          } 
+      });
     } catch (e) {
       console.error(e);
-      // router.push('/budgets');
     } finally {
       setLoading(false);
     }
@@ -152,7 +206,7 @@ export default function BudgetDetailPage() {
 
   const totalSpent = analytics.totalSpent;
   const budgetLimit = Number(budget.totalBudget || 0);
-  const percentUsed = Math.min((totalSpent / budgetLimit) * 100, 100);
+  const percentUsed = Math.min((totalSpent / budgetLimit || 0) * 100, 100);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
@@ -167,7 +221,10 @@ export default function BudgetDetailPage() {
             </button>
             <div>
                 <h1 className="text-3xl font-bold">{budget.name}</h1>
-                <p className="text-gray-400 text-sm">Trip Cost Breakdown</p>
+                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                    <Calendar className="h-4 w-4" />
+                    <span>Cost Breakdown & Projections</span>
+                </div>
             </div>
         </div>
 
@@ -183,7 +240,7 @@ export default function BudgetDetailPage() {
                             <div className="text-4xl font-bold font-mono mt-1">₹{totalSpent.toLocaleString()}</div>
                         </div>
                         <div className="text-right">
-                             <span className="text-gray-400 text-xs">Budget</span>
+                             <span className="text-gray-400 text-xs">Total Limit</span>
                              <div className="text-sm font-bold text-gray-300">₹{budgetLimit.toLocaleString()}</div>
                         </div>
                     </div>
@@ -197,7 +254,7 @@ export default function BudgetDetailPage() {
                     </div>
                     <div className="flex justify-between text-xs text-gray-500">
                         <span>{Math.round(percentUsed)}% Used</span>
-                        <span>₹{(budgetLimit - totalSpent).toLocaleString()} Remaining</span>
+                        <span>₹{(Math.max(0, budgetLimit - totalSpent)).toLocaleString()} Remaining</span>
                     </div>
                 </div>
 
@@ -206,7 +263,7 @@ export default function BudgetDetailPage() {
                     <div className="space-y-3">
                         <h3 className="font-bold text-gray-400 flex items-center gap-2">
                             <AlertCircle className="h-4 w-4 text-yellow-400" />
-                            Smart Insights
+                            Insights & Alerts
                         </h3>
                         {insights.map((insight: any, idx: number) => (
                             <motion.div 
@@ -250,87 +307,84 @@ export default function BudgetDetailPage() {
             {/* Middle & Right Col: Visualizations */}
             <div className="lg:col-span-2 space-y-6">
                 
-                {/* Category Breakdown Chart */}
+                {/* Category Breakdown Table */}
                 <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50">
                     <h3 className="font-bold text-gray-400 mb-6 flex items-center gap-2">
                         <PieChart className="h-4 w-4 text-purple-400" />
-                        Category Split
+                        Category Performance
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                        <div className="h-[250px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RePieChart>
-                                    <Pie
-                                        data={categoryBreakdown}
-                                        innerRadius={60}
-                                        outerRadius={80}
-                                        paddingAngle={5}
-                                        dataKey="amount"
-                                    >
-                                        {categoryBreakdown.map((entry: any, index: number) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                                        ))}
-                                    </Pie>
-                                    <ReTooltip 
-                                        contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
-                                        itemStyle={{ color: '#fff' }}
-                                        formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
-                                    />
-                                </RePieChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="space-y-2">
-                             {categoryBreakdown.map((cat: any) => (
-                                 <div key={cat.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg transition-colors">
-                                     <div className="flex items-center gap-3">
-                                         <div className="w-3 h-3 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]" style={{ backgroundColor: cat.color }} />
-                                         <span className="font-medium">{cat.name}</span>
-                                     </div>
-                                     <div className="text-right">
-                                         <div className="font-bold font-mono text-sm">₹{cat.amount.toLocaleString()}</div>
-                                         <div className="text-xs text-gray-500">{Math.round(cat.percentage)}%</div>
-                                     </div>
-                                 </div>
-                             ))}
-                        </div>
+                    
+                    {/* Header Row */}
+                    <div className="grid grid-cols-12 text-xs text-gray-500 uppercase font-bold mb-4 px-2">
+                        <div className="col-span-5">Category</div>
+                        <div className="col-span-3 text-right">Spent / Limit</div>
+                        <div className="col-span-4 text-right">Projection</div>
+                    </div>
+
+                    <div className="space-y-4">
+                        {categoryBreakdown.map((cat: any) => (
+                            <div key={cat.id} className="p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
+                                <div className="grid grid-cols-12 items-center mb-2">
+                                    <div className="col-span-5 flex items-center gap-3">
+                                        <div 
+                                            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+                                            style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+                                        >
+                                            {cat.icon || cat.name[0]}
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-sm">{cat.name}</div>
+                                            {cat.limit === 0 && <div className="text-[10px] text-gray-500">Unplanned</div>}
+                                        </div>
+                                    </div>
+                                    <div className="col-span-3 text-right">
+                                        <div className="font-mono text-sm">₹{cat.spent.toLocaleString()}</div>
+                                        {cat.limit > 0 && <div className="text-[10px] text-gray-500">of ₹{cat.limit.toLocaleString()}</div>}
+                                    </div>
+                                    <div className="col-span-4 text-right">
+                                        <div className="font-mono text-sm text-gray-300">₹{cat.projected.toLocaleString()}</div>
+                                        <div className="text-[10px] text-gray-500">Est. Month End</div>
+                                    </div>
+                                </div>
+                                
+                                {/* Progress Bar */}
+                                {cat.limit > 0 && (
+                                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden w-full">
+                                        <div 
+                                            className={`h-full rounded-full ${cat.isOverBudget ? 'bg-red-500' : 'bg-blue-500'}`}
+                                            style={{ width: `${Math.min(cat.percentage, 100)}%` }}
+                                        />
+                                    </div>
+                                )}
+                                {cat.isOverBudget && <div className="text-[10px] text-red-400 mt-1 font-bold text-right">Exceeded by ₹{cat.spent - cat.limit}</div>}
+                            </div>
+                        ))}
                     </div>
                 </div>
 
-                {/* Timeline Chart */}
+                {/* Spending Split Pie */}
                 <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50">
-                    <h3 className="font-bold text-gray-400 mb-6 flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-blue-400" />
-                        Spending Timeline
-                    </h3>
-                    <div className="h-[300px] w-full">
+                     <h3 className="font-bold text-gray-400 mb-6">Distribution</h3>
+                     <div className="h-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={timeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <XAxis 
-                                    dataKey="date" 
-                                    tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
-                                    stroke="#4B5563"
-                                    fontSize={12}
-                                />
-                                <YAxis stroke="#4B5563" fontSize={12} />
-                                <ReTooltip
-                                    cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                                    contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
-                                    itemStyle={{ color: '#fff' }}
-                                    formatter={(value: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, 'Spent']}
-                                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                                />
-                                <Bar dataKey="amount" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
-                            </BarChart>
+                            <RePieChart>
+                                <Pie
+                                    data={categoryBreakdown}
+                                    innerRadius={50}
+                                    outerRadius={70}
+                                    paddingAngle={5}
+                                    dataKey="spent"
+                                >
+                                    {categoryBreakdown.map((entry: any, index: number) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                    ))}
+                                </Pie>
+                                <ReTooltip contentStyle={{ backgroundColor: '#1F2937', borderRadius: '12px' }} itemStyle={{ color: '#fff' }} />
+                            </RePieChart>
                         </ResponsiveContainer>
-                    </div>
+                     </div>
                 </div>
 
-                {/* Transaction List Link (or embedded if preferred, keeping as link for now) */}
-                <div className="flex justify-end">
-                    <button className="text-sm text-gray-400 hover:text-white flex items-center gap-1 transition-colors">
-                        View Full Transaction History <ArrowUpRight className="h-4 w-4" />
-                    </button>
-                </div>
             </div>
         </div>
 

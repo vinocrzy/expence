@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
-import { useBudgets } from '../../hooks/useLocalData';
+import { useBudgets, useCategories } from '../../hooks/useLocalData';
 import { budgetService, transactionService } from '../../lib/localdb-services';
 import ConfirmationModal from '../../components/ConfirmationModal';
-import { Plus, Target, Calendar, TrendingUp, AlertTriangle, CheckCircle2, Trash2, Archive, XCircle } from 'lucide-react';
+import { Plus, Target, Calendar, TrendingUp, AlertTriangle, CheckCircle2, Trash2, Archive, XCircle, LayoutGrid } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '../../lib/motion';
 import { useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ export default function BudgetsPage() {
   
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState('ACTIVE'); // ACTIVE, PLANNING
+  const { categories } = useCategories();
   
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -57,7 +58,7 @@ export default function BudgetsPage() {
           if (b.endDate) end = new Date(b.endDate);
           start.setHours(0,0,0,0);
           end.setHours(23,59,59,999);
-      } else if (b.budgetMode === 'RECURRING' || (b as any).type === 'RECURRING') {
+      } else if (b.budgetMode === 'RECURRING' || (b as any).type === 'RECURRING' || b.budgetMode === 'CATEGORY') {
           // Current Month
           start = new Date(now.getFullYear(), now.getMonth(), 1);
           end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -68,7 +69,11 @@ export default function BudgetsPage() {
         .filter(t => t.type === 'EXPENSE')
         .filter(t => {
             const tDate = new Date(t.date);
-            return tDate >= start && tDate <= end;
+            const inDate = tDate >= start && tDate <= end;
+            if (b.budgetMode === 'CATEGORY' && b.categoryId) {
+                return inDate && t.categoryId === b.categoryId;
+            }
+            return inDate;
         })
         .reduce((sum, t) => sum + t.amount, 0);
 
@@ -117,8 +122,12 @@ export default function BudgetsPage() {
       }
   };
 
-  const activeEvents = budgetsWithSpent.filter(b => (b.budgetMode === 'EVENT' || (b as any).type === 'EVENT') && !b.isArchived && b.status === 'ACTIVE');
-  const recurringBudgets = budgetsWithSpent.filter(b => (b.budgetMode === 'RECURRING' || (b as any).type === 'RECURRING') && !b.isArchived && b.status === 'ACTIVE');
+  const activeEvents = budgetsWithSpent.filter(b => (b.budgetMode === 'EVENT' || (b as any).type === 'EVENT') && !b.isArchived && b.status === 'ACTIVE' && !b.categoryId);
+  const recurringBudgets = budgetsWithSpent.filter(b => (b.budgetMode === 'RECURRING' || (b as any).type === 'RECURRING') && !b.isArchived && b.status === 'ACTIVE' && !b.categoryId);
+  const categoryBudgets = budgetsWithSpent.filter(b => b.budgetMode === 'CATEGORY' && !b.isArchived && b.status === 'ACTIVE');
+  // Composite Budgets (New Type: Recurring/Event but has budgetLimitConfig)
+  const compositeBudgets = budgetsWithSpent.filter(b => b.budgetLimitConfig && b.budgetLimitConfig.length > 0 && !b.isArchived && b.status === 'ACTIVE');
+  
   const plannedBudgets = budgetsWithSpent.filter(b => b.status === 'PLANNING' && !b.isArchived);
 
   return (
@@ -141,6 +150,13 @@ export default function BudgetsPage() {
             >
                 <Plus className="h-5 w-5" />
                 {activeTab === 'PLANNING' ? 'Draft Budget' : 'Create Budget'}
+            </button>
+            <button 
+                onClick={() => router.push('/budgets/create')} 
+                className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl font-bold hover:bg-gray-700 transition-colors w-full md:w-auto justify-center"
+            >
+                <LayoutGrid className="h-5 w-5" />
+                Advanced Plan
             </button>
         </div>
 
@@ -236,6 +252,53 @@ export default function BudgetsPage() {
                     Active Events
                 </h2>
                 <div className="grid gap-4">
+                     {/* Composite Budgets (Grouped Plans) */}
+                     {compositeBudgets.map(budget => (
+                         <motion.div 
+                            variants={fadeInUp}
+                            key={budget.id}
+                            onClick={() => router.push(`/budgets/${budget.id}`)}
+                            className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50 cursor-pointer hover:border-gray-600 transition-colors"
+                         >
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="text-xl font-bold">{budget.name}</h3>
+                                    <div className="text-sm text-gray-400 mt-1">
+                                        Comprehensive Plan • {budget.budgetLimitConfig?.length} Categories
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-2xl font-bold font-mono">₹{(budget.totalBudget || 0).toLocaleString()}</div>
+                                    <div className="text-xs text-gray-500 uppercase flex items-center justify-end gap-2 mt-1">
+                                            Limit
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'DELETE'); }}
+                                                className="p-1 hover:text-red-400 text-gray-600 transition-colors"
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Simple Progress for Composite */}
+                            <div className="mb-2">
+                                    <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-gray-400">Total Spent: ₹{(budget.totalSpent || 0).toLocaleString()}</span>
+                                        <span className={(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'text-red-400 font-bold' : 'text-green-400'}>
+                                            {Math.round(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100)}%
+                                        </span>
+                                    </div>
+                                    <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+                                        <div 
+                                            className={`h-full rounded-full ${(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'bg-red-500' : 'bg-purple-500'}`}
+                                            style={{ width: `${Math.min(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100, 100)}%` }}
+                                        />
+                                    </div>
+                            </div>
+                         </motion.div>
+                     ))}
+
+                    {/* Standard Events */}
                     {activeEvents.map(budget => (
                         <motion.div 
                             variants={fadeInUp} 
@@ -318,7 +381,68 @@ export default function BudgetsPage() {
                 </div>
             ) : (
                 <div className="grid gap-4">
-                     {/* Render recurring budgets here similarly */}
+                     {/* Category Budgets First */}
+                     {categoryBudgets.map(budget => {
+                         const category = categories.find(c => c.id === budget.categoryId);
+                         return (
+                            <motion.div 
+                                variants={fadeInUp} 
+                                key={budget.id} 
+                                onClick={() => router.push(`/budgets/${budget.id}`)}
+                                className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50 cursor-pointer hover:border-gray-600 transition-colors"
+                            >
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-3">
+                                        {category && (
+                                            <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-lg">
+                                                {category.icon || category.name[0]}
+                                            </div>
+                                        )}
+                                        <div>
+                                            <h3 className="text-xl font-bold">{budget.name}</h3>
+                                            <div className="text-sm text-gray-400 mt-1">
+                                                Monthly Category Budget
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-2xl font-bold font-mono">₹{(budget.totalBudget || 0).toLocaleString()}</div>
+                                        <div className="text-xs text-gray-500 uppercase flex items-center justify-end gap-2 mt-1">
+                                            Limit
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'DELETE'); }}
+                                                className="p-1 hover:text-red-400 text-gray-600 transition-colors"
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mb-2">
+                                    <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-gray-400">Spent: ₹{(budget.totalSpent || 0).toLocaleString()}</span>
+                                        <span className={(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'text-red-400 font-bold' : 'text-green-400'}>
+                                            {Math.round(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100)}%
+                                        </span>
+                                    </div>
+                                    <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+                                        <div 
+                                            className={`h-full rounded-full ${(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'bg-red-500' : 'bg-blue-500'}`}
+                                            style={{ width: `${Math.min(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100, 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                                {(budget.totalSpent || 0) > (budget.totalBudget || 0) && (
+                                    <div className="flex items-center gap-2 text-red-400 text-sm mt-2 font-bold bg-red-500/10 p-2 rounded-lg">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        Over Budget by ₹{((budget.totalSpent || 0) - (budget.totalBudget || 0)).toLocaleString()}
+                                    </div>
+                                )}
+                            </motion.div>
+                         );
+                     })}
+
+                     {/* Recurring Budgets */}
                      {recurringBudgets.map(budget => (
                          <motion.div 
                              variants={fadeInUp} 
@@ -393,7 +517,7 @@ export default function BudgetsPage() {
       </main>
 
       {showCreateModal && (
-          <CreateBudgetModal onClose={() => setShowCreateModal(false)} onSuccess={refresh} initialStatus={activeTab} />
+          <CreateBudgetModal onClose={() => setShowCreateModal(false)} onSuccess={refresh} initialStatus={activeTab} categories={categories} />
       )}
       
       <ConfirmationModal
@@ -459,13 +583,14 @@ function BudgetTransactionsModal({ budget, onClose }: any) {
 
 // ... CreateBudgetModal ...
 
-function CreateBudgetModal({ onClose, onSuccess, initialStatus }: any) {
+function CreateBudgetModal({ onClose, onSuccess, initialStatus, categories }: any) {
     const [name, setName] = useState('');
     const [type, setType] = useState('EVENT'); 
     const [amount, setAmount] = useState('');
     const [status, setStatus] = useState(initialStatus || 'ACTIVE');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [categoryId, setCategoryId] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -473,7 +598,13 @@ function CreateBudgetModal({ onClose, onSuccess, initialStatus }: any) {
         setLoading(true);
         try {
             await budgetService.create({
-                name, budgetMode: type, totalBudget: parseFloat(amount), startDate, endDate, status,
+                name, 
+                budgetMode: type as any, 
+                categoryId: type === 'CATEGORY' ? categoryId : undefined,
+                totalBudget: parseFloat(amount), 
+                startDate, 
+                endDate, 
+                status,
                 planItems: [], // Initialize plan items
                 totalSpent: 0
             });
@@ -517,8 +648,21 @@ function CreateBudgetModal({ onClose, onSuccess, initialStatus }: any) {
                          <select value={type} onChange={e => setType(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-2 rounded-lg">
                              <option value="EVENT">Event (One-time)</option>
                              <option value="RECURRING">Recurring (Monthly)</option>
+                             <option value="CATEGORY">Category Budget (Monthly)</option>
                          </select>
                     </div>
+                    
+                    {type === 'CATEGORY' && (
+                        <div>
+                            <label className="text-sm text-gray-400">Category</label>
+                            <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-2 rounded-lg" required>
+                                <option value="">Select Category</option>
+                                {categories && categories.map((c: any) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     <div>
                         <label className="text-sm text-gray-400">Total Amount</label>
                         <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-2 rounded-lg" required placeholder="10000" />
