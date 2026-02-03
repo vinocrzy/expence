@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { budgetService, transactionService, categoryService, accountService, creditCardService, getHouseholdId } from '@/lib/localdb-services';
 import { 
     ArrowLeft, PieChart, TrendingUp, AlertCircle, 
-    Calendar, Wallet, CheckCircle2, AlertTriangle, ArrowUpRight 
+    Calendar, Wallet, CheckCircle2, AlertTriangle, ArrowUpRight,
+    ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
@@ -18,179 +19,48 @@ import { Transaction, Budget, Category, Account, CreditCard, BudgetCategoryLimit
 export default function BudgetDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [data, setData] = useState<any>(null);
+  
+  // Raw Data State
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [allAccounts, setAllAccounts] = useState<(Account | CreditCard)[]>([]);
+  
   const [loading, setLoading] = useState(true);
+  
+  // View State
+  const [viewDate, setViewDate] = useState(new Date());
 
   useEffect(() => {
-    if (id) fetchBudgetDetails();
+    if (id) fetchInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const fetchBudgetDetails = async () => {
+  const fetchInitialData = async () => {
     try {
-      const budget = await budgetService.getById(id as string);
-      if (!budget) throw new Error('Budget not found');
-
-      // 0. Get Dynamic Household ID
+      setLoading(true);
       const householdId = await getHouseholdId();
-
-      // 1. Determine Date Range
-      const now = new Date();
-      let start = new Date(now.getFullYear(), now.getMonth(), 1); 
-      let end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       
-      if (budget.startDate && budget.endDate) {
-          start = new Date(budget.startDate);
-          end = new Date(budget.endDate);
-      }
-      // Inclusive timing
-      start.setHours(0,0,0,0);
-      end.setHours(23,59,59,999);
+      const [fetchedBudget, txs, cats, accs, ccs] = await Promise.all([
+          budgetService.getById(id as string),
+          transactionService.getAll(householdId),
+          categoryService.getAll(householdId),
+          accountService.getAll(householdId),
+          creditCardService.getAll(householdId)
+      ]);
 
-      // 2. Fetch Data using Dynamic ID
-      const allTx = await transactionService.getAll(householdId); 
-      const categories: Category[] = await categoryService.getAll(householdId);
-      const accounts: Account[] = await accountService.getAll(householdId);
-      const creditCards: CreditCard[] = await creditCardService.getAll(householdId);
+      if (!fetchedBudget) throw new Error('Budget not found');
 
-      // 3. Filter Expenses
-      const expenses = allTx.filter((t: any) => {
-          if (t.type !== 'EXPENSE') return false;
-          const tDate = new Date(t.date);
-          return tDate >= start && tDate <= end;
-      });
-      const totalSpent = expenses.reduce((sum: number, t: any) => sum + t.amount, 0);
-
-      // 4. Build Detailed Breakdown (Spent vs Limit)
-      // Initialize with Configured Limits
-      const breakdownMap = new Map<string, {
-          id: string;
-          name: string;
-          color: string;
-          limit: number;
-          spent: number;
-          transactions: Transaction[];
-      }>();
-
-      if (budget.budgetLimitConfig && budget.budgetLimitConfig.length > 0) {
-          budget.budgetLimitConfig.forEach((limit: BudgetCategoryLimit) => {
-              const cat = categories.find(c => c.id === limit.categoryId);
-              breakdownMap.set(limit.categoryId, {
-                  id: limit.categoryId,
-                  name: cat?.name || 'Unknown',
-                  color: cat?.color || '#64748b',
-                  limit: limit.amount,
-                  spent: 0,
-                  transactions: []
-              });
-          });
+      setBudget(fetchedBudget);
+      setAllTransactions(txs);
+      setCategories(cats);
+      setAllAccounts([...accs, ...ccs]);
+      
+      // If event budget, set viewDate to start date to ensure we see relevant period immediately
+      if (fetchedBudget.budgetMode === 'EVENT' && fetchedBudget.startDate) {
+          setViewDate(new Date(fetchedBudget.startDate));
       }
 
-      // Add Actuals (and handle unplanned)
-      expenses.forEach((t: any) => {
-          const catId = t.categoryId || 'uncategorized';
-          
-          if (!breakdownMap.has(catId)) {
-              // Add Unplanned Category
-              const cat = categories.find(c => c.id === catId);
-              breakdownMap.set(catId, {
-                  id: catId,
-                  name: cat?.name || 'Uncategorized',
-                  color: cat?.color || '#94a3b8',
-                  limit: 0, // No limit set
-                  spent: 0,
-                  transactions: []
-              });
-          }
-
-          const entry = breakdownMap.get(catId)!;
-          entry.spent += t.amount;
-          entry.transactions.push(t);
-      });
-
-      // 5. Calculate Projections & Formatting
-      const nowTime = now.getTime();
-      const startTime = start.getTime();
-      const endTime = end.getTime();
-      const totalDuration = endTime - startTime;
-      const elapsed = Math.max(0, Math.min(nowTime - startTime, totalDuration));
-      
-      const progressFactor = totalDuration > 0 ? (elapsed / totalDuration) : 1; 
-
-      const categoryBreakdown = Array.from(breakdownMap.values()).map(item => {
-          // Linear Projection
-          let projected = item.spent;
-          if (progressFactor > 0 && progressFactor < 1 && nowTime <= endTime) {
-              projected = item.spent / progressFactor;
-          }
-
-          return {
-              ...item,
-              projected: Math.round(projected),
-              percentage: item.limit > 0 ? (item.spent / item.limit) * 100 : 0,
-              isOverBudget: item.limit > 0 && item.spent > item.limit
-          };
-      });
-
-      // Sort: Overbudget first, then higher spend
-      categoryBreakdown.sort((a,b) => (b.spent - a.spent));
-
-      // 6. Payment Breakdown (Existing Logic)
-      const allAccountsCombined = [...accounts, ...creditCards];
-      const paymentBreakdown = expenses.reduce((acc: any[], t: any) => {
-           let accName = 'Unknown Account';
-           if (t.accountId) {
-               const foundAcc = allAccountsCombined.find((a: any) => a.id === t.accountId);
-               if (foundAcc) accName = foundAcc.name || (foundAcc as any).bankName || 'Account';
-           }
-           const existing = acc.find((p: any) => p.name === accName);
-           if (existing) existing.amount += t.amount;
-           else acc.push({ name: accName, amount: t.amount });
-           return acc;
-      }, []);
-      
-      // 7. Timeline (Existing Logic)
-      const timelineMap: Record<string, number> = {};
-      expenses.forEach((t: any) => {
-          const dateKey = new Date(t.date).toISOString().split('T')[0];
-          timelineMap[dateKey] = (timelineMap[dateKey] || 0) + t.amount;
-      });
-      const timeline = Object.keys(timelineMap)
-        .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
-        .map(date => ({ date, amount: timelineMap[date] }));
-
-      // 8. Generate Insights
-      const insights = [];
-      const totalBudget = Number(budget.totalBudget || 0);
-      const mainProjection = (progressFactor > 0 && progressFactor < 1 && nowTime <= endTime) ? (totalSpent / progressFactor) : totalSpent;
-      
-      if (mainProjection > totalBudget && totalBudget > 0) {
-          insights.push({
-              title: 'Projected Over Budget',
-              description: `Based on current spending, you might end up spending ₹${Math.round(mainProjection).toLocaleString()}, exceeding your budget by ₹${Math.round(mainProjection - totalBudget).toLocaleString()}.`,
-              severity: 'warning'
-          });
-      }
-      
-      categoryBreakdown.filter(c => c.isOverBudget).forEach(c => {
-           insights.push({
-               title: `${c.name} Over Limit`,
-               description: `You have exceeded the set limit for ${c.name} by ₹${(c.spent - c.limit).toLocaleString()}.`,
-               severity: 'error'
-           });
-      });
-
-      setData({ 
-          budget, 
-          analytics: {
-              totalSpent,
-              categoryBreakdown,
-              timeline, 
-              paymentBreakdown,
-              insights,
-              daysLeft: Math.ceil((endTime - nowTime) / (1000 * 60 * 60 * 24))
-          } 
-      });
     } catch (e) {
       console.error(e);
     } finally {
@@ -198,13 +68,203 @@ export default function BudgetDetailPage() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading breakdown...</div>;
-  if (!data) return null;
+  // Derived Analytics based on View Date and Budget Mode
+  const analytics = useMemo(() => {
+    if (!budget) return null;
 
-  const { budget, analytics } = data;
-  const { categoryBreakdown, timeline, paymentBreakdown, insights } = analytics;
+    // 1. Determine Date Range
+    let start: Date;
+    let end: Date;
 
-  const totalSpent = analytics.totalSpent;
+    if (budget.budgetMode === 'EVENT' && budget.startDate && budget.endDate) {
+        start = new Date(budget.startDate);
+        end = new Date(budget.endDate);
+    } else {
+        // Recurring: Use View Date Month
+        start = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1); 
+        end = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
+    }
+    
+    // Inclusive timing
+    start.setHours(0,0,0,0);
+    end.setHours(23,59,59,999);
+
+    // 2. Filter Transactions
+    console.log('--- Budget Calc Debug ---');
+    console.log('View Date:', viewDate.toISOString());
+    console.log('Range:', start.toISOString(), 'to', end.toISOString());
+    console.log('Total Transactions Fetched:', allTransactions.length);
+
+    const expenses = allTransactions.filter((t) => {
+        if (t.type !== 'EXPENSE') return false;
+        const tDate = new Date(t.date);
+        const inRange = tDate >= start && tDate <= end;
+        if (!inRange && allTransactions.length < 50) { // Log filtered out items if dataset small
+             console.log('Excluded Tx:', t.date, t.amount, t.categoryId, 'Reason: Date/Type');
+        }
+        return inRange;
+    });
+
+    console.log('Matching Expenses:', expenses.length);
+    if (expenses.length > 0) {
+        console.log('Sample Expense:', expenses[0]);
+    }
+    
+    const totalSpent = expenses.reduce((sum, t) => sum + t.amount, 0);
+
+    // 3. Breakdown Calculation
+    const breakdownMap = new Map<string, {
+        id: string;
+        name: string;
+        color: string;
+        limit: number;
+        spent: number;
+        transactions: Transaction[];
+    }>();
+
+    // Init Config
+    if (budget.budgetLimitConfig && budget.budgetLimitConfig.length > 0) {
+        budget.budgetLimitConfig.forEach((limit: BudgetCategoryLimit) => {
+            const cat = categories.find(c => c.id === limit.categoryId);
+            breakdownMap.set(limit.categoryId, {
+                id: limit.categoryId,
+                name: cat?.name || 'Unknown',
+                color: cat?.color || '#64748b',
+                limit: limit.amount,
+                spent: 0,
+                transactions: []
+            });
+        });
+    }
+
+    // Process Expenses
+    expenses.forEach((t) => {
+        const catId = t.categoryId || 'uncategorized';
+        
+        if (!breakdownMap.has(catId)) {
+            const cat = categories.find(c => c.id === catId);
+            breakdownMap.set(catId, {
+                id: catId,
+                name: cat?.name || 'Uncategorized',
+                color: cat?.color || '#94a3b8',
+                limit: 0,
+                spent: 0,
+                transactions: []
+            });
+        }
+
+        const entry = breakdownMap.get(catId)!;
+        entry.spent += t.amount;
+        entry.transactions.push(t);
+    });
+
+    // 4. Projections
+    const now = new Date();
+    const nowTime = now.getTime();
+    const startTime = start.getTime();
+    const endTime = end.getTime();
+    const totalDuration = endTime - startTime;
+    // Calculate elapsed time within the target window
+    // If looking at a past month, elapsed is full duration
+    // If future, 0. If current, partial.
+    let elapsed = 0;
+    
+    if (nowTime > endTime) {
+        elapsed = totalDuration; // Past period completed
+    } else if (nowTime < startTime) {
+        elapsed = 0; // Future period not started
+    } else {
+        elapsed = nowTime - startTime; // Current period in progress
+    }
+    
+    const progressFactor = totalDuration > 0 ? (elapsed / totalDuration) : 1; 
+
+    const categoryBreakdown = Array.from(breakdownMap.values()).map(item => {
+        let projected = item.spent;
+        // Only project if current active period
+        if (progressFactor > 0 && progressFactor < 1 && nowTime <= endTime && nowTime >= startTime) {
+            projected = item.spent / progressFactor;
+        }
+
+        return {
+            ...item,
+            projected: Math.round(projected),
+            percentage: item.limit > 0 ? (item.spent / item.limit) * 100 : 0,
+            isOverBudget: item.limit > 0 && item.spent > item.limit
+        };
+    });
+
+    categoryBreakdown.sort((a,b) => (b.spent - a.spent));
+
+    // 5. Timeline & Payment Methods
+    const paymentBreakdown = expenses.reduce((acc: any[], t: any) => {
+         let accName = 'Unknown Account';
+         if (t.accountId) {
+             const foundAcc = allAccounts.find((a: any) => a.id === t.accountId);
+             if (foundAcc) accName = foundAcc.name || (foundAcc as any).bankName || 'Account';
+         }
+         const existing = acc.find((p: any) => p.name === accName);
+         if (existing) existing.amount += t.amount;
+         else acc.push({ name: accName, amount: t.amount });
+         return acc;
+    }, []);
+    
+    const timelineMap: Record<string, number> = {};
+    expenses.forEach((t: any) => {
+        const dateKey = new Date(t.date).toISOString().split('T')[0];
+        timelineMap[dateKey] = (timelineMap[dateKey] || 0) + t.amount;
+    });
+    const timeline = Object.keys(timelineMap)
+      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+      .map(date => ({ date, amount: timelineMap[date] }));
+
+    // 6. Insights
+    const insights = [];
+    const totalBudget = Number(budget.totalBudget || 0);
+    const mainProjection = (progressFactor > 0 && progressFactor < 1 && nowTime <= endTime && nowTime >= startTime) ? (totalSpent / progressFactor) : totalSpent;
+    
+    if (mainProjection > totalBudget && totalBudget > 0) {
+        insights.push({
+            title: 'Projected Over Budget',
+            description: `Based on current spending, you might end up spending ₹${Math.round(mainProjection).toLocaleString()}, exceeding your budget by ₹${Math.round(mainProjection - totalBudget).toLocaleString()}.`,
+            severity: 'warning'
+        });
+    }
+    
+    categoryBreakdown.filter(c => c.isOverBudget).forEach(c => {
+         insights.push({
+             title: `${c.name} Over Limit`,
+             description: `Limit: ₹${c.limit.toLocaleString()}. Spent: ₹${c.spent.toLocaleString()}.`,
+             severity: 'error'
+         });
+    });
+
+    const daysLeft = Math.ceil((endTime - nowTime) / (1000 * 60 * 60 * 24));
+
+    return {
+        totalSpent,
+        categoryBreakdown,
+        timeline,
+        paymentBreakdown,
+        insights,
+        daysLeft: daysLeft > 0 ? daysLeft : 0,
+        start,
+        end
+    };
+  }, [budget, allTransactions, categories, allAccounts, viewDate]);
+
+  // View Helpers
+  const changeMonth = (delta: number) => {
+      const newDate = new Date(viewDate);
+      newDate.setMonth(newDate.getMonth() + delta);
+      setViewDate(newDate);
+  };
+
+  const isRecurring = budget?.budgetMode === 'RECURRING' || !budget?.budgetMode; // Default to recurring if undefined?
+  
+  if (loading || !budget || !analytics) return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Loading breakdown...</div>;
+
+  const { totalSpent, categoryBreakdown, timeline, paymentBreakdown, insights, start, end } = analytics;
   const budgetLimit = Number(budget.totalBudget || 0);
   const percentUsed = Math.min((totalSpent / budgetLimit || 0) * 100, 100);
 
@@ -215,24 +275,48 @@ export default function BudgetDetailPage() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-            <button onClick={() => router.back()} className="p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors">
-                <ArrowLeft className="h-6 w-6" />
-            </button>
-            <div>
-                <h1 className="text-3xl font-bold">{budget.name}</h1>
-                <div className="flex items-center gap-2 text-gray-400 text-sm">
-                    <Calendar className="h-4 w-4" />
-                    <span>Cost Breakdown & Projections</span>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div className="flex items-center gap-4">
+                <button onClick={() => router.back()} className="p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors">
+                    <ArrowLeft className="h-6 w-6" />
+                </button>
+                <div>
+                    <h1 className="text-3xl font-bold">{budget.name}</h1>
+                    <div className="flex items-center gap-2 text-gray-400 text-sm">
+                        <Calendar className="h-4 w-4" />
+                        <span>Recurring Budget Plan</span>
+                    </div>
                 </div>
             </div>
+
+            {/* Month Selector for Recurring */}
+            {isRecurring && (
+                <div className="flex items-center bg-gray-800 rounded-xl p-1 border border-gray-700">
+                    <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white">
+                        <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <div className="px-4 font-bold min-w-[140px] text-center">
+                        {start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </div>
+                    <button onClick={() => changeMonth(1)} className="p-2 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white">
+                        <ChevronRight className="h-5 w-5" />
+                    </button>
+                </div>
+            )}
+            
+            {/* Date Range for Event */}
+            {!isRecurring && (
+                <div className="bg-gray-800 px-4 py-2 rounded-xl border border-gray-700 font-mono text-sm">
+                    {start.toLocaleDateString()} - {end.toLocaleDateString()}
+                </div>
+            )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             {/* Left Col: Overview & Insights */}
             <div className="space-y-6">
-                {/* Main Card */}
+                {/* Visual Card */}
                 <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50">
                     <div className="flex justify-between items-end mb-4">
                         <div>
