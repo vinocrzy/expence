@@ -13,6 +13,7 @@ interface SplitTransactionFormProps {
   categories: Category[];
   currencySymbol: string;
   initialAmount?: string;
+  initialSplits?: Split[];
   onValidationChange: (isValid: boolean, totalAmount: number, splits: Split[]) => void;
 }
 
@@ -20,13 +21,16 @@ export default function SplitTransactionForm({
   categories,
   currencySymbol,
   initialAmount = '',
+  initialSplits = [],
   onValidationChange
 }: SplitTransactionFormProps) {
   const [totalAmount, setTotalAmount] = useState<string>(initialAmount);
   // Each split: id, amount, categoryId, note
-  const [splits, setSplits] = useState<Split[]>([
-    { id: crypto.randomUUID(), amount: 0, categoryId: '', note: '' }
-  ]);
+  const [splits, setSplits] = useState<Split[]>(
+    initialSplits.length > 0 
+      ? initialSplits 
+      : [{ id: crypto.randomUUID(), amount: 0, categoryId: '', note: '' }]
+  );
 
   // Derived state
   const totalRaw = parseFloat(totalAmount) || 0;

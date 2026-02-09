@@ -249,7 +249,20 @@ function TransactionModal({
                 <button
                     type="button"
                     onClick={() => {
-                         setIsSplit(!isSplit);
+                         const newIsSplit = !isSplit;
+                         setIsSplit(newIsSplit);
+                         
+                         // If turning on split and no splits exist, convert current transaction to first split
+                         if (newIsSplit && splits.length === 0 && amount) {
+                             setSplits([{
+                                 id: crypto.randomUUID(),
+                                 amount: parseFloat(amount),
+                                 categoryId: categoryId,
+                                 note: description
+                             }]);
+                             setSplitTotal(parseFloat(amount));
+                         }
+                         
                          // Clear error when toggling
                          setError('');
                     }}
@@ -269,6 +282,7 @@ function TransactionModal({
                     categories={filteredCategories}
                     currencySymbol={accounts.find(a => a.id === accountId)?.currency === 'USD' ? '$' : accounts.find(a => a.id === accountId)?.currency === 'EUR' ? '€' : accounts.find(a => a.id === accountId)?.currency === 'GBP' ? '£' : '₹'}
                     initialAmount={initialData?.amount?.toString() || amount}
+                    initialSplits={splits}
                     onValidationChange={(valid, total, newSplits) => {
                         setIsSplitValid(valid);
                         setSplitTotal(total);
