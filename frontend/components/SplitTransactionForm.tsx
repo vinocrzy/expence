@@ -14,6 +14,7 @@ interface SplitTransactionFormProps {
   currencySymbol: string;
   initialAmount?: string;
   initialSplits?: Split[];
+  isReadOnly?: boolean;
   onValidationChange: (isValid: boolean, totalAmount: number, splits: Split[]) => void;
 }
 
@@ -22,6 +23,7 @@ export default function SplitTransactionForm({
   currencySymbol,
   initialAmount = '',
   initialSplits = [],
+  isReadOnly = false,
   onValidationChange
 }: SplitTransactionFormProps) {
   const [totalAmount, setTotalAmount] = useState<string>(initialAmount);
@@ -87,9 +89,10 @@ export default function SplitTransactionForm({
         <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
             <Calculator className="w-4 h-4 text-purple-400" />
             Total Amount
+            {isReadOnly && <span className="text-xs text-gray-500 ml-auto">(Locked)</span>}
         </label>
         <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
+            <span className={`absolute left-3 top-1/2 -translate-y-1/2 font-bold ${isReadOnly ? 'text-gray-600' : 'text-gray-400'}`}>
                 {currencySymbol}
             </span>
             <input
@@ -97,7 +100,10 @@ export default function SplitTransactionForm({
                 step="0.01"
                 value={totalAmount}
                 onChange={(e) => setTotalAmount(e.target.value)}
-                className="block w-full pl-8 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono text-lg"
+                disabled={isReadOnly}
+                className={`block w-full pl-8 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono text-lg ${
+                    isReadOnly ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''
+                }`}
                 placeholder="0.00"
             />
         </div>

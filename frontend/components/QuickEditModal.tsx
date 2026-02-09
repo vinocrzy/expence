@@ -10,6 +10,7 @@ interface QuickEditModalProps {
   accounts: any[]; // For currency display if needed
   categories: Category[];
   onSuccess: () => void;
+  onEditFully?: (transaction: Transaction) => void;
 }
 
 export default function QuickEditModal({
@@ -17,7 +18,8 @@ export default function QuickEditModal({
   onClose,
   transaction,
   categories,
-  onSuccess
+  onSuccess,
+  onEditFully
 }: QuickEditModalProps) {
   const [categoryId, setCategoryId] = useState('');
   const [subCategoryId, setSubCategoryId] = useState('');
@@ -117,7 +119,7 @@ export default function QuickEditModal({
                 </div>
             )}
 
-            <div className="pt-2">
+        <div className="pt-2 flex flex-col gap-2">
                 <button
                     type="submit"
                     disabled={loading}
@@ -130,6 +132,16 @@ export default function QuickEditModal({
                         </>
                     )}
                 </button>
+                
+                {onEditFully && (
+                    <button
+                        type="button"
+                        onClick={() => onEditFully(transaction)}
+                        className="w-full py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                    >
+                        Edit full details (Split, Date, Account)
+                    </button>
+                )}
             </div>
         </form>
       </div>

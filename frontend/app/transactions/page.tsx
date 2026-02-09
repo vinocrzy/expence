@@ -402,6 +402,11 @@ export default function TransactionsPage() {
              setIsQuickEditOpen(false);
              setQuickEditTransaction(null);
         }}
+        onEditFully={(t) => {
+            setIsQuickEditOpen(false);
+            setQuickEditTransaction(null);
+            handleEdit(t);
+        }}
       />
     </div>
   );

@@ -48,6 +48,9 @@ function TransactionModal({
   const [selectedEventId, setSelectedEventId] = useState('');
   const [isSuggesting, setIsSuggesting] = useState(false);
 
+  // Edit Mode Flag
+  const isEditMode = !!initialData;
+
   // Split Transaction State
   const [isSplit, setIsSplit] = useState(false);
   const [splits, setSplits] = useState<any[]>([]);
@@ -232,12 +235,13 @@ function TransactionModal({
                     <button
                         key={t}
                         type="button"
+                        disabled={isEditMode}
                         onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
                             type === t 
                             ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400' : t === 'EXPENSE' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400')
                             : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                        }`}
+                        } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         {t}
                     </button>
@@ -283,6 +287,7 @@ function TransactionModal({
                     currencySymbol={accounts.find(a => a.id === accountId)?.currency === 'USD' ? '$' : accounts.find(a => a.id === accountId)?.currency === 'EUR' ? '€' : accounts.find(a => a.id === accountId)?.currency === 'GBP' ? '£' : '₹'}
                     initialAmount={initialData?.amount?.toString() || amount}
                     initialSplits={splits}
+                    isReadOnly={isEditMode}
                     onValidationChange={(valid, total, newSplits) => {
                         setIsSplitValid(valid);
                         setSplitTotal(total);
@@ -305,7 +310,8 @@ function TransactionModal({
                         step="0.01"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        className="block w-full pl-8 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono text-lg"
+                        disabled={isEditMode}
+                        className={`block w-full pl-8 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono text-lg ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
                         placeholder="0.00"
                         required={!isSplit}
                         />
@@ -384,8 +390,9 @@ function TransactionModal({
                 <select
                 value={accountId}
                 onChange={(e) => setAccountId(e.target.value)}
-                className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                className={`block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
                 required
+                disabled={isEditMode}
                 >
                 <option value="" disabled>Select Account</option>
                 {accounts.map(acc => (
@@ -400,8 +407,9 @@ function TransactionModal({
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                className={`block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
                 required
+                disabled={isEditMode}
                 />
             </div>
           </div>
