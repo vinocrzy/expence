@@ -6,15 +6,6 @@
   --foreground: #ededed;
 }
 
-/* Optional Light Mode Overrides if needed later */
-@media (prefers-color-scheme: light) {
-  /* Keep it dark for now as the app seems fully dark themed based on code */
-  :root {
-     --background: #111827;
-     --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
@@ -26,6 +17,12 @@ body {
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
 }
+
+/* Retaining Custom Overrides */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
 
 /* Safe Area Utility Classes */
 .pt-safe {
