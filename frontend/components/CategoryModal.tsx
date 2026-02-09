@@ -15,6 +15,8 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
   const [name, setName] = useState('');
   const [type, setType] = useState('EXPENSE');
   const [color, setColor] = useState('#808080');
+  const [subCategories, setSubCategories] = useState<{id: string, name: string}[]>([]);
+  const [newSubCategory, setNewSubCategory] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -25,16 +27,33 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
         setError('');
         if (initialData) {
             setName(initialData.name);
-            setName(initialData.name);
             setType(initialData.type);
             setColor(initialData.color);
+            setSubCategories(initialData.subCategories || []);
         } else {
             setName('');
             setType('EXPENSE');
             setColor('#808080'); // Default Gray
+            setSubCategories([]);
         }
     }
   }, [initialData, isOpen]);
+
+  const handleAddSubCategory = () => {
+      if (!newSubCategory.trim()) return;
+      if (subCategories.some(sc => sc.name.toLowerCase() === newSubCategory.trim().toLowerCase())) {
+          return; // Duplicate
+      }
+      setSubCategories([...subCategories, { 
+          id: crypto.randomUUID(), 
+          name: newSubCategory.trim() 
+      }]);
+      setNewSubCategory('');
+  };
+
+  const handleRemoveSubCategory = (id: string) => {
+      setSubCategories(subCategories.filter(sc => sc.id !== id));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,13 +62,12 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
     
     try {
       if (onSubmit) {
-         await onSubmit({ name, type, color });
+         await onSubmit({ name, type, color, subCategories });
       } else {
-         await categoryService.create({ name, type, color });
+         await categoryService.create({ name, type, color, subCategories });
       }
       onClose();
     } catch (err: any) {
-      console.error(err);
       console.error(err);
       setError(err.message || 'Failed to save category');
     } finally {
@@ -132,6 +150,51 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
                     title="Custom Color"
                 />
              </div>
+          </div>
+          
+          {/* Sub-categories */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-300">Sub-categories</label>
+            <div className="flex gap-2">
+                <input
+                    type="text"
+                    value={newSubCategory}
+                    onChange={(e) => setNewSubCategory(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddSubCategory();
+                        }
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 text-sm"
+                    placeholder="Add sub-category (e.g. Fruits)"
+                />
+                <button
+                    type="button"
+                     onClick={handleAddSubCategory}
+                     disabled={!newSubCategory.trim()}
+                     className="px-3 py-2 bg-gray-700 text-white rounded-xl hover:bg-gray-600 disabled:opacity-50 transition-colors"
+                >
+                    Add
+                </button>
+            </div>
+            
+            {subCategories.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                    {subCategories.map(sc => (
+                        <div key={sc.id} className="flex items-center gap-1 px-2 py-1 bg-gray-700/50 border border-gray-600 rounded-lg text-sm text-gray-300">
+                            <span>{sc.name}</span>
+                            <button
+                                type="button"
+                                onClick={() => handleRemoveSubCategory(sc.id)}
+                                className="text-gray-500 hover:text-red-400 transition-colors"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
           </div>
 
           <div className="flex justify-end pt-4 gap-3">

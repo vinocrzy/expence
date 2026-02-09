@@ -15,6 +15,7 @@ interface Category {
   name: string;
   type: string;
   color: string;
+  subCategories?: { id: string; name: string }[];
 }
 
 interface TransactionModalProps {
@@ -42,6 +43,8 @@ function TransactionModal({
   const [categoryId, setCategoryId] = useState('');
   const [type, setType] = useState('EXPENSE');
   const [description, setDescription] = useState('');
+  
+  const [subCategoryId, setSubCategoryId] = useState('');
   
   const [categories, setCategories] = useState<Category[]>([]);
   // const { addTransaction } = useTransactionMutations(); // removed
@@ -91,7 +94,7 @@ function TransactionModal({
         });
 
         if (process.env.NEXT_PUBLIC_ENABLE_EVENT_BUDGETS !== 'false') {
-          // Load active budgets from local database
+          // Load active active budgets from local database
             budgetService.getActiveEventBudgets().then(budgets => {
               setActiveEvents(budgets.map((b: any) => ({ 
                 id: b.id, 
@@ -111,6 +114,7 @@ function TransactionModal({
             setDate(new Date(initialData.date).toISOString().split('T')[0]);
             setAccountId(initialData.accountId);
             setCategoryId(initialData.categoryId || '');
+            setSubCategoryId(initialData.subCategoryId || '');
             setType(initialData.type);
             setDescription(initialData.description || '');
             setSelectedEventId(initialData.budgetId || '');
@@ -126,6 +130,7 @@ function TransactionModal({
             // OR I can add a check:
             setAccountId('');
             setCategoryId('');
+            setSubCategoryId('');
             setType(initialType);
             setDescription('');
             setSelectedEventId('');
@@ -151,6 +156,7 @@ function TransactionModal({
       date: new Date(date).toISOString(),
       accountId,
       categoryId: categoryId || undefined,
+      subCategoryId: subCategoryId || undefined,
       type,
       description,
       budgetId: selectedEventId || undefined
@@ -173,6 +179,13 @@ function TransactionModal({
   };
 
   const filteredCategories = useMemo(() => categories.filter(c => c.type === type), [categories, type]);
+  
+  // Get sub-categories for selected category
+  const activeSubCategories = useMemo(() => {
+      if (!categoryId) return [];
+      const cat = categories.find(c => c.id === categoryId);
+      return cat?.subCategories || [];
+  }, [categories, categoryId]);
 
   if (!isOpen) return null;
 
@@ -202,7 +215,7 @@ function TransactionModal({
                     <button
                         key={t}
                         type="button"
-                        onClick={() => { setType(t); setCategoryId(''); }}
+                        onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
                             type === t 
                             ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400' : t === 'EXPENSE' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400')
@@ -237,16 +250,31 @@ function TransactionModal({
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-300">Category</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-            >
-              <option value="">Uncategorized</option>
-              {filteredCategories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
+            <div className="flex gap-2">
+                <select
+                  value={categoryId}
+                  onChange={(e) => { setCategoryId(e.target.value); setSubCategoryId(''); }}
+                  className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                >
+                  <option value="">Uncategorized</option>
+                  {filteredCategories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+                
+                {activeSubCategories.length > 0 && (
+                     <select
+                        value={subCategoryId}
+                        onChange={(e) => setSubCategoryId(e.target.value)}
+                        className="block w-1/2 px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                      >
+                        <option value="">Sub-category</option>
+                        {activeSubCategories.map(sub => (
+                            <option key={sub.id} value={sub.id}>{sub.name}</option>
+                        ))}
+                      </select>
+                )}
+            </div>
           </div>
 
           <div className="space-y-2">

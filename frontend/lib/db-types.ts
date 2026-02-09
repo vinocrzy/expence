@@ -21,6 +21,7 @@ export interface Transaction {
   description?: string;
   date: string;
   categoryId?: string;
+  subCategoryId?: string; // New: Sub-category ID
   accountId: string;
   householdId: string;
   userId?: string; // ID of the user who made the transaction
@@ -37,6 +38,7 @@ export interface Category {
   type?: string; // INCOME, EXPENSE
   icon?: string;
   color?: string;
+  subCategories?: { id: string; name: string }[]; // New: Sub-categories
   isActive?: boolean; // Default true
   householdId: string;
   createdAt?: string;

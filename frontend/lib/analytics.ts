@@ -123,6 +123,55 @@ export async function calculateCategoryBreakdown(
 }
 
 /**
+ * Calculate sub-category breakdown for a specific category
+ */
+export async function calculateSubCategoryBreakdown(
+  householdId: string,
+  startDate: Date,
+  endDate: Date,
+  categoryId: string
+): Promise<CategoryBreakdown[]> {
+  const [transactions, category] = await Promise.all([
+    transactionService.getByDateRange(householdId, startDate, endDate),
+    categoryService.getById(categoryId)
+  ]);
+
+  if (!category) return [];
+
+  const filtered = transactions.filter((t) => t.categoryId === categoryId && t.type === 'EXPENSE');
+  const total = filtered.reduce((sum, t) => sum + t.amount, 0);
+
+  // Group by sub-category
+  const subCategoryMap = new Map<string, { amount: number; count: number }>();
+
+  filtered.forEach((t) => {
+    const subId = t.subCategoryId || 'unspecified';
+    if (!subCategoryMap.has(subId)) {
+        subCategoryMap.set(subId, { amount: 0, count: 0 });
+    }
+    const sub = subCategoryMap.get(subId)!;
+    sub.amount += t.amount;
+    sub.count += 1;
+  });
+
+  // Convert to array
+  return Array.from(subCategoryMap.entries())
+    .map(([subId, data]) => {
+      const subName = category.subCategories?.find(sc => sc.id === subId)?.name || (subId === 'unspecified' ? 'Unspecified' : 'Unknown');
+      
+      return {
+        categoryId: subId, // Using subId as ID for consistency in UI
+        categoryName: subName,
+        color: category.color, // Inherit parent color
+        amount: data.amount,
+        percentage: total > 0 ? (data.amount / total) * 100 : 0,
+        transactionCount: data.count,
+      };
+    })
+    .sort((a, b) => b.amount - a.amount);
+}
+
+/**
  * Calculate daily/weekly trends
  */
 export async function calculateTrends(

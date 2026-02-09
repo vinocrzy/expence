@@ -143,7 +143,41 @@ export default function AnalyticsPage() {
 
     }, [transactions, dateRange, categories, pieFilterIds]);
 
-    // 3. Current Period Stats (Summary Cards)
+    // 3. Sub-Category Breakdown Data
+    const [selectedCategoryForBreakdown, setSelectedCategoryForBreakdown] = useState<string | null>(null);
+
+    const subCategoryData = useMemo(() => {
+        if (!selectedCategoryForBreakdown) return [];
+
+        const category = categories.find(c => c.id === selectedCategoryForBreakdown);
+        if (!category) return [];
+
+        const subCatMap = new Map<string, number>();
+        let total = 0;
+
+        transactions.forEach(t => {
+            if (t.categoryId === selectedCategoryForBreakdown && t.type === 'EXPENSE') {
+                 const d = new Date(t.date);
+                 if (d >= dateRange.start && d <= dateRange.end) {
+                     const subId = t.subCategoryId || 'unspecified';
+                     subCatMap.set(subId, (subCatMap.get(subId) || 0) + t.amount);
+                     total += t.amount;
+                 }
+            }
+        });
+
+        return Array.from(subCatMap.entries()).map(([subId, value]) => {
+            const subName = category.subCategories?.find(sc => sc.id === subId)?.name || (subId === 'unspecified' ? 'Unspecified' : 'Unknown');
+            return {
+                categoryId: subId,
+                categoryName: subName,
+                amount: value,
+                color: category.color // Inherit parent color for now
+            };
+        }).sort((a, b) => b.amount - a.amount);
+    }, [transactions, dateRange, selectedCategoryForBreakdown, categories]);
+
+    // 4. Current Period Stats (Summary Cards)
     const currentStats = useMemo(() => {
         // Use chartMonthlyData to aggregate total for the selected period
         return chartMonthlyData.data.reduce((acc, curr) => ({
@@ -271,96 +305,149 @@ export default function AnalyticsPage() {
                             <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50 min-h-[400px]">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-lg font-bold flex items-center gap-2">
-                                        <PieIcon className="h-5 w-5 text-pink-500" /> Expense Breakdown
+                                        <PieIcon className="h-5 w-5 text-pink-500" /> 
+                                        {selectedCategoryForBreakdown ? (
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                    onClick={() => setSelectedCategoryForBreakdown(null)}
+                                                    className="text-gray-400 hover:text-white transition-colors text-sm"
+                                                >
+                                                    Expenses /
+                                                </button>
+                                                <span className="text-pink-400">{categories.find(c => c.id === selectedCategoryForBreakdown)?.name}</span>
+                                            </div>
+                                        ) : 'Expense Breakdown'}
                                     </h3>
                                     
-                                    {/* Multi-Select for Pie Chart */}
-                                    <div className="relative z-30">
-                                        <button
-                                            onClick={() => setIsPieDropdownOpen(!isPieDropdownOpen)}
-                                            className="bg-gray-700 text-white text-xs rounded-lg px-3 py-1.5 border border-gray-600 focus:outline-none flex items-center gap-2 hover:bg-gray-600 transition-colors"
-                                        >
-                                            <span className="truncate max-w-[100px]">
-                                                {pieFilterIds.length === 0 
-                                                    ? 'All Categories' 
-                                                    : `${pieFilterIds.length} Selected`}
-                                            </span>
-                                            <ChevronDown className="h-3 w-3 text-gray-400" />
-                                        </button>
-                                        
-                                        {isPieDropdownOpen && (
-                                            <>
-                                                <div className="fixed inset-0 z-10" onClick={() => setIsPieDropdownOpen(false)} />
-                                                <div className="absolute top-full right-0 mt-2 w-48 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 p-2 space-y-1">
-                                                    <button
-                                                        onClick={() => setPieFilterIds([])}
-                                                        className={clsx(
-                                                            "w-full text-left px-3 py-2 rounded-md text-xs transition-colors result-item flex items-center justify-between",
-                                                            pieFilterIds.length === 0 ? "bg-pink-500 text-white" : "text-gray-300 hover:bg-gray-700"
-                                                        )}
-                                                    >
-                                                        <span>All Categories</span>
-                                                        {pieFilterIds.length === 0 && <Check className="h-3 w-3" />}
-                                                    </button>
-                                                    {categories.map(c => (
+                                    {/* Multi-Select for Pie Chart (Only show if NOT drilling down) */}
+                                    {!selectedCategoryForBreakdown && (
+                                        <div className="relative z-30">
+                                            <button
+                                                onClick={() => setIsPieDropdownOpen(!isPieDropdownOpen)}
+                                                className="bg-gray-700 text-white text-xs rounded-lg px-3 py-1.5 border border-gray-600 focus:outline-none flex items-center gap-2 hover:bg-gray-600 transition-colors"
+                                            >
+                                                <span className="truncate max-w-[100px]">
+                                                    {pieFilterIds.length === 0 
+                                                        ? 'All Categories' 
+                                                        : `${pieFilterIds.length} Selected`}
+                                                </span>
+                                                <ChevronDown className="h-3 w-3 text-gray-400" />
+                                            </button>
+                                            
+                                            {isPieDropdownOpen && (
+                                                <>
+                                                    <div className="fixed inset-0 z-10" onClick={() => setIsPieDropdownOpen(false)} />
+                                                    <div className="absolute top-full right-0 mt-2 w-48 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 p-2 space-y-1">
                                                         <button
-                                                            key={c.id}
-                                                            onClick={() => togglePieCategory(c.id)}
+                                                            onClick={() => setPieFilterIds([])}
                                                             className={clsx(
-                                                                "w-full text-left px-3 py-2 rounded-md text-xs transition-colors flex items-center justify-between",
-                                                                pieFilterIds.includes(c.id) ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
+                                                                "w-full text-left px-3 py-2 rounded-md text-xs transition-colors result-item flex items-center justify-between",
+                                                                pieFilterIds.length === 0 ? "bg-pink-500 text-white" : "text-gray-300 hover:bg-gray-700"
                                                             )}
                                                         >
-                                                            <span>{c.name}</span>
-                                                            {pieFilterIds.includes(c.id) && <Check className="h-3 w-3 text-pink-400" />}
+                                                            <span>All Categories</span>
+                                                            {pieFilterIds.length === 0 && <Check className="h-3 w-3" />}
                                                         </button>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
+                                                        {categories.map(c => (
+                                                            <button
+                                                                key={c.id}
+                                                                onClick={() => togglePieCategory(c.id)}
+                                                                className={clsx(
+                                                                    "w-full text-left px-3 py-2 rounded-md text-xs transition-colors flex items-center justify-between",
+                                                                    pieFilterIds.includes(c.id) ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
+                                                                )}
+                                                            >
+                                                                <span>{c.name}</span>
+                                                                {pieFilterIds.includes(c.id) && <Check className="h-3 w-3 text-pink-400" />}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                                {chartCategoryData?.chartData?.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <PieChart>
-                                            <Pie
-                                                data={chartCategoryData.chartData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={60}
-                                                outerRadius={100}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                                onClick={(data) => {
-                                                 const cat = categories.find(c => c.name === data.name);
-                                                 if (cat) togglePieCategory(cat.id);
-                                                }}
-                                                className="cursor-pointer focus:outline-none"
-                                            >
-                                                {chartCategoryData.chartData.map((entry: any, index: number) => (
-                                                    <Cell 
-                                                        key={`cell-${index}`} 
-                                                        fill={entry.color || COLORS[index % COLORS.length]} 
-                                                        stroke={pieFilterIds.length > 0 && categories.find(c => c.name === entry.name)?.id && pieFilterIds.includes(categories.find(c => c.name === entry.name)!.id) ? "#fff" : "rgba(0,0,0,0.2)"}
-                                                        strokeWidth={pieFilterIds.length > 0 && categories.find(c => c.name === entry.name)?.id && pieFilterIds.includes(categories.find(c => c.name === entry.name)!.id) ? 2 : 1}
-                                                        className="transition-all duration-200 hover:opacity-80"
-                                                    />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip 
-                                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
-                                                itemStyle={{ color: '#fff' }}
-                                                formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
-                                            />
-                                            <Legend verticalAlign="bottom" height={36} iconType="circle" onClick={(data) => {
-                                                 const cat = categories.find(c => c.name === data.value);
-                                                 if (cat) togglePieCategory(cat.id);
-                                            }} className="cursor-pointer"/>
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                ) : (
 
-                                    <EmptyState text="No expense data for this period" />
+                                {selectedCategoryForBreakdown ? (
+                                    // Sub-category View
+                                    subCategoryData.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={subCategoryData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={60}
+                                                    outerRadius={100}
+                                                    paddingAngle={5}
+                                                    dataKey="amount"
+                                                    nameKey="categoryName"
+                                                    className="focus:outline-none"
+                                                >
+                                                    {subCategoryData.map((entry: any, index: number) => (
+                                                        <Cell 
+                                                            key={`cell-${index}`} 
+                                                            fill={entry.color || COLORS[index % COLORS.length]} 
+                                                            className="transition-all duration-200 hover:opacity-80"
+                                                        />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip 
+                                                    contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                                    itemStyle={{ color: '#fff' }}
+                                                    formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
+                                                />
+                                                <Legend verticalAlign="bottom" height={36} iconType="circle"/>
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <EmptyState text="No sub-category data available" />
+                                    )
+                                ) : (
+                                    // Main Category View
+                                    chartCategoryData?.chartData?.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={chartCategoryData.chartData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={60}
+                                                    outerRadius={100}
+                                                    paddingAngle={5}
+                                                    dataKey="value"
+                                                    onClick={(data) => {
+                                                     const cat = categories.find(c => c.name === data.name);
+                                                     if (cat) {
+                                                         setSelectedCategoryForBreakdown(cat.id);
+                                                     }
+                                                    }}
+                                                    className="cursor-pointer focus:outline-none"
+                                                >
+                                                    {chartCategoryData.chartData.map((entry: any, index: number) => (
+                                                        <Cell 
+                                                            key={`cell-${index}`} 
+                                                            fill={entry.color || COLORS[index % COLORS.length]} 
+                                                            stroke={pieFilterIds.length > 0 && categories.find(c => c.name === entry.name)?.id && pieFilterIds.includes(categories.find(c => c.name === entry.name)!.id) ? "#fff" : "rgba(0,0,0,0.2)"}
+                                                            strokeWidth={pieFilterIds.length > 0 && categories.find(c => c.name === entry.name)?.id && pieFilterIds.includes(categories.find(c => c.name === entry.name)!.id) ? 2 : 1}
+                                                            className="transition-all duration-200 hover:opacity-80"
+                                                        />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip 
+                                                    contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                                    itemStyle={{ color: '#fff' }}
+                                                    formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
+                                                />
+                                                <Legend verticalAlign="bottom" height={36} iconType="circle" onClick={(data) => {
+                                                     const cat = categories.find(c => c.name === data.value);
+                                                     if (cat) togglePieCategory(cat.id);
+                                                }} className="cursor-pointer"/>
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <EmptyState text="No expense data for this period" />
+                                    )
                                 )}
                             </div>
 
