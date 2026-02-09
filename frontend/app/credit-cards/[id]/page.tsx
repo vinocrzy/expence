@@ -3,20 +3,32 @@
 import { useState, useEffect, use } from 'react';
 import Navbar from '../../../components/Navbar';
 import CreditCardPaymentModal from '../../../components/CreditCardPaymentModal';
+import TransactionModal from '../../../components/TransactionModal';
 import { creditCardService, transactionService, accountService } from '../../../lib/localdb-services';
+import { useAccounts } from '../../../hooks/useLocalData';
 import { 
     CreditCard as CreditCardIcon, Calendar, Upload, AlertCircle, TrendingUp, DollarSign, List 
 } from 'lucide-react';
+
+// Wrapper
+function TransactionModalWrapper(props: any) {
+    return <TransactionModal {...props} />;
+}
 
 export default function CreditCardDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
   
   const [card, setCard] = useState<any>(null);
-  const [accounts, setAccounts] = useState<any[]>([]); 
+  const { accounts } = useAccounts();
   const [loading, setLoading] = useState(true);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
+  
+  // Transaction Modal State
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [transactionInitialData, setTransactionInitialData] = useState<any>(null);
+  const [pendingPaymentUpdate, setPendingPaymentUpdate] = useState<{amount: number} | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -26,12 +38,10 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
     try {
       setLoading(true);
       const cardData = await creditCardService.getById(id);
-      const allAccounts = await accountService.getAll('household_1');
       // Use getByAccount for better performance and to ensure we get transactions even if limit was an issue before
       const myTx = await transactionService.getByAccount(id);
 
       setCard(cardData);
-      setAccounts(allAccounts.filter((a: any) => a.type !== 'CREDIT_CARD'));
       
       setTransactions(myTx.slice(0, 50)); // Show more
       
@@ -42,10 +52,36 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
     }
   };
 
-  const handlePayment = async (data: any) => {
-      // Mock payment logic
-      // create transaction?
-      await fetchData();
+  const handlePayment = async (data: { amount: number, sourceAccountId: string, date: string, type: string, recordTransaction?: boolean }) => {
+      const { amount, sourceAccountId, date, recordTransaction } = data;
+      
+      if (recordTransaction) {
+          // Close Payment Modal first? Or keep open? Usually close.
+          setIsPaymentOpen(false);
+
+           setTransactionInitialData({
+              amount: amount,
+              description: `Bill Payment for ${card.bankName} ${card.name}`,
+              categoryId: '', 
+              accountId: sourceAccountId, 
+              date: date,
+              type: 'EXPENSE'
+          });
+          setPendingPaymentUpdate({ amount });
+          setIsTransactionModalOpen(true);
+      } else {
+          await creditCardService.recordPayment(card.id, amount);
+          setIsPaymentOpen(false);
+          await fetchData();
+      }
+  };
+  
+  const handleTransactionSuccess = async () => {
+      if (pendingPaymentUpdate) {
+          await creditCardService.recordPayment(card.id, pendingPaymentUpdate.amount);
+          await fetchData();
+          setPendingPaymentUpdate(null);
+      }
   };
   
   const handleGenerateStatement = async () => {
@@ -252,6 +288,16 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
             minDue={minDue}
             totalDue={totalDue}
         />
+        
+        {isTransactionModalOpen && (
+             <TransactionModalWrapper 
+                isOpen={isTransactionModalOpen}
+                onClose={() => setIsTransactionModalOpen(false)}
+                initialData={transactionInitialData}
+                onSuccess={handleTransactionSuccess}
+                accounts={accounts}
+             />
+        )}
       </main>
     </div>
   );

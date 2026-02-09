@@ -683,6 +683,17 @@ export const creditCardService = {
   async updateOutstanding(creditCardId: string): Promise<void> {
     // Placeholder
   },
+
+  async recordPayment(id: string, amount: number): Promise<void> {
+    const card = await this.getById(id);
+    if (!card) throw new Error('Card not found');
+
+    const updatedOutstanding = (card.currentOutstanding || 0) - amount;
+
+    await this.update(id, {
+        currentOutstanding: Math.max(0, updatedOutstanding)
+    });
+  },
 };
 
 // ============================================
@@ -771,6 +782,23 @@ export const loanService = {
     const emi = principal * monthlyRate * Math.pow(1 + monthlyRate, tenureMonths) / 
                 (Math.pow(1 + monthlyRate, tenureMonths) - 1);
     return Math.round(emi * 100) / 100;
+  },
+
+  async recordPayment(id: string, amount: number): Promise<void> {
+    const loan = await this.getById(id);
+    if (!loan) throw new Error('Loan not found');
+
+    const updatedOutstanding = (loan.outstandingPrincipal || 0) - amount;
+    // Check if fully paid? Optionally update status.
+    const newStatus = updatedOutstanding <= 0 ? 'CLOSED' : loan.status || 'ACTIVE';
+
+    const normalizedPaidEmis = (loan.paidEmis || 0) + 1;
+
+    await this.update(id, {
+        outstandingPrincipal: Math.max(0, updatedOutstanding),
+        paidEmis: normalizedPaidEmis,
+        status: newStatus
+    });
   }
 };
 

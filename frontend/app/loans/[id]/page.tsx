@@ -12,15 +12,35 @@ import {
     PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid 
 } from 'recharts';
 
+// Imports for payment
+import LoanPaymentModal from '../../../components/LoanPaymentModal';
+import TransactionModal from '../../../components/TransactionModal';
+import { useAccounts } from '../../../hooks/useLocalData';
+
+// Wrapper
+function TransactionModalWrapper(props: any) {
+    return <TransactionModal {...props} />;
+}
+
 export default function LoanDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
   const router = useRouter();
   
+  const { accounts } = useAccounts(); // For TransactionModal
+
   const [loan, setLoan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isPrepaymentOpen, setIsPrepaymentOpen] = useState(false);
   const [processingEmi, setProcessingEmi] = useState<number | null>(null);
+
+  // Payment Logic
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  
+  // Transaction Modal State
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [transactionInitialData, setTransactionInitialData] = useState<any>(null);
+  const [pendingPaymentUpdate, setPendingPaymentUpdate] = useState<{amount: number} | null>(null);
 
   useEffect(() => {
     fetchLoan();
@@ -67,26 +87,48 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
             totalAmount: emiAmount,
             principalComponent,
             interestComponent: interest,
-            status: i <= (loan.initialPaidEmis || 0) ? 'PAID' : 'PENDING'
+            status: i <= ((loan.initialPaidEmis || 0) + (loan.paidEmis || 0)) ? 'PAID' : 'PENDING'
         });
         outstanding -= principalComponent;
       }
       return emis;
   };
 
-  const handlePayEmi = async (emiNumber: number) => {
-    if (!confirm('Are you sure you want to pay this EMI? (Mock)')) return;
-    setProcessingEmi(emiNumber);
-    try {
-        // await api.post(`/loans/${id}/pay/${emiNumber}`, {});
-        // Update loan locally
-        await fetchLoan();
-    } catch (e) {
-        console.error(e);
-        alert('Failed to pay EMI');
-    } finally {
-        setProcessingEmi(null);
-    }
+  const handlePayEmi = (emiNumber?: number) => {
+      // If payment for specific EMI, we can use that data, but LoanPaymentModal is generic for now.
+      // We can improve LoanPaymentModal to accept pre-filled amount later if needed.
+      // For now, it defaults to loan.emiAmount which is what we want.
+      setPaymentModalOpen(true);
+  };
+  
+  const handlePayment = async (amount: number, recordTransaction: boolean, date: string) => {
+      setPaymentModalOpen(false);
+      
+      if (recordTransaction) {
+          // Open Transaction Modal
+          setTransactionInitialData({
+              amount: amount,
+              description: `EMI Payment for ${loan.name}`,
+              categoryId: '', 
+              accountId: loan.linkedAccountId || '',
+              date: date,
+              type: 'EXPENSE'
+          });
+          setPendingPaymentUpdate({ amount });
+          setIsTransactionModalOpen(true);
+      } else {
+          // Just update loan
+          await loanService.recordPayment(loan.id, amount);
+          await fetchLoan();
+      }
+  };
+  
+  const handleTransactionSuccess = async () => {
+      if (pendingPaymentUpdate) {
+          await loanService.recordPayment(loan.id, pendingPaymentUpdate.amount);
+          await fetchLoan();
+          setPendingPaymentUpdate(null);
+      }
   };
 
   const handlePrepayment = async (data: any) => {
@@ -166,6 +208,13 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                 >
                     <TrendingDown className="h-4 w-4 text-purple-400" />
                     Prepay
+                </button>
+                <button 
+                  onClick={() => handlePayEmi()}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl shadow-lg shadow-purple-500/25 transition-all font-bold flex items-center gap-2"
+                >
+                    <CheckCircle className="h-4 w-4" />
+                    Pay EMI
                 </button>
             </div>
         </div>
@@ -308,6 +357,23 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
             onSubmit={handlePrepayment}
             maxAmount={Number(loan.outstandingPrincipal)}
         />
+        
+        <LoanPaymentModal
+            isOpen={paymentModalOpen}
+            onClose={() => setPaymentModalOpen(false)}
+            loan={loan}
+            onPayment={handlePayment}
+        />
+        
+        {isTransactionModalOpen && (
+             <TransactionModalWrapper 
+                isOpen={isTransactionModalOpen}
+                onClose={() => setIsTransactionModalOpen(false)}
+                initialData={transactionInitialData}
+                onSuccess={handleTransactionSuccess}
+                accounts={accounts}
+             />
+        )}
       </main>
     </div>
   );

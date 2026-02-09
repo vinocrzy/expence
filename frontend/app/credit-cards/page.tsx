@@ -17,7 +17,6 @@ export default function CreditCardsPage() {
       await refresh();
   };
   
-  // Calculate utilization color
   const getUtilizationColor = (percent: number) => {
       if (percent < 30) return 'bg-green-500';
       if (percent < 70) return 'bg-yellow-500';
@@ -50,61 +49,61 @@ export default function CreditCardsPage() {
                 {cards.map(card => {
                     const limit = Number(card.creditLimit);
                     const outstanding = Number(card.currentOutstanding || 0);
-                    // Use Account Balance if outstanding not set?
-                    // Safe fallbacks.
                     
                     const utilization = limit > 0 ? (outstanding / limit) * 100 : 0;
                     const available = limit - outstanding;
 
                     return (
-                        <Link href={`/credit-cards/${card.id}`} key={card.id} className="block group">
-                            <div className="bg-gray-800 border border-gray-700/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all shadow-lg hover:shadow-purple-500/10 h-full flex flex-col justify-between">
-                                <div>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div>
-                                            <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors uppercase tracking-wide">
-                                                {card.bankName}
-                                            </h3>
-                                            <div className="text-sm text-gray-400">{card.name}</div>
-                                        </div>
-                                        <div className="bg-gray-700/50 p-2 rounded-lg">
-                                            <CreditCard className="h-6 w-6 text-gray-400" />
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="mb-6">
-                                        <div className="flex justify-between text-sm text-gray-400 mb-1">
-                                            <span>Utilization</span>
-                                            <span className={utilization > 70 ? 'text-red-400' : 'text-gray-400'}>{Math.round(utilization)}%</span>
-                                        </div>
-                                        <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                                            <div className={`h-full ${getUtilizationColor(utilization)} transition-all duration-500`} style={{ width: `${Math.min(utilization, 100)}%` }}></div>
-                                        </div>
-                                        <div className="flex justify-between mt-2">
+                        <div key={card.id} className="block group relative h-full">
+                            <Link href={`/credit-cards/${card.id}`} className="block h-full">
+                                <div className="bg-gray-800 border border-gray-700/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all shadow-lg hover:shadow-purple-500/10 h-full flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex justify-between items-start mb-4">
                                             <div>
-                                                <div className="text-xs text-gray-500">Outstanding</div>
-                                                <div className="text-xl font-bold text-white">₹ {outstanding.toLocaleString()}</div>
+                                                <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors uppercase tracking-wide">
+                                                    {card.bankName}
+                                                </h3>
+                                                <div className="text-sm text-gray-400">{card.name}</div>
                                             </div>
-                                            <div className="text-right">
-                                                <div className="text-xs text-gray-500">Available</div>
-                                                <div className="text-xl font-bold text-green-400">₹ {available.toLocaleString()}</div>
+                                            <div className="bg-gray-700/50 p-2 rounded-lg">
+                                                <CreditCard className="h-6 w-6 text-gray-400" />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="mb-6">
+                                            <div className="flex justify-between text-sm text-gray-400 mb-1">
+                                                <span>Utilization</span>
+                                                <span className={utilization > 70 ? 'text-red-400' : 'text-gray-400'}>{Math.round(utilization)}%</span>
+                                            </div>
+                                            <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                                                <div className={`h-full ${getUtilizationColor(utilization)} transition-all duration-500`} style={{ width: `${Math.min(utilization, 100)}%` }}></div>
+                                            </div>
+                                            <div className="flex justify-between mt-2">
+                                                <div>
+                                                    <div className="text-xs text-gray-500">Outstanding</div>
+                                                    <div className="text-xl font-bold text-white">₹ {outstanding.toLocaleString()}</div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-xs text-gray-500">Available</div>
+                                                    <div className="text-xl font-bold text-green-400">₹ {available.toLocaleString()}</div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-2 gap-4 border-t border-gray-700/50 pt-4 mt-auto">
-                                    <div className="flex items-center gap-2 text-gray-400 text-sm">
-                                        <Calendar className="h-4 w-4" />
-                                        <span>Bill Day: {card.billingCycle}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-gray-400 text-sm justify-end">
-                                        <AlertTriangle className="h-4 w-4" />
-                                        <span>Due +{card.paymentDueDay}d</span>
+                                    <div className="grid grid-cols-2 gap-4 border-t border-gray-700/50 pt-4 mt-auto mb-4">
+                                        <div className="flex items-center gap-2 text-gray-400 text-sm">
+                                            <Calendar className="h-4 w-4" />
+                                            <span>Bill: {card.billingCycle}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-gray-400 text-sm justify-end">
+                                            <AlertTriangle className="h-4 w-4" />
+                                            <span>Due +{card.paymentDueDay}d</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </Link>
+                            </Link>
+                        </div>
                     );
                 })}
                 

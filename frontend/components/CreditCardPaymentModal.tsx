@@ -120,12 +120,38 @@ export default function CreditCardPaymentModal({ isOpen, onClose, onSubmit, acco
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2 text-white" required />
             </div>
 
-          <div className="flex justify-end pt-4 gap-3">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">Cancel</button>
-            <button type="submit" disabled={loading} className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-purple-600 hover:bg-purple-500 disabled:opacity-50 transition-all ml-auto">
-              {loading ? 'Processing...' : 'Pay Now'}
-            </button>
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <button
+                    type="button"
+                    onClick={() => {
+                        onSubmit({
+                            amount: parseFloat(amount),
+                            sourceAccountId,
+                            date: new Date(date).toISOString(),
+                            recordTransaction: false
+                        });
+                    }}
+                    disabled={loading || !amount}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all disabled:opacity-50 active:scale-95"
+                >
+                    Mark as Paid
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        onSubmit({
+                            amount: parseFloat(amount),
+                            sourceAccountId,
+                            date: new Date(date).toISOString(),
+                            recordTransaction: true
+                        });
+                    }}
+                    disabled={loading || !amount}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold transition-all disabled:opacity-50 active:scale-95 shadow-lg shadow-purple-500/25"
+                >
+                    {loading ? 'Processing...' : 'Pay & Log'}
+                </button>
+            </div>
         </form>
       </div>
     </div>

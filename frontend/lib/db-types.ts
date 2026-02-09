@@ -88,6 +88,7 @@ export interface Loan {
   tenureMonths: number;
   startDate: string;
   initialPaidEmis?: number;
+  paidEmis?: number; // Number of EMIs paid via app
   emiAmount?: number;
   outstandingPrincipal: number;
   status?: 'ACTIVE' | 'CLOSED';
