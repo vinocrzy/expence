@@ -362,6 +362,16 @@ export const transactionService = {
     return { ...transaction, _rev: response.rev };
   },
 
+  async saveSplitTransaction(data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<Transaction> {
+    if (data.isSplit && data.splits && data.splits.length > 0) {
+        const totalSplits = data.splits.reduce((sum, split) => sum + split.amount, 0);
+        if (Math.abs(totalSplits - data.amount) > 0.01) {
+            throw new Error(`Split amount mismatch. Total: ${data.amount}, Splits: ${totalSplits}`);
+        }
+    }
+    return this.create(data);
+  },
+
   async update(id: string, data: Partial<Transaction>): Promise<Transaction> {
     const oldTxDoc = await transactionsDB.get(id) as any;
     const oldTx = oldTxDoc as Transaction;

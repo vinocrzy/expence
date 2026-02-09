@@ -1,21 +1,15 @@
 'use client';
 
 import { useState, useEffect, useMemo, memo } from 'react';
-import { X } from 'lucide-react';
+import { X, Split } from 'lucide-react';
+import { Category } from '../lib/db-types';
 import { categoryService, transactionService, budgetService, getHouseholdId } from '../lib/localdb-services';
+import SplitTransactionForm from './SplitTransactionForm';
 
 interface Account {
   id: string;
   name: string;
   currency: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  type: string;
-  color: string;
-  subCategories?: { id: string; name: string }[];
 }
 
 interface TransactionModalProps {
@@ -54,6 +48,12 @@ function TransactionModal({
   const [selectedEventId, setSelectedEventId] = useState('');
   const [isSuggesting, setIsSuggesting] = useState(false);
 
+  // Split Transaction State
+  const [isSplit, setIsSplit] = useState(false);
+  const [splits, setSplits] = useState<any[]>([]);
+  const [isSplitValid, setIsSplitValid] = useState(true);
+  const [splitTotal, setSplitTotal] = useState(0);
+
   const handleDescriptionBlur = async () => {
     if (!description || categoryId) return; 
 
@@ -70,7 +70,7 @@ function TransactionModal({
             const foundCategory = categories.find(c => c.name.toLowerCase() === data.category.toLowerCase());
             
             if (foundCategory) {
-                if (foundCategory.type !== type) {
+                if (foundCategory.type && foundCategory.type !== type) {
                     setType(foundCategory.type);
                 }
                 setCategoryId(foundCategory.id);
@@ -118,16 +118,18 @@ function TransactionModal({
             setType(initialData.type);
             setDescription(initialData.description || '');
             setSelectedEventId(initialData.budgetId || '');
+            
+            if (initialData.isSplit && initialData.splits) {
+                setIsSplit(true);
+                setSplits(initialData.splits);
+                setSplitTotal(initialData.amount);
+            } else {
+                setIsSplit(false);
+                setSplits([]);
+            }
         } else {
             setAmount('');
-            // If we want to allow passing a specific date for new transactions (e.g. from calendar), we can check a prop or initialData
-            // For now, if initialData contains ONLY date, we use it.
-            // But initialData is usually full transaction.
-            // Let's rely on the caller passing { date: '...' } as initialData for "New on Date" scenario or add a separate prop.
-            // Implementation: helper to reset but keep date if desired? 
-            // Simplified: Reset everything.
-            // If the user wants to pre-fill date, they can pass it in initialData even for "new" records if we treat it loosely, 
-            // OR I can add a check:
+            // ... (rest of reset logic)
             setAccountId('');
             setCategoryId('');
             setSubCategoryId('');
@@ -136,6 +138,9 @@ function TransactionModal({
             setSelectedEventId('');
              // Default date to today unless provided in a "partial" initialData
              setDate(new Date().toISOString().split('T')[0]);
+             
+             setIsSplit(false);
+             setSplits([]);
         }
     }
   }, [initialData, isOpen, initialType]);
@@ -152,21 +157,33 @@ function TransactionModal({
     }
 
     const transactionData = {
-      amount: parseFloat(amount),
+      amount: isSplit ? splitTotal : parseFloat(amount),
       date: new Date(date).toISOString(),
       accountId,
-      categoryId: categoryId || undefined,
-      subCategoryId: subCategoryId || undefined,
+      categoryId: isSplit ? undefined : (categoryId || undefined),
+      subCategoryId: isSplit ? undefined : (subCategoryId || undefined),
       type,
       description,
-      budgetId: selectedEventId || undefined
+      budgetId: selectedEventId || undefined,
+      isSplit,
+      splits: isSplit ? splits : undefined
     };
+
+    if (isSplit && !isSplitValid) {
+        setError('Please fix split transaction errors (sum must match total)');
+        setLoading(false);
+        return;
+    }
 
     try {
       if (onSubmit) {
         await onSubmit(transactionData);
       } else {
-        await transactionService.create(transactionData);
+        if (isSplit) {
+            await transactionService.saveSplitTransaction(transactionData);
+        } else {
+            await transactionService.create(transactionData);
+        }
       }
       onSuccess?.();
       onClose();
@@ -227,55 +244,91 @@ function TransactionModal({
                 ))}
             </div>
 
-          {/* ... Amount ... */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Amount</label>
-            <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
-                    {accounts.find(a => a.id === accountId)?.currency === 'USD' ? '$' : 
-                     accounts.find(a => a.id === accountId)?.currency === 'EUR' ? '€' :
-                     accounts.find(a => a.id === accountId)?.currency === 'GBP' ? '£' : '₹'}
-                </span>
-                <input
-                type="number"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="block w-full pl-8 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono text-lg"
-                placeholder="0.00"
-                required
-                />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Category</label>
-            <div className="flex gap-2">
-                <select
-                  value={categoryId}
-                  onChange={(e) => { setCategoryId(e.target.value); setSubCategoryId(''); }}
-                  className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+            {/* Split Toggle */}
+            <div className="flex justify-end mb-2">
+                <button
+                    type="button"
+                    onClick={() => {
+                         setIsSplit(!isSplit);
+                         // Clear error when toggling
+                         setError('');
+                    }}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        isSplit 
+                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' 
+                        : 'text-gray-400 hover:bg-gray-800 border border-transparent'
+                    }`}
                 >
-                  <option value="">Uncategorized</option>
-                  {filteredCategories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-                
-                {activeSubCategories.length > 0 && (
-                     <select
-                        value={subCategoryId}
-                        onChange={(e) => setSubCategoryId(e.target.value)}
-                        className="block w-1/2 px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-                      >
-                        <option value="">Sub-category</option>
-                        {activeSubCategories.map(sub => (
-                            <option key={sub.id} value={sub.id}>{sub.name}</option>
-                        ))}
-                      </select>
-                )}
+                    <Split className="w-4 h-4" />
+                    {isSplit ? 'Split Transaction Active' : 'Split Transaction?'}
+                </button>
             </div>
-          </div>
+
+            {isSplit ? (
+                <SplitTransactionForm
+                    categories={filteredCategories}
+                    currencySymbol={accounts.find(a => a.id === accountId)?.currency === 'USD' ? '$' : accounts.find(a => a.id === accountId)?.currency === 'EUR' ? '€' : accounts.find(a => a.id === accountId)?.currency === 'GBP' ? '£' : '₹'}
+                    initialAmount={initialData?.amount?.toString() || amount}
+                    onValidationChange={(valid, total, newSplits) => {
+                        setIsSplitValid(valid);
+                        setSplitTotal(total);
+                        setSplits(newSplits);
+                    }}
+                />
+            ) : (
+                <>
+                  {/* ... Amount ... */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Amount</label>
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
+                            {accounts.find(a => a.id === accountId)?.currency === 'USD' ? '$' : 
+                             accounts.find(a => a.id === accountId)?.currency === 'EUR' ? '€' :
+                             accounts.find(a => a.id === accountId)?.currency === 'GBP' ? '£' : '₹'}
+                        </span>
+                        <input
+                        type="number"
+                        step="0.01"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="block w-full pl-8 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono text-lg"
+                        placeholder="0.00"
+                        required={!isSplit}
+                        />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Category</label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <select
+                          value={categoryId}
+                          onChange={(e) => { setCategoryId(e.target.value); setSubCategoryId(''); }}
+                          className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                          required={!isSplit}
+                        >
+                          <option value="">Uncategorized</option>
+                          {filteredCategories.map(cat => (
+                              <option key={cat.id} value={cat.id}>{cat.name}</option>
+                          ))}
+                        </select>
+                        
+                        {activeSubCategories.length > 0 && (
+                             <select
+                                value={subCategoryId}
+                                onChange={(e) => setSubCategoryId(e.target.value)}
+                                className="block w-full sm:w-1/2 px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                              >
+                                <option value="">Sub-category</option>
+                                {activeSubCategories.map(sub => (
+                                    <option key={sub.id} value={sub.id}>{sub.name}</option>
+                                ))}
+                              </select>
+                        )}
+                    </div>
+                  </div>
+                </>
+            )}
 
           <div className="space-y-2">
               {/* ... Description ... */}

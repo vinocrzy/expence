@@ -30,6 +30,8 @@ export interface Transaction {
   createdAt?: string;
   updatedAt?: string;
   _rev?: string;
+  isSplit?: boolean;
+  splits?: { id: string; amount: number; categoryId: string; note?: string }[];
 }
 
 export interface Category {
