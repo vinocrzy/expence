@@ -97,13 +97,25 @@ export async function calculateCategoryBreakdown(
   const categoryMap = new Map<string, { amount: number; count: number }>();
 
   filtered.forEach((t) => {
-    const categoryId = t.categoryId || 'uncategorized';
-    if (!categoryMap.has(categoryId)) {
-      categoryMap.set(categoryId, { amount: 0, count: 0 });
+    if (t.isSplit && t.splits) {
+        t.splits.forEach(split => {
+            const categoryId = split.categoryId || 'uncategorized';
+            if (!categoryMap.has(categoryId)) {
+                categoryMap.set(categoryId, { amount: 0, count: 0 });
+            }
+            const cat = categoryMap.get(categoryId)!;
+            cat.amount += split.amount;
+            cat.count += 1;
+        });
+    } else {
+        const categoryId = t.categoryId || 'uncategorized';
+        if (!categoryMap.has(categoryId)) {
+            categoryMap.set(categoryId, { amount: 0, count: 0 });
+        }
+        const cat = categoryMap.get(categoryId)!;
+        cat.amount += t.amount;
+        cat.count += 1;
     }
-    const cat = categoryMap.get(categoryId)!;
-    cat.amount += t.amount;
-    cat.count += 1;
   });
 
   // Convert to array
@@ -138,20 +150,53 @@ export async function calculateSubCategoryBreakdown(
 
   if (!category) return [];
 
-  const filtered = transactions.filter((t) => t.categoryId === categoryId && t.type === 'EXPENSE');
-  const total = filtered.reduce((sum, t) => sum + t.amount, 0);
+  // Filter transactions that are either directly in this category OR have a split in this category
+  const filtered = transactions.filter((t) => {
+      if (t.type !== 'EXPENSE') return false;
+      if (t.categoryId === categoryId) return true;
+      if (t.isSplit && t.splits) {
+          return t.splits.some(s => s.categoryId === categoryId);
+      }
+      return false;
+  });
+
+  const total = filtered.reduce((sum, t) => {
+      if (t.isSplit && t.splits) {
+          // Only count the portions belonging to this category
+          return sum + t.splits
+            .filter(s => s.categoryId === categoryId)
+            .reduce((sSum, s) => sSum + s.amount, 0);
+      }
+      return sum + t.amount;
+  }, 0);
 
   // Group by sub-category
   const subCategoryMap = new Map<string, { amount: number; count: number }>();
 
   filtered.forEach((t) => {
-    const subId = t.subCategoryId || 'unspecified';
-    if (!subCategoryMap.has(subId)) {
-        subCategoryMap.set(subId, { amount: 0, count: 0 });
+    if (t.isSplit && t.splits) {
+        t.splits.forEach(s => {
+            if (s.categoryId === categoryId) {
+                // Split interface currently doesn't support subCategoryId, so we default to 'unspecified'
+                const subId = (s as any).subCategoryId || 'unspecified'; 
+                
+                if (!subCategoryMap.has(subId)) {
+                    subCategoryMap.set(subId, { amount: 0, count: 0 });
+                }
+                const sub = subCategoryMap.get(subId)!;
+                sub.amount += s.amount;
+                sub.count += 1;
+            }
+        });
+    } else {
+        const subId = t.subCategoryId || 'unspecified';
+        if (!subCategoryMap.has(subId)) {
+            subCategoryMap.set(subId, { amount: 0, count: 0 });
+        }
+        const sub = subCategoryMap.get(subId)!;
+        sub.amount += t.amount;
+        sub.count += 1;
     }
-    const sub = subCategoryMap.get(subId)!;
-    sub.amount += t.amount;
-    sub.count += 1;
   });
 
   // Convert to array
