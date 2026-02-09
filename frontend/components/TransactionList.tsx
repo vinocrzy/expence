@@ -1,5 +1,4 @@
-import React from 'react';
-import { ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Calendar, Trash2 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Calendar, Trash2, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import { Transaction, Category, Account } from '../lib/db-types';
@@ -10,14 +9,16 @@ interface TransactionListProps {
   categories: Category[];
   onDelete: (id: string) => void;
   onEdit?: (transaction: Transaction) => void;
+  onQuickEdit?: (transaction: Transaction) => void;
 }
 
 export default function TransactionList({ 
   transactions, 
   accountMap, 
   categories, 
-  onDelete,
-  onEdit
+  onEdit,
+  onQuickEdit,
+  onDelete
 }: TransactionListProps) {
     
   const getIcon = (type: string) => {
@@ -82,16 +83,28 @@ export default function TransactionList({
                         {t.type === 'EXPENSE' ? '-' : '+'}
                         {accountMap[t.accountId]?.currency} {Number(t.amount).toLocaleString()}
                     </div>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(t.id);
-                        }}
-                        className="p-2 text-gray-500 hover:text-red-400 transition-all active:scale-95"
-                        title="Delete Transaction"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                         <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onQuickEdit?.(t);
+                            }}
+                            className="p-2 text-gray-500 hover:text-purple-400 transition-all active:scale-95 bg-gray-800 rounded-lg md:bg-transparent md:rounded-none"
+                            title="Quick Edit Category/Description"
+                        >
+                            <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(t.id);
+                            }}
+                            className="p-2 text-gray-500 hover:text-red-400 transition-all active:scale-95 bg-gray-800 rounded-lg md:bg-transparent md:rounded-none"
+                            title="Delete Transaction"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
         ))}

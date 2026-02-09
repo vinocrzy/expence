@@ -6,6 +6,7 @@ import TransactionModal from '../../components/TransactionModal';
 import CalendarView from '../../components/CalendarView';
 import DayDetailsModal from '../../components/DayDetailsModal';
 import TransactionList from '../../components/TransactionList';
+import QuickEditModal from '../../components/QuickEditModal';
 import { useTransactions, useAccounts, useCreditCards, useCategories } from '../../hooks/useLocalData';
 
 import { Plus, Filter, Check, ChevronDown, List, LayoutGrid, SlidersHorizontal, X } from 'lucide-react';
@@ -29,6 +30,10 @@ export default function TransactionsPage() {
   // Calendar Details State
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDayDetailsOpen, setIsDayDetailsOpen] = useState(false);
+
+  // Quick Edit State
+  const [quickEditTransaction, setQuickEditTransaction] = useState<any>(null);
+  const [isQuickEditOpen, setIsQuickEditOpen] = useState(false);
 
   // Filter UI State
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -111,6 +116,11 @@ export default function TransactionsPage() {
   const handleDateSelect = (date: Date) => {
       setSelectedDate(date);
       setIsDayDetailsOpen(true);
+  };
+
+  const handleQuickEdit = (t: any) => {
+      setQuickEditTransaction(t);
+      setIsQuickEditOpen(true);
   };
 
   // transactions for the selected day
@@ -331,6 +341,7 @@ export default function TransactionsPage() {
                         categories={categories}
                         onDelete={handleDelete}
                         onEdit={handleEdit}
+                        onQuickEdit={handleQuickEdit}
                     />
                 </div>
               ) : (
@@ -375,6 +386,21 @@ export default function TransactionsPage() {
             } else {
                 handleCreate();
             }
+        }}
+      />
+      
+      <QuickEditModal
+        isOpen={isQuickEditOpen}
+        onClose={() => {
+            setIsQuickEditOpen(false);
+            setQuickEditTransaction(null);
+        }}
+        transaction={quickEditTransaction}
+        categories={categories}
+        accounts={allAccounts}
+        onSuccess={() => {
+             setIsQuickEditOpen(false);
+             setQuickEditTransaction(null);
         }}
       />
     </div>
