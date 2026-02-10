@@ -152,6 +152,41 @@ export async function generatePDF(data: ReportData, type: ReportType): Promise<B
       startY += 80;
   }
 
+  // --- Category Breakdown Table (Consolidated Only) ---
+  if (type === 'CONSOLIDATED' && data.categoryBreakdown && Object.keys(data.categoryBreakdown).length > 0) {
+       const allEntries = Object.entries(data.categoryBreakdown).sort((a,b) => b[1] - a[1]);
+       const totalAmount = allEntries.reduce((sum, item) => sum + item[1], 0);
+
+       // Check if page break is needed
+       if (startY > doc.internal.pageSize.height - 60) {
+           doc.addPage();
+           startY = 20;
+       }
+
+       doc.setFontSize(14);
+       doc.setTextColor(0);
+       doc.text('Category Details', 14, startY);
+       startY += 5;
+
+       autoTable(doc, {
+            startY,
+            head: [['Category', 'Amount', '% of Total']],
+            body: allEntries.map(([name, val]) => [
+                name,
+                val.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+                `${totalAmount > 0 ? ((val / totalAmount) * 100).toFixed(1) : 0}%`
+            ]),
+            styles: { fontSize: 10, cellPadding: 2 },
+             headStyles: { fillColor: [30, 41, 59] },
+             columnStyles: {
+                 1: { halign: 'right' },
+                 2: { halign: 'right' }
+             }
+       });
+        // @ts-ignore
+       startY = doc.lastAutoTable.finalY + 15;
+  }
+
   // --- Summary Text Section ---
   if (data.summary) {
     // Only show if not CONSOLIDATED (as it has its own table), or if it's general summary
