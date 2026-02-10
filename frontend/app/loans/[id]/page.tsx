@@ -328,55 +328,91 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
             {/* Recent Prepayments */}
             <div className="lg:col-span-2 bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
                 <h3 className="text-lg font-bold text-white mb-4">Loan Timeline & Schedule</h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="text-xs text-gray-400 uppercase border-b border-gray-700">
-                                <th className="px-4 py-3">#</th>
-                                <th className="px-4 py-3">Due Date</th>
-                                <th className="px-4 py-3">Total</th>
-                                <th className="px-4 py-3 hidden sm:table-cell">Principal</th>
-                                <th className="px-4 py-3 hidden sm:table-cell">Interest</th>
-                                <th className="px-4 py-3">Status</th>
-                                <th className="px-4 py-3">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-700/50">
-                            {loan.emis.map((emi: any) => (
-                                <tr key={emi.id} className={`hover:bg-gray-700/20 transition-colors ${
-                                    emi.id === nextEmi?.id ? 'bg-purple-900/10' : ''
-                                }`}>
-                                    <td className="px-4 py-3 text-sm font-mono text-gray-500">{emi.emiNumber}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-300">{new Date(emi.dueDate).toLocaleDateString()}</td>
-                                    <td className="px-4 py-3 text-sm font-bold text-white">₹{Number(emi.totalAmount).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-400 hidden sm:table-cell">₹{Number(emi.principalComponent).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                    <td className="px-4 py-3 text-sm text-red-400 hidden sm:table-cell">₹{Number(emi.interestComponent).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                    <td className="px-4 py-3">
-                                        {emi.status === 'PAID' ? (
-                                            <span className="inline-flex items-center gap-1 text-xs font-bold text-green-400 bg-green-900/20 px-2 py-1 rounded">
-                                                <CheckCircle className="h-3 w-3" /> Paid
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1 text-xs font-bold text-orange-400 bg-orange-900/20 px-2 py-1 rounded">
-                                                <AlertCircle className="h-3 w-3" /> Pending
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">
+                <div className="space-y-3">
+                    {loan.emis.map((emi: any) => {
+                        const isNext = emi.id === nextEmi?.id;
+                        const isPaid = emi.status === 'PAID';
+                        
+                        return (
+                            <div 
+                                key={emi.id} 
+                                className={`p-4 rounded-2xl border transition-all ${
+                                    isNext 
+                                        ? 'bg-purple-900/10 border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.1)]' 
+                                        : 'bg-black/20 border-white/5 hover:bg-white/5'
+                                }`}
+                            >
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    {/* Left: Info */}
+                                    <div className="flex items-start gap-4">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm border ${
+                                            isPaid 
+                                                ? 'bg-green-500/10 border-green-500/20 text-green-400' 
+                                                : isNext
+                                                    ? 'bg-purple-500/10 border-purple-500/20 text-purple-400'
+                                                    : 'bg-gray-800 border-gray-700 text-gray-400'
+                                        }`}>
+                                            {emi.emiNumber}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="font-bold text-white text-sm">
+                                                    {new Date(emi.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </span>
+                                                {isPaid ? (
+                                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20">PAID</span>
+                                                ) : isNext ? (
+                                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">NEXT DUE</span>
+                                                ) : (
+                                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-700 text-gray-400 border border-gray-600">PENDING</span>
+                                                )}
+                                            </div>
+                                            <div className="text-xs text-gray-500 flex items-center gap-3">
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                                    Prin: ₹{Number(emi.principalComponent).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                     <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                                    Int: ₹{Number(emi.interestComponent).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Right: Amount & Action */}
+                                    <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pl-[3.5rem] sm:pl-0">
+                                        <div className="text-right">
+                                            <div className="font-mono font-bold text-white text-lg">
+                                                ₹{Number(emi.totalAmount).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                            </div>
+                                        </div>
+                                        
                                         {emi.status === 'PENDING' && (
                                             <button
                                                 onClick={() => handlePayEmi(emi.emiNumber)}
                                                 disabled={processingEmi === emi.emiNumber || (nextEmi && emi.emiNumber !== nextEmi.emiNumber)}
-                                                className="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                                                    processingEmi === emi.emiNumber 
+                                                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                                        : isNext
+                                                            ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/25'
+                                                            : 'bg-gray-800 hover:bg-gray-700 text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed'
+                                                }`}
                                             >
-                                                {processingEmi === emi.emiNumber ? 'Paying...' : 'Pay'}
+                                                {processingEmi === emi.emiNumber ? '...' : 'Pay'}
                                             </button>
                                         )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                        {emi.status === 'PAID' && (
+                                            <div className="w-8 h-8 flex items-center justify-center rounded-full bg-green-500/10 text-green-400">
+                                                <CheckCircle className="w-5 h-5" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
