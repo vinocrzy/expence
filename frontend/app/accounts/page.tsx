@@ -19,7 +19,10 @@ import clsx from 'clsx';
 
 // Let's stick to standard Tailwind for dropdown to avoid dependency issues since I deleted shadcn.
 
+import { useRouter } from 'next/navigation';
+
 export default function AccountsPage() {
+  const router = useRouter();
   const { accounts, loading, updateAccount, deleteAccount, refresh } = useAccounts();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any>(null);
@@ -171,7 +174,7 @@ export default function AccountsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        onClick={() => handleEdit(account)}
+                        onClick={() => router.push(`/accounts/${account.id}`)}
                         className={clsx(
                             "relative h-56 rounded-3xl p-6 flex flex-col justify-between shadow-2xl overflow-hidden cursor-pointer group border transition-all hover:scale-[1.02]",
                             getCardStyle(account, index)
