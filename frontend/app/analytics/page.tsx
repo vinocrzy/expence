@@ -16,6 +16,7 @@ import {
 import clsx from 'clsx';
 import { format } from 'date-fns';
 import NativeSegmentedControl from '../../components/ui/NativeSegmentedControl';
+import MultiSelect from '../../components/ui/MultiSelect';
 
 // Colors for charts
 const COLORS = ['#8b5cf6', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1', '#14b8a6'];
@@ -30,10 +31,7 @@ export default function AnalyticsPage() {
     const loading = txLoading || catLoading;
 
     // -- State for Independent Filters --
-    const [pieFilterIds, setPieFilterIds] = useState<string[]>([]); // Empty = ALL
-    const [isPieDropdownOpen, setIsPieDropdownOpen] = useState(false);
-    const [barFilterId, setBarFilterId] = useState<string>('ALL'); // 'ALL' = Global Comparison
-    const [isBarDropdownOpen, setIsBarDropdownOpen] = useState(false);
+    const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]); // Empty = ALL
     
     // Drill-down State
     const [selectedDrilldownCategory, setSelectedDrilldownCategory] = useState<string | null>(null);
@@ -46,6 +44,12 @@ export default function AnalyticsPage() {
         start.setHours(0,0,0,0);
         return { start, end };
     }, [months]);
+
+    const categoryOptions = useMemo(() => categories.map(c => ({ 
+        id: c.id, 
+        label: c.name, 
+        color: c.color 
+    })), [categories]);
 
     // Filter transactions (Global - only Date Range applies)
     const filteredTransactions = useMemo(() => {
@@ -100,7 +104,7 @@ export default function AnalyticsPage() {
         transactions.forEach(t => {
             const d = new Date(t.date);
             if (d >= dateRange.start && d <= dateRange.end && t.type === 'EXPENSE') {
-                if (pieFilterIds.length > 0 && t.categoryId && !pieFilterIds.includes(t.categoryId)) return;
+                if (selectedCategoryIds.length > 0 && t.categoryId && !selectedCategoryIds.includes(t.categoryId)) return;
                 
                 // Get Category object for this transaction
                 const cat = categories.find(c => c.id === t.categoryId);
@@ -142,7 +146,7 @@ export default function AnalyticsPage() {
                 })
                 .sort((a, b) => b.value - a.value)
         };
-    }, [transactions, dateRange, categories, pieFilterIds, selectedDrilldownCategory]);
+    }, [transactions, dateRange, categories, selectedCategoryIds, selectedDrilldownCategory]);
 
     // 3. Current Period Stats
     const currentStats = useMemo(() => {
@@ -167,8 +171,8 @@ export default function AnalyticsPage() {
 
         transactions.forEach(t => {
              if (t.type !== 'EXPENSE') return;
-             if (barFilterId !== 'ALL') {
-                 if (!t.categoryId || t.categoryId !== barFilterId) return;
+             if (selectedCategoryIds.length > 0) {
+                 if (!t.categoryId || !selectedCategoryIds.includes(t.categoryId)) return;
              }
              const tDate = new Date(t.date);
              const tKey = format(tDate, 'yyyy-MM');
@@ -181,14 +185,15 @@ export default function AnalyticsPage() {
             { name: 'Last', amount: lastMonthTotal, fill: '#6b7280' },
             { name: 'This', amount: thisMonthTotal, fill: thisMonthTotal > lastMonthTotal ? '#ef4444' : '#10b981' }
         ];
-    }, [barFilterId, transactions]);
+    }, [selectedCategoryIds, transactions]);
 
 
     return (
         <div className="min-h-screen bg-black text-white font-sans pb-32">
             <Navbar />
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 pt-0 md:pt-4">                <NativeHeader title="Analytics" />
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 pt-0 md:pt-4">
+                <NativeHeader title="Analytics" />
                 {/* Header & Controls */}
                 <div className="flex flex-col gap-4">
                     <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 w-fit hidden md:block">
@@ -204,6 +209,15 @@ export default function AnalyticsPage() {
                             { label: '1Y', value: 'YEAR' }
                         ]}
                     />
+
+                    <div className="w-full md:w-64">
+                         <MultiSelect 
+                            options={categoryOptions}
+                            selectedIds={selectedCategoryIds}
+                            onChange={setSelectedCategoryIds}
+                            placeholder="Filter Categories"
+                         />
+                    </div>
                 </div>
 
                 {loading ? (
@@ -280,23 +294,7 @@ export default function AnalyticsPage() {
                                      <h3 className="text-sm font-bold text-gray-300 flex items-center gap-2">
                                         <Activity className="h-4 w-4 text-purple-500" /> vs Last Month
                                     </h3>
-                                    {/* Simple Dropdown Trigger (Simplified for brevity) */}
-                                    <button
-                                        onClick={() => setIsBarDropdownOpen(!isBarDropdownOpen)}
-                                        className="text-xs text-purple-400 font-medium flex items-center gap-1"
-                                    >
-                                        {barFilterId === 'ALL' ? 'All' : 'Filtered'} <ChevronDown className="h-3 w-3" />
-                                    </button>
                                 </div>
-                                
-                                {isBarDropdownOpen && (
-                                    <div className="mb-4 grid grid-cols-3 gap-2">
-                                         <button onClick={() => { setBarFilterId('ALL'); setIsBarDropdownOpen(false); }} className="px-2 py-1 bg-gray-800 rounded text-xs text-white">All</button>
-                                         {categories.slice(0, 5).map(c => (
-                                              <button key={c.id} onClick={() => { setBarFilterId(c.id); setIsBarDropdownOpen(false); }} className="px-2 py-1 bg-gray-800 rounded text-xs text-gray-300 truncate">{c.name}</button>
-                                         ))}
-                                    </div>
-                                )}
 
                                 <ResponsiveContainer width="100%" height={150}>
                                     <BarChart data={comparisonData} layout="vertical" barGap={2}>
@@ -334,40 +332,68 @@ export default function AnalyticsPage() {
                                 </div>
                                 
                                 {chartCategoryData?.chartData?.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height={250}>
-                                        <PieChart>
-                                            <Pie
-                                                data={chartCategoryData.chartData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={60}
-                                                outerRadius={80}
-                                                paddingAngle={4}
-                                                dataKey="value"
-                                                stroke="none"
-                                                onClick={(e) => {
-                                                    if (!selectedDrilldownCategory) {
-                                                        // Only allow drilling down from top-level
-                                                        setSelectedDrilldownCategory(e.name);
-                                                    }
-                                                }}
-                                                className={!selectedDrilldownCategory ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}
-                                            >
-                                                {chartCategoryData.chartData.map((entry: any, index: number) => (
-                                                    <Cell 
-                                                        key={`cell-${index}`} 
-                                                        fill={entry.color || COLORS[index % COLORS.length]} 
-                                                        style={{ outline: 'none' }}
-                                                    />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip 
-                                                contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px' }}
-                                                itemStyle={{ color: '#fff' }}
-                                                formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
-                                            />
-                                        </PieChart>
-                                    </ResponsiveContainer>
+                                    <>
+                                        <ResponsiveContainer width="100%" height={250}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={chartCategoryData.chartData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={60}
+                                                    outerRadius={80}
+                                                    paddingAngle={4}
+                                                    dataKey="value"
+                                                    stroke="none"
+                                                    onClick={(e) => {
+                                                        if (!selectedDrilldownCategory) {
+                                                            // Only allow drilling down from top-level
+                                                            setSelectedDrilldownCategory(e.name);
+                                                        }
+                                                    }}
+                                                    className={!selectedDrilldownCategory ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}
+                                                >
+                                                    {chartCategoryData.chartData.map((entry: any, index: number) => (
+                                                        <Cell 
+                                                            key={`cell-${index}`} 
+                                                            fill={entry.color || COLORS[index % COLORS.length]} 
+                                                            style={{ outline: 'none' }}
+                                                        />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip 
+                                                    contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px' }}
+                                                    itemStyle={{ color: '#fff' }}
+                                                    formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                        
+                                        {/* Mobile Details List */}
+                                        <div className="mt-8 space-y-4 md:hidden">
+                                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Details</div>
+                                            {chartCategoryData.chartData.map((item: any) => {
+                                                const total = chartCategoryData.chartData.reduce((acc, curr) => acc + curr.value, 0);
+                                                const percentage = total > 0 ? ((item.value / total) * 100).toFixed(0) : 0;
+                                                
+                                                return (
+                                                    <div key={item.name} className="flex items-center justify-between text-sm group">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
+                                                            <span className="text-gray-200 font-medium">{item.name}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-4">
+                                                             <span className="text-white font-semibold">₹{Math.round(item.value).toLocaleString()}</span>
+                                                             <div className="w-12 text-right">
+                                                                 <span className="text-gray-500 text-xs bg-white/5 px-1.5 py-0.5 rounded ml-auto">
+                                                                    {percentage}%
+                                                                 </span>
+                                                             </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
                                 ) : (
                                     <EmptyState text="No data" />
                                 )}
