@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import NativeHeader from '../../components/dashboard/NativeHeader';
-import { User, Mail, Wallet, Calendar, Check, ChevronRight, Save, Camera } from 'lucide-react';
+import { User, Mail, Wallet, Calendar, Check, ChevronRight, Save, Camera, Cloud, LogOut, LogIn, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser, useClerk, SignInButton, SignOutButton } from '@clerk/nextjs';
 import { useToast } from '../../context/ToastContext';
 
 export default function Profile() {
@@ -20,9 +20,7 @@ export default function Profile() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (isLoaded && !user) {
-      router.push('/');
-    }
+    // Guest access allowed
   }, [user, isLoaded, router]);
 
   useEffect(() => {
@@ -49,7 +47,7 @@ export default function Profile() {
     }
   };
 
-  if (!isLoaded || !user) {
+  if (!isLoaded) {
     return <div className="min-h-screen bg-black flex items-center justify-center text-white"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div></div>;
   }
 
@@ -63,22 +61,84 @@ export default function Profile() {
         <div className="flex flex-col items-center mb-8">
             <div className="relative group cursor-pointer mb-4">
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px]">
-                    <div className="w-full h-full rounded-full overflow-hidden bg-black">
-                        <img 
-                            src={user.imageUrl} 
-                            alt="Profile" 
-                            className="w-full h-full object-cover"
-                        />
+                    <div className="w-full h-full rounded-full overflow-hidden bg-black flex items-center justify-center">
+                        {user ? (
+                            <img 
+                                src={user.imageUrl} 
+                                alt="Profile" 
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <User className="w-10 h-10 text-gray-500" />
+                        )}
                     </div>
                 </div>
-                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera className="w-8 h-8 text-white" />
-                </div>
+                {user && (
+                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="w-8 h-8 text-white" />
+                    </div>
+                )}
             </div>
             <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                {user.fullName || 'User'}
+                {user ? (user.fullName || 'User') : 'Guest User'}
             </h1>
-            <p className="text-gray-500 text-sm">{user.primaryEmailAddress?.emailAddress}</p>
+            <p className="text-gray-500 text-sm">
+                {user ? user.primaryEmailAddress?.emailAddress : 'Local Account'}
+            </p>
+        </div>
+
+        {/* Sync Status Card - CRITICAL UX */}
+        <div className="mb-6">
+            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-4">Data Sync</h2>
+            <div className="bg-[#1c1c1e] rounded-2xl overflow-hidden p-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${user ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
+                            <Cloud className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <span className="font-medium text-white block">
+                                {user ? 'Sync Active' : 'Local Only'}
+                            </span>
+                            <span className="text-xs text-gray-500 block">
+                                {user ? 'Data is backed up to cloud' : 'Data is stored on this device only'}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    {user ? (
+                        <div className="flex items-center gap-2">
+                             <span className="relative flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                             </span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 text-yellow-500" />
+                        </div>
+                    )}
+                </div>
+
+                {/* Actions */}
+                <div className="mt-4 pt-4 border-t border-gray-800">
+                    {user ? (
+                        <SignOutButton>
+                            <button className="w-full py-2 rounded-lg bg-red-500/10 text-red-500 font-medium text-sm hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2">
+                                <LogOut className="w-4 h-4" />
+                                Sign Out
+                            </button>
+                        </SignOutButton>
+                    ) : (
+                        <SignInButton mode="modal">
+                             <button className="w-full py-2 rounded-lg bg-white text-black font-bold text-sm hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+                                <LogIn className="w-4 h-4" />
+                                Enable Sync / Sign In
+                            </button>
+                        </SignInButton>
+                    )}
+                </div>
+            </div>
         </div>
 
         {/* Group 1: Personal Info */}
@@ -114,7 +174,7 @@ export default function Profile() {
                         </div>
                         <div className="flex items-center gap-2">
                             <code className="text-xs text-gray-500 font-mono">
-                                {(user?.publicMetadata as any)?.householdId || user?.id?.substring(0, 12) + '...'}
+                                {user ? ((user.publicMetadata as any)?.householdId || user.id.substring(0, 12) + '...') : 'local-device'}
                             </code>
                         </div>
                      </div>
@@ -188,9 +248,8 @@ export default function Profile() {
             </button>
 
             <div className="text-center pt-8">
-                <button onClick={() => signOut()} className="text-red-500 text-sm font-medium hover:underline">
-                    Sign Out
-                </button>
+                {/* Footer info or version */}
+                <p className="text-gray-600 text-xs">v0.1.0 • Local-First</p>
             </div>
         </div>
 
