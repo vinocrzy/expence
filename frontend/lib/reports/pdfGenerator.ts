@@ -6,66 +6,143 @@ export async function generatePDF(data: ReportData, type: ReportType): Promise<B
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
 
-  // Title
-  doc.setFontSize(18);
-  doc.text(data.title, pageWidth / 2, 20, { align: 'center' });
-
-  // Subtitle
+  // --- Header Section ---
+  doc.setFillColor(30, 41, 59); // Dark slate blue
+  doc.rect(0, 0, pageWidth, 40, 'F');
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(22);
+  doc.text(data.title.toUpperCase(), pageWidth / 2, 20, { align: 'center' });
+  
   if (data.subtitle) {
     doc.setFontSize(12);
-    doc.setTextColor(100);
+    doc.setTextColor(203, 213, 225); // Light gray
     doc.text(data.subtitle, pageWidth / 2, 30, { align: 'center' });
   }
 
-  // Generated Date
-  doc.setFontSize(10);
-  doc.setTextColor(150);
-  doc.text(`Generated on: ${new Date(data.generatedAt).toLocaleString()}`, pageWidth - 15, 10, { align: 'right' });
+  // Meta Info
+  doc.setTextColor(100);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date(data.generatedAt).toLocaleDateString()}`, pageWidth - 15, 48, { align: 'right' });
 
-  // Summary Section
-  let startY = 40;
-  if (data.summary) {
-    doc.setFontSize(12);
-    doc.setTextColor(0);
-    doc.text('Summary', 14, startY);
-    startY += 10;
-    
-    doc.setFontSize(10);
-    Object.entries(data.summary).forEach(([key, value]) => {
-      const displayValue = typeof value === 'number' 
-        ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
-        : value;
-      doc.text(`${key}: ${displayValue}`, 14, startY);
-      startY += 7;
-    });
-    startY += 10; // Extra spacing before table
-  }
+  let startY = 55;
 
-  // Category Breakdown
-  if (data.categoryBreakdown) {
-      doc.setFontSize(12);
+  // --- Consolidated Summary Table ---
+  if (type === 'CONSOLIDATED' && data.consolidatedSummary) {
+      doc.setFontSize(14);
       doc.setTextColor(0);
-      doc.text('Category Breakdown', 14, startY);
+      doc.text('Account Balances Summary', 14, startY);
       startY += 5;
 
-      const breakdownData = Object.entries(data.categoryBreakdown)
-        .sort((a,b) => b[1] - a[1])
-        .map(([cat, amount]) => [cat, amount.toLocaleString(undefined, { minimumFractionDigits: 2 })]);
+      const summaryData = data.consolidatedSummary.map(s => [
+          s.accountName,
+          s.openingBalance.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+          s.income.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+          s.expense.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+          s.closingBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })
+      ]);
 
       autoTable(doc, {
           startY,
-          head: [['Category', 'Amount']],
-          body: breakdownData,
-          styles: { fontSize: 9, cellPadding: 2 },
-          headStyles: { fillColor: [100, 100, 100] },
-          margin: { left: 14, right: 140 } // Keep it narrow
+          head: [['Account', 'Opening', 'Income', 'Expense', 'Closing']],
+          body: summaryData,
+          styles: { fontSize: 10, cellPadding: 3 },
+          headStyles: { fillColor: [71, 85, 105], halign: 'center' },
+          columnStyles: {
+              1: { halign: 'right' },
+              2: { halign: 'right', textColor: [22, 163, 74] }, // Income Green
+              3: { halign: 'right', textColor: [220, 38, 38] }, // Expense Red
+              4: { halign: 'right', fontStyle: 'bold' }
+          }
       });
-
       // @ts-ignore
       startY = doc.lastAutoTable.finalY + 15;
   }
 
-  // Table
+  // --- Visual Charts (Pie Chart for Category Breakdown) ---
+  if (data.categoryBreakdown && Object.keys(data.categoryBreakdown).length > 0) {
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text('Expense Breakdown', 14, startY);
+      
+      const entries = Object.entries(data.categoryBreakdown).sort((a,b) => b[1] - a[1]).slice(0, 6); // Top 6
+      
+      // Simple Pie Chart Draw Logic
+      const total = entries.reduce((sum, item) => sum + item[1], 0);
+      let currentAngle = 0;
+      const centerX = 60;
+      const centerY = startY + 40;
+      const radius = 25;
+      
+      const colors = [
+          [59, 130, 246], // Blue
+          [16, 185, 129], // Green
+          [245, 158, 11], // Orange
+          [239, 68, 68],  // Red
+          [168, 85, 247], // Purple
+          [236, 72, 153], // Pink
+      ]
+      
+      entries.forEach(([cat, val], index) => {
+          const sliceAngle = (val / total) * 360;
+          const color = colors[index % colors.length];
+          doc.setFillColor(color[0], color[1], color[2]);
+          
+          doc.path([
+             ['M', centerX, centerY],
+             ['L', centerX + radius * Math.cos(currentAngle * Math.PI / 180), centerY + radius * Math.sin(currentAngle * Math.PI / 180)],
+             ['A', radius, radius, 0, sliceAngle > 180 ? 1 : 0, 1, centerX + radius * Math.cos((currentAngle + sliceAngle) * Math.PI / 180), centerY + radius * Math.sin((currentAngle + sliceAngle) * Math.PI / 180)],
+             ['Z']
+          ]).fill();
+
+          // Legend
+          const legendY = startY + 20 + (index * 8);
+          doc.rect(100, legendY - 3, 6, 6, 'F');
+          doc.setTextColor(50);
+          doc.setFontSize(10);
+          doc.text(`${cat} (${((val/total)*100).toFixed(1)}%) - ${val.toLocaleString()}`, 110, legendY + 1);
+          
+          currentAngle += sliceAngle;
+      });
+
+      startY += 80;
+  }
+
+  // --- Summary Text Section ---
+  if (data.summary) {
+    // Only show if not CONSOLIDATED (as it has its own table), or if it's general summary
+    if (type !== 'CONSOLIDATED') {
+        doc.setFontSize(14);
+        doc.setTextColor(0);
+        doc.text('Key Metrics', 14, startY);
+        startY += 8;
+        
+        doc.setFontSize(10);
+        Object.entries(data.summary).forEach(([key, value]) => {
+          const displayValue = typeof value === 'number' 
+            ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+            : value;
+          doc.text(`${key}: ${displayValue}`, 14, startY);
+          startY += 6;
+        });
+        startY += 10;
+    } else {
+        // For consolidated, just show Net Change if available
+        if (data.summary['Net Change']) {
+             doc.setFontSize(12);
+             doc.setTextColor(80);
+             doc.text(`Total Period Net Change: ${Number(data.summary['Net Change']).toLocaleString()}`, 14, startY);
+             startY += 10;
+        }
+    }
+  }
+
+  // --- Transaction Table ---
+  doc.setFontSize(14);
+  doc.setTextColor(0);
+  doc.text(type === 'CONSOLIDATED' ? 'Transaction Details' : 'Data', 14, startY);
+  startY += 5;
+
   autoTable(doc, {
     startY,
     head: [data.headers],
@@ -76,9 +153,12 @@ export async function generatePDF(data: ReportData, type: ReportType): Promise<B
       }
       return cell;
     })),
-    styles: { fontSize: 9, cellPadding: 3 },
-    headStyles: { fillColor: [66, 66, 66] }, // Dark grey header
-    alternateRowStyles: { fillColor: [245, 245, 245] },
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [51, 65, 85], valign: 'middle' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: type === 'CONSOLIDATED' ? {
+        5: { halign: 'right', fontStyle: 'bold' } // Amount column
+    } : {}
   });
 
   return doc.output('blob');

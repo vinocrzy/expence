@@ -238,6 +238,110 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
       };
     }
 
+    case 'CONSOLIDATED': {
+      // 1. Get ALL transactions from Start Date to NOW (to calculate closing balance at End Date)
+      // Actually, strategy:
+      // Current Balance is known.
+      // Balance at EndDate = CurrentBalance - (Transactions > EndDate)
+      // Balance at StartDate = Balance at EndDate - (Transactions between Start & End)
+      
+      const today = new Date();
+      // Ensure we have transactions up to today to reverse-calculate
+      // However, simplified approach:
+      // Fetch transactions relative to the REPORT PERIOD
+      // But to get accurate Opening Balance, we need an anchor.
+      // Anchor = Current Balance (from accounts DB)
+      
+      // Fetch all transactions from Report Start Date to NOW
+      const allTxFromStart = await transactionService.getByDateRange(householdId, startDate, today);
+      
+      // Filter primarily by account if needed
+      // Note: credit cards are liabilities, accounts are assets.
+      // Ideally handled separately or unified. For now, focus on Accounts (Bank/Cash).
+      
+      const txInPeriod = allTxFromStart.filter(t => new Date(t.date) <= endDate);
+      const txAfterPeriod = allTxFromStart.filter(t => new Date(t.date) > endDate);
+
+      const activeAccounts = await accountService.getAllActive(householdId);
+      const consolidatedSummary = [];
+      
+      let totalIncomePeriod = 0;
+      let totalExpensePeriod = 0;
+
+      for (const acc of activeAccounts) {
+        // 1. Calculate Closing Balance at EndDate
+        // Current Balance (DB) - (Sum of Income after EndDate) + (Sum of Expense after EndDate)
+        // Income adds to balance, Expense subtracts. So to reverse:
+        // Reverse Income = -Amount
+        // Reverse Expense = +Amount
+        
+        const accTxAfter = txAfterPeriod.filter(t => t.accountId === acc.id);
+        
+        let closingBal = acc.balance || 0;
+        accTxAfter.forEach(t => {
+            if (t.type === 'INCOME') closingBal -= t.amount;
+            else if (t.type === 'EXPENSE') closingBal += t.amount;
+        });
+
+        // 2. Calculate Opening Balance at StartDate
+        // Closing Balance - (Sum of Income in Period) + (Sum of Expense in Period)
+        const accTxInPeriod = txInPeriod.filter(t => t.accountId === acc.id);
+        
+        let income = 0;
+        let expense = 0;
+        
+        accTxInPeriod.forEach(t => {
+            if (t.type === 'INCOME') income += t.amount;
+            else if (t.type === 'EXPENSE') expense += t.amount;
+        });
+
+        const openingBal = closingBal - income + expense;
+
+        totalIncomePeriod += income;
+        totalExpensePeriod += expense;
+
+        consolidatedSummary.push({
+            accountId: acc.id,
+            accountName: acc.name,
+            openingBalance: openingBal,
+            income,
+            expense,
+            closingBalance: closingBal
+        });
+      }
+
+      // Prepare Category Breakdown for the period
+      const categoryBreakdown: Record<string, number> = {};
+      txInPeriod.forEach(t => {
+        if (t.type === 'EXPENSE') {
+            const catName = categoryMap.get(t.categoryId || '') || 'Uncategorized';
+            categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + t.amount;
+        }
+      });
+
+      return {
+        title: 'Consolidated Financial Report',
+        subtitle: `${format(startDate, 'PP')} - ${format(endDate, 'PP')}`,
+        generatedAt,
+        headers: ['Date', 'Account', 'Category', 'Description', 'Type', 'Amount'],
+        rows: txInPeriod.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(t => [
+            format(new Date(t.date), 'dd/MM/yyyy'),
+            accountMap.get(t.accountId) || 'Unknown',
+            categoryMap.get(t.categoryId || '') || '-',
+            t.description || '',
+            t.type,
+            t.amount
+        ]),
+        summary: {
+            'Total Income': totalIncomePeriod,
+            'Total Expense': totalExpensePeriod,
+            'Net Change': totalIncomePeriod - totalExpensePeriod
+        },
+        categoryBreakdown,
+        consolidatedSummary
+      };
+    }
+
     default:
       throw new Error(`Report type ${type} not implemented`);
   }
