@@ -2,7 +2,25 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
 // Define public routes
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/', '/manifest.json', '/sw.js'])
+// We allow all routes to be public because we are moving to a Local-First architecture 
+// where the app works offline/unauthenticated.
+// Auth is handled component-side via <SignedIn> / <SignedOut> or useUser().
+const isPublicRoute = createRouteMatcher([
+  '/sign-in(.*)', 
+  '/sign-up(.*)', 
+  '/', 
+  '/dashboard(.*)',
+  '/transactions(.*)',
+  '/reports(.*)',
+  '/budgets(.*)',
+  '/accounts(.*)',
+  '/settings(.*)',
+  '/loans(.*)',
+  '/finances(.*)',
+  '/profile(.*)',
+  '/manifest.json', 
+  '/sw.js'
+])
 
 export default clerkMiddleware(async (auth, request) => {
   const { pathname, search } = request.nextUrl
