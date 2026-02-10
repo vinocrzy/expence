@@ -104,27 +104,39 @@ export default function AnalyticsPage() {
         transactions.forEach(t => {
             const d = new Date(t.date);
             if (d >= dateRange.start && d <= dateRange.end && t.type === 'EXPENSE') {
-                if (selectedCategoryIds.length > 0 && t.categoryId && !selectedCategoryIds.includes(t.categoryId)) return;
                 
-                // Get Category object for this transaction
-                const cat = categories.find(c => c.id === t.categoryId);
-                const catName = cat?.name || 'Uncategorized';
+                // Helper to process a single entry (either full tx or split)
+                const processEntry = (catId: string, amount: number, subCatId?: string) => {
+                    if (selectedCategoryIds.length > 0 && catId && !selectedCategoryIds.includes(catId)) return;
 
-                if (selectedDrilldownCategory) {
-                    // DRILL-DOWN MODE: Show sub-categories for selected category
-                    if (catName === selectedDrilldownCategory) {
-                        // Determine sub-category name
-                        let subCatName = 'Uncategorized';
-                        if (t.subCategoryId && cat?.subCategories) {
-                             const sub = cat.subCategories.find(s => s.id === t.subCategoryId);
-                             if (sub) subCatName = sub.name;
+                    // Get Category object
+                    const cat = categories.find(c => c.id === catId);
+                    const catName = cat?.name || 'Uncategorized';
+
+                    if (selectedDrilldownCategory) {
+                        // DRILL-DOWN MODE
+                        if (catName === selectedDrilldownCategory) {
+                            let subCatName = catName; // Default to Parent Name if no sub-category
+                            if (subCatId && cat?.subCategories) {
+                                 const sub = cat.subCategories.find(s => s.id === subCatId);
+                                 if (sub) subCatName = sub.name;
+                            }
+                            catMap.set(subCatName, (catMap.get(subCatName) || 0) + amount);
                         }
-                        
-                        catMap.set(subCatName, (catMap.get(subCatName) || 0) + t.amount);
+                    } else {
+                        // TOP-LEVEL MODE
+                        catMap.set(catName, (catMap.get(catName) || 0) + amount);
                     }
+                };
+
+                if (t.isSplit && t.splits && t.splits.length > 0) {
+                    // Process Splits
+                    t.splits.forEach(split => {
+                        processEntry(split.categoryId, split.amount, undefined); // Splits don't have subCategoryId in current interface
+                    });
                 } else {
-                    // TOP-LEVEL MODE: Show aggregated categories
-                    catMap.set(catName, (catMap.get(catName) || 0) + t.amount);
+                    // Process Whole Transaction
+                    processEntry(t.categoryId || '', t.amount, t.subCategoryId);
                 }
             }
         });
@@ -171,14 +183,25 @@ export default function AnalyticsPage() {
 
         transactions.forEach(t => {
              if (t.type !== 'EXPENSE') return;
-             if (selectedCategoryIds.length > 0) {
-                 if (!t.categoryId || !selectedCategoryIds.includes(t.categoryId)) return;
-             }
+             
              const tDate = new Date(t.date);
              const tKey = format(tDate, 'yyyy-MM');
+             if (tKey !== thisMonthKey && tKey !== lastMonthKey) return;
 
-             if (tKey === thisMonthKey) thisMonthTotal += t.amount;
-             if (tKey === lastMonthKey) lastMonthTotal += t.amount;
+             const processAmount = (catId: string, amount: number) => {
+                 if (selectedCategoryIds.length > 0) {
+                     if (!catId || !selectedCategoryIds.includes(catId)) return;
+                 }
+                 
+                 if (tKey === thisMonthKey) thisMonthTotal += amount;
+                 if (tKey === lastMonthKey) lastMonthTotal += amount;
+             };
+
+             if (t.isSplit && t.splits && t.splits.length > 0) {
+                 t.splits.forEach(split => processAmount(split.categoryId, split.amount));
+             } else {
+                 processAmount(t.categoryId || '', t.amount);
+             }
         });
 
         return [

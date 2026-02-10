@@ -25,7 +25,21 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
   accounts.forEach(a => accountMap.set(a.id, a.name));
   creditCards.forEach(c => accountMap.set(c.id, c.name));
 
-  const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+  // categoryMap now stores the full Category object for sub-category resolution
+  const categoryObjMap = new Map(categories.map(c => [c.id, c]));
+
+  // Helper to get formatted category name (Parent: Child)
+  const getCategoryName = (categoryId?: string, subCategoryId?: string) => {
+    if (!categoryId) return 'Uncategorized';
+    const cat = categoryObjMap.get(categoryId);
+    if (!cat) return 'Unknown';
+    
+    if (subCategoryId && cat.subCategories) {
+        const sub = cat.subCategories.find(s => s.id === subCategoryId);
+        if (sub) return `${cat.name}: ${sub.name}`;
+    }
+    return cat.name;
+  };
 
   const startDate = new Date(filters.startDate);
   const endDate = new Date(filters.endDate);
@@ -50,11 +64,37 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
       
       const totalAmount = filtered.reduce((sum, t) => sum + t.amount, 0);
       
-      // Calculate Category Breakdown
+      // Calculate Category Breakdown & Prepare Rows (Flattening Splits)
       const categoryBreakdown: Record<string, number> = {};
+      const flattenedRows: any[] = [];
+
       filtered.forEach(t => {
-          const catName = categoryMap.get(t.categoryId || '') || 'Uncategorized';
-          categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + t.amount;
+          // A. Handle Rows & Breakdown
+          if (t.isSplit && t.splits && t.splits.length > 0) {
+              t.splits.forEach(split => {
+                  const catName = getCategoryName(split.categoryId, undefined); // Splits don't have subCategoryId yet in interface
+                  categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + split.amount;
+                  
+                  flattenedRows.push([
+                      format(new Date(t.date), 'PP'),
+                      `${t.description || ''} (Split)`,
+                      catName,
+                      accountMap.get(t.accountId) || 'Unknown',
+                      split.amount
+                  ]);
+              });
+          } else {
+              const catName = getCategoryName(t.categoryId, t.subCategoryId);
+              categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + t.amount;
+
+              flattenedRows.push([
+                  format(new Date(t.date), 'PP'),
+                  t.description || '',
+                  catName,
+                  accountMap.get(t.accountId) || 'Unknown',
+                  t.amount
+              ]);
+          }
       });
 
       return {
@@ -62,13 +102,7 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
         subtitle: `${format(startDate, 'PP')} - ${format(endDate, 'PP')}`,
         generatedAt,
         headers: ['Date', 'Description', 'Category', 'Account', 'Amount'],
-        rows: filtered.map(t => [
-          format(new Date(t.date), 'PP'),
-          t.description || '',
-          categoryMap.get(t.categoryId || '') || 'Unknown',
-          accountMap.get(t.accountId) || 'Unknown',
-          t.amount
-        ]),
+        rows: flattenedRows,
         summary: {
           'Total Count': filtered.length,
           'Total Amount': totalAmount
@@ -310,12 +344,47 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
         });
       }
 
-      // Prepare Category Breakdown for the period
+      // Prepare Category Breakdown & Rows for the period (Flattening Splits)
       const categoryBreakdown: Record<string, number> = {};
-      txInPeriod.forEach(t => {
+      const flattenedRows: any[] = [];
+
+      txInPeriod.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).forEach(t => {
+        // 1. Breakdown Logic (Expense only typically)
         if (t.type === 'EXPENSE') {
-            const catName = categoryMap.get(t.categoryId || '') || 'Uncategorized';
-            categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + t.amount;
+             if (t.isSplit && t.splits && t.splits.length > 0) {
+                 t.splits.forEach(split => {
+                     const catName = getCategoryName(split.categoryId, undefined);
+                     categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + split.amount;
+                 });
+             } else {
+                 const catName = getCategoryName(t.categoryId, t.subCategoryId);
+                 categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + t.amount;
+             }
+        }
+
+        // 2. Rows Logic
+        if (t.isSplit && t.splits && t.splits.length > 0) {
+            t.splits.forEach(split => {
+                const catName = getCategoryName(split.categoryId, undefined);
+                flattenedRows.push([
+                    format(new Date(t.date), 'dd/MM/yyyy'),
+                    accountMap.get(t.accountId) || 'Unknown',
+                    catName,
+                    `${t.description || ''} (Split)`,
+                    t.type,
+                    split.amount
+                ]);
+            });
+        } else {
+            const catName = getCategoryName(t.categoryId, t.subCategoryId);
+            flattenedRows.push([
+                format(new Date(t.date), 'dd/MM/yyyy'),
+                accountMap.get(t.accountId) || 'Unknown',
+                catName,
+                t.description || '',
+                t.type,
+                t.amount
+            ]);
         }
       });
 
@@ -324,14 +393,7 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
         subtitle: `${format(startDate, 'PP')} - ${format(endDate, 'PP')}`,
         generatedAt,
         headers: ['Date', 'Account', 'Category', 'Description', 'Type', 'Amount'],
-        rows: txInPeriod.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(t => [
-            format(new Date(t.date), 'dd/MM/yyyy'),
-            accountMap.get(t.accountId) || 'Unknown',
-            categoryMap.get(t.categoryId || '') || '-',
-            t.description || '',
-            t.type,
-            t.amount
-        ]),
+        rows: flattenedRows,
         summary: {
             'Total Income': totalIncomePeriod,
             'Total Expense': totalExpensePeriod,
