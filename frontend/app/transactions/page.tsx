@@ -276,7 +276,7 @@ export default function TransactionsPage() {
         )}
       </main>
 
-      <div className="fixed bottom-24 right-4 z-50 md:hidden">
+      <div className="fixed bottom-32 right-4 z-50 md:hidden">
           <button
             onClick={() => handleCreate()}
             className="w-14 h-14 bg-white text-black rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-transform"

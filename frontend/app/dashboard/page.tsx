@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
-import { useAccounts, useTransactions, useCategories } from '../../hooks/useLocalData';
+import { useAccounts, useTransactions, useCategories, useCreditCards } from '../../hooks/useLocalData';
 import { getHouseholdId } from '../../lib/localdb-services';
 import { 
   getCashFlowSummary, 
@@ -83,11 +83,13 @@ export default function DashboardPage() {
   }, [authLoading, transactions, accounts]); 
 
   // Prepare Account Map for Recent Activity
+  const { creditCards } = useCreditCards(); // Added hook
   const accountMap = useMemo(() => {
     const map: Record<string, any> = {};
     accounts.forEach(acc => map[acc.id] = acc);
+    creditCards.forEach(cc => map[cc.id] = { ...cc, type: 'CREDIT_CARD' }); // Add CCs to map
     return map;
-  }, [accounts]);
+  }, [accounts, creditCards]);
 
   const { categories } = useCategories();
   const categoryMap = useMemo(() => {

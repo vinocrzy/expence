@@ -52,31 +52,23 @@ export default function FinancesPage() {
             title="My Finances"
         />
 
-        {/* Total Net Worth Card */}
+        {/* Total Cash Card */}
         <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-[#1c1c1e] rounded-3xl p-6 border border-white/5 relative overflow-hidden"
         >
-             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+             <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
              
              <div className="relative z-10">
-                 <div className="text-gray-400 text-sm font-medium mb-1">Net Liquid Position</div>
-                 <div className="text-3xl font-bold text-white mb-6">₹{netPosition.toLocaleString()}</div>
-                 
-                 <div className="grid grid-cols-3 gap-4">
-                     <div>
-                         <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1">Cash</div>
-                         <div className="text-green-400 font-bold">₹{totalBankBalance.toLocaleString()}</div>
-                     </div>
-                     <div>
-                         <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1">Loans</div>
-                         <div className="text-white font-bold">₹{totalLoanOutstanding.toLocaleString()}</div>
-                     </div>
-                     <div>
-                         <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1">CC Debt</div>
-                         <div className="text-red-400 font-bold">₹{totalCcOutstanding.toLocaleString()}</div>
-                     </div>
+                 <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-green-500/10 rounded-xl text-green-400">
+                        <Wallet className="w-5 h-5" />
+                    </div>
+                    <span className="text-gray-400 text-sm font-medium">Total Cash Balance</span>
+                 </div>
+                 <div className="text-4xl font-bold text-white tracking-tight">
+                    ₹{totalBankBalance.toLocaleString()}
                  </div>
              </div>
         </motion.div>

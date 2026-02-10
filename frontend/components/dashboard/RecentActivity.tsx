@@ -30,16 +30,22 @@ export default function RecentActivity({ transactions, accountMap, categories }:
           </div>
       ) : (
           <div className="space-y-3">
-              {recent.map(transaction => (
-                  <TransactionCard 
-                      key={transaction.id}
-                      transaction={transaction}
-                      accountMap={accountMap}
-                      categories={categories}
-                      onDelete={() => {}} // Read only in dash
-                      onEdit={() => {}} // Read only in dash
-                  />
-              ))}
+              {recent.map(transaction => {
+                  const account = accountMap[transaction.accountId];
+                  const category = categories.find(c => c.id === transaction.categoryId);
+                  
+                  return (
+                      <TransactionCard 
+                          key={transaction.id}
+                          transaction={transaction}
+                          account={account}
+                          category={category}
+                          categories={categories}
+                          onDelete={() => {}} // Read only in dash
+                          onEdit={() => {}} // Read only in dash
+                      />
+                  );
+              })}
           </div>
       )}
     </div>
