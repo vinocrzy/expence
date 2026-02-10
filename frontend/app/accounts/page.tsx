@@ -136,7 +136,7 @@ export default function AccountsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans pb-32">
+    <div className="min-h-screen bg-black text-white font-sans pb-32 md:pb-8">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 sm:pt-8 pb-8">        <NativeHeader title="Your Wallet" />

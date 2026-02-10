@@ -216,7 +216,7 @@ export default function BudgetDetailPage() {
   const percentUsed = Math.min((totalSpent / budgetLimit || 0) * 100, 100);
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans pb-24">
+    <div className="min-h-screen bg-black text-white font-sans pb-32 md:pb-8">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-8 pb-8">

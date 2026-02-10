@@ -131,7 +131,7 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
   const totalDue = lastStatement ? Number(lastStatement.closingBalance) : outstanding;
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-purple-500 selection:text-white pb-24">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-purple-500 selection:text-white pb-32 md:pb-8">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-8 pb-8">

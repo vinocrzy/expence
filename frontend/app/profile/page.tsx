@@ -54,7 +54,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans pb-24">
+    <div className="min-h-screen bg-black text-white font-sans pb-32 md:pb-8">
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 pt-0 md:pt-8 pb-8">        <NativeHeader title="Profile" />

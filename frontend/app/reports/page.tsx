@@ -68,7 +68,7 @@ export default function ReportsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans pb-24 selection:bg-purple-500 selection:text-white">
+    <div className="min-h-screen bg-black text-white font-sans pb-32 md:pb-8 selection:bg-purple-500 selection:text-white">
       <Navbar />
       
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">

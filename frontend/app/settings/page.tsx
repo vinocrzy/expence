@@ -55,7 +55,7 @@ export default function SettingsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black text-gray-100 pb-24 font-sans">
+        <div className="min-h-screen bg-black text-gray-100 pb-32 md:pb-8 font-sans">
             <Navbar />
             
              <main className="max-w-3xl mx-auto px-4 py-8">
