@@ -5,9 +5,10 @@ import Navbar from '../../components/Navbar';
 import { useBudgets } from '../../hooks/useLocalData';
 import { transactionService, getHouseholdId } from '../../lib/localdb-services';
 import ConfirmationModal from '../../components/ConfirmationModal';
-import { Plus, Calendar, Target, AlertTriangle, Trash2, Archive, ArrowRight, PieChart } from 'lucide-react';
+import { Plus, Calendar, Target, AlertTriangle, Trash2, ArrowRight, PieChart, MoreVertical, Flag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import clsx from 'clsx';
 
 export default function BudgetsPage() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function BudgetsPage() {
 
   const loading = budgetsLoading || txLoading;
 
-  // Calculate spent amounts
+  // Calculate spent amounts (Same logic as before)
   const budgetsWithSpent = budgets.map(b => {
       let spent = 0;
       const now = new Date();
@@ -55,7 +56,6 @@ export default function BudgetsPage() {
           start.setHours(0,0,0,0);
           end.setHours(23,59,59,999);
       } else {
-          // Recurring (Default)
           start = new Date(now.getFullYear(), now.getMonth(), 1);
           end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
           end.setHours(23,59,59,999);
@@ -65,7 +65,6 @@ export default function BudgetsPage() {
         .filter(t => t.type === 'EXPENSE')
         .filter(t => {
             const tDate = new Date(t.date);
-            // Apply budget category filter if config exists
             if (b.budgetLimitConfig && b.budgetLimitConfig.length > 0) {
                  const catIds = b.budgetLimitConfig.map((c: any) => c.categoryId);
                  return tDate >= start && tDate <= end && catIds.includes(t.categoryId);
@@ -103,11 +102,10 @@ export default function BudgetsPage() {
       }
   };
 
-  // Filter Active Budgets
   const activeBudgets = budgetsWithSpent.filter(b => !b.isArchived && b.status === 'ACTIVE');
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
+    <div className="min-h-screen bg-black text-white font-sans pb-32">
       <Navbar />
       
       <main className="max-w-4xl mx-auto px-4 py-8">
@@ -116,111 +114,118 @@ export default function BudgetsPage() {
                 <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
                     Budgets
                 </h1>
-                <p className="text-gray-400 text-sm mt-1">Track and manage your spending limits</p>
+                <p className="text-gray-400 text-sm mt-1">Spending limits & Goals</p>
              </div>
+             
+             {/* Mobile-friendly Add Icon Only on small screens if simpler */}
             <button 
                 onClick={() => router.push('/budgets/create')}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 transition-colors shadow-lg shadow-blue-900/20"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gray-800 border border-gray-700 rounded-xl font-bold hover:bg-gray-700 transition-colors"
             >
                 <Plus className="h-5 w-5" />
-                Create New Budget
+                <span className="hidden sm:inline">New Plan</span>
             </button>
         </div>
 
-        {activeBudgets.length === 0 ? (
-             <div className="text-center py-20 bg-gray-800/30 rounded-3xl border border-dashed border-gray-700">
-                <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <PieChart className="h-10 w-10 text-gray-500" />
+        {loading ? (
+             <div className="space-y-4">
+                 {[1,2].map(i => <div key={i} className="h-40 bg-gray-900 rounded-3xl animate-pulse" />)}
+             </div>
+        ) : activeBudgets.length === 0 ? (
+             <div className="flex flex-col items-center justify-center py-20 bg-[#18181b] rounded-3xl border border-white/5">
+                <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                    <Target className="h-8 w-8 text-purple-500" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-300">No Active Budgets</h3>
-                <p className="text-gray-500 mt-2 max-w-md mx-auto mb-8">
-                    Create a comprehensive budget to track multiple categories, or set up a one-time event budget.
+                <h3 className="text-xl font-bold text-white">No active budgets</h3>
+                <p className="text-gray-500 text-sm mt-2 text-center max-w-xs">
+                    Set a limit to track expenses for holidays, events, or monthly categories.
                 </p>
                 <button 
                     onClick={() => router.push('/budgets/create')}
-                    className="px-6 py-3 bg-gray-800 border border-gray-600 hover:bg-gray-700 rounded-xl font-bold transition-colors"
+                    className="mt-6 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-colors"
                 >
-                    Start your first plan
+                    Create Budget
                 </button>
             </div>
         ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-4">
                 <AnimatePresence>
-                    {activeBudgets.map((budget, index) => (
+                    {activeBudgets.map((budget, index) => {
+                        const totalBudget = budget.totalBudget || 1; // avoid divide by zero
+                        const totalSpent = budget.totalSpent || 0;
+                        const percent = Math.min((totalSpent / totalBudget) * 100, 100);
+                        const isOver = totalSpent > totalBudget;
+                        
+                        return (
                         <motion.div
                             key={budget.id}
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ delay: index * 0.1 }}
+                            transition={{ delay: index * 0.05 }}
                             onClick={() => router.push(`/budgets/${budget.id}`)}
-                            className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50 cursor-pointer hover:border-purple-500/50 hover:shadow-xl hover:shadow-purple-900/10 transition-all group relative overflow-hidden"
+                            className="bg-[#18181b] p-5 rounded-3xl border border-white/5 cursor-pointer hover:border-white/10 active:scale-[0.99] transition-all group relative overflow-hidden"
                         >
-                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                {budget.budgetMode === 'EVENT' ? <Calendar className="w-32 h-32" /> : <Target className="w-32 h-32" />}
-                            </div>
-
-                            <div className="flex justify-between items-start mb-6 relative z-10">
-                                <div>
-                                    <h3 className="text-xl font-bold group-hover:text-purple-400 transition-colors">{budget.name}</h3>
-                                    <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
-                                        {budget.budgetMode === 'EVENT' ? <Calendar className="w-3 h-3" /> : <Target className="w-3 h-3" />}
-                                        {budget.budgetMode === 'EVENT' ? 'One-time Event' : 'Monthly Recurring'}
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="flex gap-4">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 ${
+                                        budget.budgetMode === 'EVENT' ? 'bg-orange-500/10 text-orange-500' : 'bg-blue-500/10 text-blue-500'
+                                    }`}>
+                                        {budget.budgetMode === 'EVENT' ? <Flag className="w-6 h-6" /> : <Target className="w-6 h-6" />}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white">{budget.name}</h3>
+                                        <div className="text-sm text-gray-500 flex items-center gap-2">
+                                            {budget.budgetMode === 'EVENT' ? 'One-time Event' : 'Monthly Recurring'}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                     <button 
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'DELETE'); }}
-                                        className="p-2 hover:bg-gray-700 rounded-lg text-gray-500 hover:text-red-400 transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
+                                
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(budget.id, 'DELETE'); }}
+                                    className="p-2 text-gray-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
                             </div>
 
-                            <div className="space-y-4 relative z-10">
-                                <div className="flex justify-between items-end">
-                                    <div className="text-3xl font-bold font-mono">
-                                        <span className="text-sm text-gray-500 font-sans block mb-1">Remaining</span>
-                                        ₹{Math.max(0, (budget.totalBudget || 0) - (budget.totalSpent || 0)).toLocaleString()}
-                                    </div>
+                            {/* Native Pill Progress */}
+                            <div className="py-2">
+                                <div className="flex justify-between items-end mb-2">
+                                    <span className="text-2xl font-bold font-mono text-white">
+                                        {Math.round(percent)}%
+                                    </span>
                                     <div className="text-right">
-                                        <div className="text-sm text-gray-500">Limit</div>
-                                        <div className="font-mono text-gray-300">₹{(budget.totalBudget || 0).toLocaleString()}</div>
+                                        <span className={`text-sm ${isOver ? 'text-red-400 font-bold' : 'text-gray-400'}`}>
+                                            ₹{totalSpent.toLocaleString()}
+                                        </span>
+                                        <span className="text-gray-600 text-sm"> / ₹{totalBudget.toLocaleString()}</span>
                                     </div>
                                 </div>
-
-                                {/* Progress Bar */}
-                                <div>
-                                    <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
-                                        <div 
-                                            className={`h-full rounded-full transition-all duration-1000 ${(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'bg-gradient-to-r from-red-500 to-orange-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`}
-                                            style={{ width: `${Math.min(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100, 100)}%` }}
-                                        />
-                                    </div>
-                                     <div className="flex justify-between mt-2 text-xs">
-                                        <span className="text-gray-400">
-                                            ₹{(budget.totalSpent || 0).toLocaleString()} spent
-                                        </span>
-                                        <span className={(budget.totalSpent || 0) > (budget.totalBudget || 0) ? 'text-red-400 font-bold' : 'text-gray-400'}>
-                                            {Math.round(((budget.totalSpent || 0) / (budget.totalBudget || 1)) * 100)}%
-                                        </span>
-                                    </div>
+                                
+                                <div className="h-5 bg-gray-800/50 rounded-full overflow-hidden p-1">
+                                    <motion.div 
+                                        className={clsx(
+                                            "h-full rounded-full relative",
+                                            isOver ? "bg-gradient-to-r from-red-600 to-red-500" : "bg-gradient-to-r from-blue-600 to-purple-500"
+                                        )}
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${percent}%` }}
+                                        transition={{ duration: 1, ease: "easeOut" }}
+                                    >
+                                        <div className="absolute inset-0 bg-white/20 rounded-full" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 40%, 0 40%)' }}></div>
+                                    </motion.div>
                                 </div>
-
-                                {(budget.totalSpent || 0) > (budget.totalBudget || 0) && (
-                                    <div className="flex items-center gap-2 text-red-300 text-sm bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-                                        <AlertTriangle className="h-4 w-4 shrink-0" />
-                                        <span>Over budget by ₹{((budget.totalSpent || 0) - (budget.totalBudget || 0)).toLocaleString()}</span>
+                                
+                                {isOver && (
+                                    <div className="mt-3 flex items-center gap-2 text-xs text-red-300 font-medium animate-pulse">
+                                        <AlertTriangle className="w-3 h-3" />
+                                        Exceeded by ₹{(totalSpent - totalBudget).toLocaleString()}
                                     </div>
                                 )}
                             </div>
-
-                            <div className="mt-6 flex items-center text-sm text-blue-400 font-medium group-hover:translate-x-1 transition-transform">
-                                View Details <ArrowRight className="w-4 h-4 ml-1" />
-                            </div>
                         </motion.div>
-                    ))}
+                    );
+                    })}
                 </AnimatePresence>
             </div>
         )}

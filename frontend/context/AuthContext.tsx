@@ -8,6 +8,9 @@ interface User {
   id: string;
   email: string;
   name: string;
+  firstName?: string | null;
+  username?: string | null;
+  imageUrl?: string;
   householdId?: string; // Clerk metadata or derived
 }
 
@@ -33,6 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     id: clerkUser.id,
     email: clerkUser.primaryEmailAddress?.emailAddress || '',
     name: clerkUser.fullName || clerkUser.username || '',
+    username: clerkUser.username || null,
+    firstName: clerkUser.firstName,
+    imageUrl: clerkUser.imageUrl,
     householdId: (clerkUser.publicMetadata as any)?.householdId || clerkUser.id // Default to User ID if no household set
   } : null;
 

@@ -55,7 +55,7 @@ export function TransactionCard({
     <div 
         className={cn(
             "relative overflow-hidden rounded-2xl transition-all duration-300",
-            "bg-[#18181b] active:scale-[0.98] touch-manipulation", // Native-like touch feedback
+            "glass-panel active:scale-[0.98] touch-manipulation", // Native-like touch feedback
             isExpanded ? "ring-1 ring-white/10" : "" // Subtle highlight when expanded
         )}
         onClick={() => isSplit && setIsExpanded(!isExpanded)}

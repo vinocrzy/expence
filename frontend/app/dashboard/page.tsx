@@ -23,6 +23,11 @@ import BudgetWidget from '../../components/dashboard/BudgetWidget';
 
 import LoadingScreen from '../../components/ui/LoadingScreen';
 
+// Native Components
+import NativeHeader from '../../components/dashboard/NativeHeader';
+import StatsRow from '../../components/dashboard/StatsRow';
+import FAB from '../../components/dashboard/FAB';
+
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const { transactions, loading: txLoading } = useTransactions(); 
@@ -98,47 +103,27 @@ export default function DashboardPage() {
   const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-purple-500 selection:text-white pb-24">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-24 md:pb-8">
-        {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
-            Overview
-          </h1>
-          <p className="text-sm md:text-base text-gray-400 mt-1">
-             Financial summary for the last 30 days
-          </p>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* Native Header */}
+        <NativeHeader 
+            userName={user?.firstName || user?.username} 
+            photoUrl={user?.imageUrl}
+        />
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6">
-            <StatCard 
-                title="Net Worth"
-                value={`₹${netWorth.toLocaleString()}`}
-                icon={Wallet}
-                color="blue"
-            />
-            <StatCard 
-                title="Income"
-                value={`₹${(cashFlow?.totalIncome || 0).toLocaleString()}`}
-                icon={TrendingUp}
-                color="green"
-            />
-            <StatCard 
-                title="Expenses"
-                value={`₹${(cashFlow?.totalExpense || 0).toLocaleString()}`}
-                icon={TrendingDown}
-                color="red"
-            />
-             <StatCard 
-                title="Savings Rate"
-                value={`${Math.round(cashFlow?.savingsRate || 0)}%`}
-                icon={PiggyBank}
-                color="purple"
-            />
-        </div>
+        {/* Swipeable Stats Row */}
+        <StatsRow 
+            netWorth={netWorth}
+            totalIncome={cashFlow?.totalIncome || 0}
+            totalExpense={cashFlow?.totalExpense || 0}
+            savingsRate={cashFlow?.savingsRate || 0}
+        />
+
+        {/* Hidden: Traditional Stats Grid 
+           We keep this logic available if needed, but UI is replaced by StatsRow 
+        */}
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6 mb-8">
@@ -148,7 +133,7 @@ export default function DashboardPage() {
                 <RecentActivity 
                     transactions={sortedTransactions}
                     accountMap={accountMap}
-                    categoryMap={categoryMap}
+                    categories={categories}
                 />
             </div>
             
@@ -165,6 +150,7 @@ export default function DashboardPage() {
             </div>
         </div>
 
+        <FAB />
       </main>
     </div>
   );

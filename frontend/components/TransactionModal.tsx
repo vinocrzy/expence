@@ -211,8 +211,8 @@ function TransactionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-md shadow-xl animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+      <div className="glass-panel w-full max-w-md shadow-xl animate-in fade-in zoom-in duration-200">
+        <div className="flex items-center justify-between p-6 border-b border-white/10">
           <h2 className="text-xl font-bold text-white">
             {initialData ? 'Edit Transaction' : 'Add Transaction'}
           </h2>
@@ -230,7 +230,7 @@ function TransactionModal({
             )}
 
             {/* ... Type Toggle ... */}
-            <div className="flex gap-2 p-1 bg-gray-900/50 rounded-xl border border-gray-700/50 mb-4">
+            <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/10 mb-4">
                 {['EXPENSE', 'INCOME', 'TRANSFER'].map((t) => (
                     <button
                         key={t}
@@ -311,7 +311,7 @@ function TransactionModal({
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         disabled={isEditMode}
-                        className={`block w-full pl-8 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono text-lg ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
+                        className={`block w-full pl-8 pr-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono text-lg ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
                         placeholder="0.00"
                         required={!isSplit}
                         />
@@ -324,7 +324,7 @@ function TransactionModal({
                         <select
                           value={categoryId}
                           onChange={(e) => { setCategoryId(e.target.value); setSubCategoryId(''); }}
-                          className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                          className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                           required={!isSplit}
                         >
                           <option value="">Uncategorized</option>
@@ -337,7 +337,7 @@ function TransactionModal({
                              <select
                                 value={subCategoryId}
                                 onChange={(e) => setSubCategoryId(e.target.value)}
-                                className="block w-full sm:w-1/2 px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                                className="block w-full sm:w-1/2 px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                               >
                                 <option value="">Sub-category</option>
                                 {activeSubCategories.map(sub => (
@@ -361,7 +361,7 @@ function TransactionModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               onBlur={handleDescriptionBlur}
-              className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+              className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
               placeholder="What is this for? (e.g. Uber, Netflix)"
             />
           </div>
@@ -373,7 +373,7 @@ function TransactionModal({
                 <select
                     value={selectedEventId}
                     onChange={(e) => setSelectedEventId(e.target.value)}
-                    className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                    className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                 >
                     <option value="">None (Regular Budget)</option>
                     {activeEvents.map(evt => (
@@ -390,7 +390,7 @@ function TransactionModal({
                 <select
                 value={accountId}
                 onChange={(e) => setAccountId(e.target.value)}
-                className={`block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
+                className={`block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
                 required
                 disabled={isEditMode}
                 >
@@ -407,7 +407,7 @@ function TransactionModal({
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className={`block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
+                className={`block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
                 required
                 disabled={isEditMode}
                 />
@@ -425,7 +425,7 @@ function TransactionModal({
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 transition-all ml-auto"
+              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 disabled:opacity-50 transition-all ml-auto"
             >
               {loading ? 'Saving...' : (initialData ? 'Save Changes' : 'Save Transaction')}
             </button>

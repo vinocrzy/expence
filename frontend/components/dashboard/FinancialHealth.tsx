@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import clsx from 'clsx';
-// Note: Using a simple CSS/SVG circle for now to avoid bulky chartjs setup just for a gauge
-// Or maybe stick to current pattern. Let's use SVG.
+import { Shield, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface FinancialHealthProps {
   savingsRate: number;
@@ -9,93 +8,117 @@ interface FinancialHealthProps {
 }
 
 export default function FinancialHealth({ savingsRate, netWorth }: FinancialHealthProps) {
-  // Simple score calculation (heuristic)
-  // Max score 100.
-  // Savings Rate contribution: up to 50pts (target 20% = 50pts?)
-  // Net Worth contribution: simple logarithmic scale or just positive cash flow indicator?
-  // Let's simplify: 
-  // Score = (Savings Rate * 2). Cap at 100. Min 0.
-  // If savings rate is negative, score drops.
-  
+  // Score Calculation
   const score = useMemo(() => {
     let s = Math.round(savingsRate * 2); 
-    // Bonus for high net worth? Maybe keep it simple to "Monthly Health"
     if (s < 0) s = 0;
     if (s > 100) s = 100;
-    
-    // Adjust logic: 
-    // 50% savings = 100 score
-    // 25% savings = 50 score
-    // 0% savings = 0 score
-    // <0 = 0
     return s;
   }, [savingsRate]);
 
   // Determine health level
   let level = 'Needs Attention';
-  let color = 'text-red-500';
-  let strokeColor = '#EF4444'; // red-500
+  let colorClass = 'text-red-400';
+  let strokeColor = '#F87171'; // red-400
+  let gradientId = 'gradientRed';
+  let Icon = AlertTriangle;
 
   if (score >= 80) {
       level = 'Excellent';
-      color = 'text-green-500';
-      strokeColor = '#10B981'; // green-500
+      colorClass = 'text-green-400';
+      strokeColor = '#34D399'; // green-400
+      gradientId = 'gradientGreen';
+      Icon = Shield;
   } else if (score >= 50) {
       level = 'Healthy';
-      color = 'text-blue-500';
-      strokeColor = '#3B82F6'; // blue-500
+      colorClass = 'text-blue-400';
+      strokeColor = '#60A5FA'; // blue-400
+      gradientId = 'gradientBlue';
+      Icon = CheckCircle;
   } else if (score >= 30) {
       level = 'Fair';
-      color = 'text-yellow-500';
-      strokeColor = '#EAB308'; // yellow-500
+      colorClass = 'text-yellow-400';
+      strokeColor = '#FACC15'; // yellow-400
+      gradientId = 'gradientYellow';
+      Icon = TrendingUp;
   }
 
-  // Generic SVG Gauge
-  const radius = 40;
+  // SVG Gauge Config
+  const radius = 50;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
 
   return (
-    <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50 shadow-lg flex flex-col items-center">
-      <h3 className="text-lg font-bold text-white mb-2 w-full text-left">Financial Health</h3>
-      
-      <div className="flex-1 flex flex-col items-center justify-center py-2">
-          <div className="relative w-36 h-36 flex items-center justify-center mb-2">
-            {/* Background Circle */}
-            <svg className="transform -rotate-90 w-36 h-36">
-              <circle
-                className="text-gray-700/30"
-                strokeWidth="8"
-                stroke="currentColor"
-                fill="transparent"
-                r={radius}
-                cx="72"
-                cy="72"
-              />
-              <circle
-                className={clsx("transition-all duration-1000 ease-out", color)}
-                strokeWidth="8"
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="transparent"
-                r={radius}
-                cx="72"
-                cy="72"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-bold text-white tracking-tighter">{score}</span>
-                <span className="text-[10px] text-gray-500 uppercase tracking-widest font-medium mt-1">Score</span>
-            </div>
-          </div>
+    <div className="bg-[#1c1c1e]/80 backdrop-blur-xl p-6 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden flex flex-col items-center">
+      {/* Background Glow */}
+      <div className={clsx("absolute top-0 w-full h-1/2 opacity-10 blur-3xl pointer-events-none", {
+          'bg-green-500': score >= 80,
+          'bg-blue-500': score >= 50 && score < 80,
+          'bg-yellow-500': score >= 30 && score < 50,
+          'bg-red-500': score < 30
+      })} />
 
-          <div className="text-center">
-              <h4 className={clsx("text-lg font-bold mb-1", color)}>{level}</h4>
-              <p className="text-xs text-gray-400 max-w-[180px] mx-auto leading-relaxed">
-                Based on your <span className="text-white font-medium">{Math.round(savingsRate)}%</span> savings rate.
-              </p>
+      <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4 w-full text-center relative z-10">Financial Health</h3>
+      
+      <div className="relative w-40 h-40 flex items-center justify-center mb-4 z-10">
+        <svg className="transform -rotate-90 w-40 h-40 drop-shadow-2xl">
+          <defs>
+            <linearGradient id="gradientGreen" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#34D399" />
+              <stop offset="100%" stopColor="#059669" />
+            </linearGradient>
+            <linearGradient id="gradientBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#60A5FA" />
+              <stop offset="100%" stopColor="#2563EB" />
+            </linearGradient>
+            <linearGradient id="gradientYellow" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#FACC15" />
+              <stop offset="100%" stopColor="#CA8A04" />
+            </linearGradient>
+            <linearGradient id="gradientRed" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#F87171" />
+              <stop offset="100%" stopColor="#DC2626" />
+            </linearGradient>
+          </defs>
+
+          {/* Track */}
+          <circle
+            className="text-black/40"
+            strokeWidth="8"
+            stroke="currentColor"
+            fill="transparent"
+            r={radius}
+            cx="80"
+            cy="80"
+          />
+          
+          {/* Progress */}
+          <circle
+            className="transition-all duration-1000 ease-out"
+            strokeWidth="8"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            stroke={`url(#${gradientId})`}
+            fill="transparent"
+            r={radius}
+            cx="80"
+            cy="80"
+          />
+        </svg>
+
+        {/* Center Content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <Icon className={clsx("w-6 h-6 mb-1", colorClass)} />
+            <span className="text-4xl font-bold text-white tracking-tighter">{score}</span>
+        </div>
+      </div>
+
+      <div className="text-center relative z-10">
+          <h4 className={clsx("text-lg font-bold mb-1", colorClass)}>{level}</h4>
+          <div className="flex items-center gap-2 justify-center text-xs text-gray-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+               <span>Savings Rate:</span>
+               <span className="text-white font-bold">{Math.round(savingsRate)}%</span>
           </div>
       </div>
     </div>

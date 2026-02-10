@@ -83,8 +83,8 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-sm shadow-xl animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+      <div className="glass-panel w-full max-w-sm shadow-xl animate-in fade-in zoom-in duration-200">
+        <div className="flex items-center justify-between p-6 border-b border-white/10">
           <h2 className="text-xl font-bold text-white">
             {initialData ? 'Edit Category' : 'Add Category'}
           </h2>
@@ -100,7 +100,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
                 </div>
             )}
 
-            <div className="flex gap-2 p-1 bg-gray-900/50 rounded-xl border border-gray-700/50 mb-4">
+            <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/10 mb-4">
                 {['EXPENSE', 'INCOME'].map((t) => (
                     <button
                         key={t}
@@ -123,7 +123,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="block w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+              className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
               placeholder="e.g. Groceries"
               required
             />
@@ -166,7 +166,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
                             handleAddSubCategory();
                         }
                     }}
-                    className="flex-1 px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 text-sm"
+                    className="flex-1 px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 text-sm"
                     placeholder="Add sub-category (e.g. Fruits)"
                 />
                 <button
@@ -208,7 +208,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 transition-all ml-auto"
+              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 disabled:opacity-50 transition-all ml-auto"
             >
               {loading ? 'Saving...' : (initialData ? 'Save Changes' : 'Save Category')}
             </button>

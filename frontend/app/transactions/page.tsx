@@ -8,8 +8,7 @@ import DayDetailsModal from '../../components/DayDetailsModal';
 import TransactionList from '../../components/TransactionList';
 import QuickEditModal from '../../components/QuickEditModal';
 import { useTransactions, useAccounts, useCreditCards, useCategories } from '../../hooks/useLocalData';
-
-import { Plus, Filter, Check, ChevronDown, List, LayoutGrid, SlidersHorizontal, X } from 'lucide-react';
+import { Plus, List, LayoutGrid, Check, ChevronDown, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -36,13 +35,13 @@ export default function TransactionsPage() {
   const [isQuickEditOpen, setIsQuickEditOpen] = useState(false);
 
   // Filter UI State
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const allAccounts = useMemo(() => {
       const ccs = creditCards.map(c => ({
           id: c.id,
           name: c.name || c.bankName || 'Credit Card',
-          currency: 'INR', // Default/Fallback
+          currency: 'INR',
           type: 'CREDIT_CARD'
       }));
       return [...accounts, ...ccs];
@@ -56,13 +55,10 @@ export default function TransactionsPage() {
     return map;
   }, [allAccounts]);
   
-  
   // Data Filtering
   const [filterType, setFilterType] = useState('ALL');
-  const [filterCategories, setFilterCategories] = useState<string[]>([]); // Empty array means ALL
-  const [filterAccounts, setFilterAccounts] = useState<string[]>([]); // Empty array means ALL
-  const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
-  const [isAccDropdownOpen, setIsAccDropdownOpen] = useState(false);
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
+  const [filterAccounts, setFilterAccounts] = useState<string[]>([]);
 
   const handleCreate = (date?: Date) => {
     setEditingTransaction(date ? { date: date.toISOString() } : null);
@@ -123,7 +119,6 @@ export default function TransactionsPage() {
       setIsQuickEditOpen(true);
   };
 
-  // transactions for the selected day
   const selectedDayTransactions = useMemo(() => {
       if (!selectedDate) return [];
       return filteredTransactions.filter(t => {
@@ -137,213 +132,133 @@ export default function TransactionsPage() {
   const activeFilterCount = (filterCategories.length > 0 ? 1 : 0) + (filterAccounts.length > 0 ? 1 : 0);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
+    <div className="min-h-screen bg-black text-white font-sans pb-32">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 pb-32 md:pb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         
-        {/* Header Section */}
-        <div className="flex items-center justify-between gap-4 mb-6 md:mb-8">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">Transactions</h1>
-            <p className="hidden md:block text-gray-400">Track and manage your financial activity</p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-             {/* View Toggle */}
-             <div className="bg-gray-800 p-1 rounded-xl flex items-center border border-gray-700">
-                <button
-                    onClick={() => setViewMode('LIST')}
-                    className={clsx(
-                        "p-2 rounded-lg transition-all",
-                        viewMode === 'LIST' ? "bg-gray-700 text-white shadow-sm" : "text-gray-400 hover:text-white"
-                    )}
-                    title="List View"
-                >
-                    <List className="h-5 w-5" />
-                </button>
-                <button
-                    onClick={() => setViewMode('CALENDAR')}
-                    className={clsx(
-                        "p-2 rounded-lg transition-all",
-                        viewMode === 'CALENDAR' ? "bg-gray-700 text-white shadow-sm" : "text-gray-400 hover:text-white"
-                    )}
-                    title="Calendar View"
-                >
-                    <LayoutGrid className="h-5 w-5" />
-                </button>
-             </div>
+        {/* Header & Controls */}
+        <div className="flex items-center justify-between mb-6 sticky top-0 z-20 py-2 bg-black/80 backdrop-blur-xl">
+           <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
+               Transactions
+           </h1>
+           <div className="flex bg-gray-900 rounded-xl p-1 border border-gray-800">
+               <button onClick={() => setViewMode('LIST')} className={`p-2 rounded-lg transition-all ${viewMode === 'LIST' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500'}`}>
+                   <List className="w-5 h-5" />
+               </button>
+               <button onClick={() => setViewMode('CALENDAR')} className={`p-2 rounded-lg transition-all ${viewMode === 'CALENDAR' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500'}`}>
+                   <LayoutGrid className="w-5 h-5" />
+               </button>
+           </div>
+        </div>
 
-             {/* Desktop Add Button (Hidden on Mobile) */}
+        {/* Native Horizontal Scroll Filters */}
+        <div className="mb-6 -mx-4 px-4 overflow-x-auto scrollbar-hide py-1 flex items-center gap-3">
              <button
-                onClick={() => handleCreate()}
-                 className="hidden md:flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all font-bold shadow-lg shadow-purple-500/25 shrink-0"
-            >
-                <Plus className="h-5 w-5" />
-                <span>Add Transaction</span>
-            </button>
-          </div>
-        </div>
+                onClick={() => setShowFilters(!showFilters)}
+                className={clsx(
+                    "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors border",
+                    showFilters || activeFilterCount > 0 
+                        ? "bg-purple-600 border-purple-500 text-white" 
+                        : "bg-gray-900 border-gray-800 text-gray-500"
+                )}
+             >
+                 {activeFilterCount > 0 ? (
+                     <span className="text-xs font-bold">{activeFilterCount}</span>
+                 ) : (
+                     <SlidersHorizontal className="w-5 h-5" />
+                 )}
+             </button>
 
-        {/* Filters Section */}
-        <div className="flex flex-col gap-4 mb-6">
-             
-             {/* Top Row: Type Pills & Mobile Expand Toggle */}
-             <div className="flex gap-3 justify-between">
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide flex-1">
-                    {['ALL', 'INCOME', 'EXPENSE', 'TRANSFER'].map(ft => (
-                        <button
-                            key={ft}
-                            onClick={() => setFilterType(ft)}
-                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors whitespace-nowrap ${
-                                filterType === ft 
-                                ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' 
-                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white border border-gray-700/50'
-                            }`}
-                        >
-                            {ft}
-                        </button>
-                    ))}
-                </div>
-                
-                {/* Mobile Filter Toggle */}
-                <button 
+             <div className="h-8 w-[1px] bg-gray-800 mx-1 flex-shrink-0" />
+
+             {['ALL', 'EXPENSE', 'INCOME', 'TRANSFER'].map(type => (
+                 <button
+                    key={type}
+                    onClick={() => {
+                        if (navigator.vibrate) navigator.vibrate(5);
+                        setFilterType(type);
+                    }}
                     className={clsx(
-                        "md:hidden p-2 rounded-xl border flex items-center justify-center gap-2 relative",
-                        showMobileFilters || activeFilterCount > 0 
-                            ? "bg-gray-700 border-purple-500 text-white" 
-                            : "bg-gray-800 border-gray-700 text-gray-400"
+                        "flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold transition-all border",
+                        filterType === type 
+                            ? "bg-white text-black border-white"
+                            : "bg-gray-900 text-gray-400 border-gray-800 hover:border-gray-700"
                     )}
-                    onClick={() => setShowMobileFilters(!showMobileFilters)}
-                >
-                    {activeFilterCount > 0 && (
-                        <span className="absolute -top-2 -right-2 w-5 h-5 bg-purple-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
-                            {activeFilterCount}
-                        </span>
-                    )}
-                    <SlidersHorizontal className="h-5 w-5" />
-                </button>
-             </div>
-
-            {/* Expansible Complex Filters (Account/Category) */}
-            <div className={clsx("flex-wrap gap-4 w-full md:w-auto", showMobileFilters ? "flex" : "hidden md:flex")}>
-                
-                {/* Account Dropdown */}
-                <div className="relative min-w-[200px] w-full md:w-auto">
-                    <button
-                        onClick={() => setIsAccDropdownOpen(!isAccDropdownOpen)}
-                        className="w-full bg-gray-800 text-white text-sm rounded-xl px-4 py-3 border border-gray-700 focus:outline-none focus:border-purple-500 flex items-center justify-between group hover:border-gray-600 transition-colors"
-                    >
-                        <div className="flex items-center gap-2 truncate">
-                            <span className="text-gray-400 group-hover:text-gray-300">Account:</span>
-                            <span className="font-medium truncate">
-                                {filterAccounts.length === 0 
-                                    ? 'All' 
-                                    : `${filterAccounts.length} selected`}
-                            </span>
-                        </div>
-                        <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${isAccDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {isAccDropdownOpen && (
-                        <>
-                            <div className="fixed inset-0 z-10" onClick={() => setIsAccDropdownOpen(false)} />
-                            <div className="absolute top-full mt-2 left-0 right-0 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-20 p-2 space-y-1">
-                                <button
-                                    onClick={() => setFilterAccounts([])}
-                                    className={clsx(
-                                        "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between",
-                                        filterAccounts.length === 0 ? "bg-purple-500/20 text-purple-200" : "text-gray-300 hover:bg-gray-700"
-                                    )}
-                                >
-                                    <span>All Accounts</span>
-                                    {filterAccounts.length === 0 && <Check className="h-4 w-4" />}
-                                </button>
-                                {allAccounts.map(a => (
-                                    <button
-                                        key={a.id}
-                                        onClick={() => toggleAccount(a.id)}
-                                        className={clsx(
-                                            "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between",
-                                            filterAccounts.includes(a.id) ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
-                                        )}
-                                    >
-                                        <span>{a.name}</span>
-                                        {filterAccounts.includes(a.id) && <Check className="h-4 w-4 text-purple-400" />}
-                                    </button>
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
-
-                {/* Category Dropdown */}
-                <div className="relative min-w-[200px] w-full md:w-auto">
-                    <button
-                        onClick={() => setIsCatDropdownOpen(!isCatDropdownOpen)}
-                        className="w-full bg-gray-800 text-white text-sm rounded-xl px-4 py-3 border border-gray-700 focus:outline-none focus:border-purple-500 flex items-center justify-between group hover:border-gray-600 transition-colors"
-                    >
-                        <div className="flex items-center gap-2 truncate">
-                            <span className="text-gray-400 group-hover:text-gray-300">Category:</span>
-                            <span className="font-medium truncate">
-                                {filterCategories.length === 0 
-                                    ? 'All' 
-                                    : `${filterCategories.length} selected`}
-                            </span>
-                        </div>
-                        <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${isCatDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {isCatDropdownOpen && (
-                        <>
-                            <div className="fixed inset-0 z-10" onClick={() => setIsCatDropdownOpen(false)} />
-                            <div className="absolute top-full mt-2 left-0 right-0 max-h-60 overflow-y-auto bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-20 p-2 space-y-1">
-                                <button
-                                    onClick={() => setFilterCategories([])}
-                                    className={clsx(
-                                        "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between",
-                                        filterCategories.length === 0 ? "bg-purple-500/20 text-purple-200" : "text-gray-300 hover:bg-gray-700"
-                                    )}
-                                >
-                                    <span>All Categories</span>
-                                    {filterCategories.length === 0 && <Check className="h-4 w-4" />}
-                                </button>
-                                {categories.map(c => (
-                                    <button
-                                        key={c.id}
-                                        onClick={() => toggleCategory(c.id)}
-                                        className={clsx(
-                                            "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between",
-                                            filterCategories.includes(c.id) ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
-                                        )}
-                                    >
-                                        <span>{c.name}</span>
-                                        {filterCategories.includes(c.id) && <Check className="h-4 w-4 text-purple-400" />}
-                                    </button>
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
-            </div>
+                 >
+                     {type}
+                 </button>
+             ))}
         </div>
 
-        {/* Content */}
+        {/* Expanded Filters Drawer */}
+        <AnimatePresence>
+            {showFilters && (
+                <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden mb-6"
+                >
+                    <div className="bg-[#18181b] rounded-3xl p-5 border border-white/5 space-y-4">
+                        <div>
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Accounts</span>
+                            <div className="flex flex-wrap gap-2">
+                                {allAccounts.map(acc => (
+                                    <button
+                                        key={acc.id}
+                                        onClick={() => toggleAccount(acc.id)}
+                                        className={clsx(
+                                            "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                                            filterAccounts.includes(acc.id)
+                                                ? "bg-purple-500/20 border-purple-500/50 text-purple-300"
+                                                : "bg-gray-800 border-gray-700 text-gray-400"
+                                        )}
+                                    >
+                                        {acc.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Categories</span>
+                            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar">
+                                {categories.map(cat => (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => toggleCategory(cat.id)}
+                                        className={clsx(
+                                            "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                                            filterCategories.includes(cat.id)
+                                                ? "bg-blue-500/20 border-blue-500/50 text-blue-300"
+                                                : "bg-gray-800 border-gray-700 text-gray-400"
+                                        )}
+                                    >
+                                        {cat.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
         {loading ? (
-           <div className="text-center text-gray-400 py-12">Loading transactions...</div>
+           <div className="flex justify-center p-12">
+               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+           </div>
         ) : (
            <>
               {viewMode === 'LIST' ? (
-                <div className="bg-gray-800/50 backdrop-blur-md rounded-2xl border border-gray-700/50 overflow-hidden">
-                    <TransactionList 
-                        transactions={filteredTransactions}
-                        accountMap={accountMap}
-                        categories={categories}
-                        onDelete={handleDelete}
-                        onEdit={handleEdit}
-                        onQuickEdit={handleQuickEdit}
-                    />
-                </div>
+                <TransactionList 
+                    transactions={filteredTransactions}
+                    accountMap={accountMap}
+                    categories={categories}
+                    onDelete={handleDelete}
+                    onEdit={handleEdit}
+                    onQuickEdit={handleQuickEdit}
+                />
               ) : (
                 <div className="h-[600px]">
                     <CalendarView 
@@ -358,7 +273,15 @@ export default function TransactionsPage() {
         )}
       </main>
 
-      {/* Modals */}
+      <div className="fixed bottom-24 right-4 z-50 md:hidden">
+          <button
+            onClick={() => handleCreate()}
+            className="w-14 h-14 bg-white text-black rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-transform"
+          >
+              <Plus className="w-7 h-7" />
+          </button>
+      </div>
+
       <TransactionModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -381,11 +304,8 @@ export default function TransactionsPage() {
         onEditTransaction={handleEdit}
         onAddTransaction={() => {
             setIsDayDetailsOpen(false);
-            if (selectedDate) {
-                handleCreate(selectedDate);
-            } else {
-                handleCreate();
-            }
+            if (selectedDate) handleCreate(selectedDate);
+            else handleCreate();
         }}
       />
       

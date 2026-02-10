@@ -78,7 +78,7 @@ export default function Navbar() {
   return (
     <>
       {/* --- DESKTOP NAVIGATION --- */}
-      <nav className="hidden md:block bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
+      <nav className="hidden md:block bg-black/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-6">
@@ -202,7 +202,8 @@ export default function Navbar() {
 
       {/* --- MOBILE NAVIGATION --- */}
       
-      {/* Top Bar (Mobile) */}
+      {/* Top Bar (Mobile) - Hidden on Dashboard and Pages with NativeHeader */}
+      {!['/dashboard', '/finances', '/reports', '/settings/categories'].includes(pathname) && (
       <nav className="md:hidden bg-gray-900/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40 px-4 pt-safe pb-3 flex items-center justify-between transition-all duration-300">
            <div className="flex items-center gap-3 pt-2"> {/* Added pt-2 for extra island clearance */}
                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-purple-900/20">
@@ -219,9 +220,10 @@ export default function Navbar() {
                 </Link>
             </div>
       </nav>
+      )}
 
-      {/* Bottom Nav (Mobile) */}
-      <nav className="md:hidden fixed bottom-6 left-4 right-4 bg-gray-900/90 backdrop-blur-2xl border border-white/10 z-50 rounded-[2rem] shadow-2xl shadow-black/50 transition-all duration-300 pb-2 pt-2 safe-area-bottom-margin">
+       {/* Bottom Nav (Mobile) */}
+       <nav className="md:hidden fixed bottom-6 left-4 right-4 bg-gray-900/95 backdrop-blur-2xl border border-white/10 z-50 rounded-[2rem] shadow-2xl shadow-black/80 transition-all duration-300 pb-2 pt-2 safe-area-bottom-margin">
         <div className="flex items-center justify-between px-6">
             {mobileNavItems.map((item, index) => {
                 const Icon = item.icon;
@@ -232,15 +234,15 @@ export default function Navbar() {
                         <div key="fab" className="relative -top-10"> {/* Adjusted for floating nav */}
                             <motion.button 
                                 onClick={() => {
-                                    if (navigator.vibrate) navigator.vibrate(10);
+                                    if (navigator.vibrate) navigator.vibrate(15);
                                     handleOpenQuickAction();
                                 }}
-                                className="w-14 h-14 bg-gradient-to-tr from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-purple-600/40 border-4 border-gray-900"
+                                className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white shadow-xl shadow-purple-600/40 border-[6px] border-gray-900"
                                 whileTap={{ scale: 0.9 }}
                                 whileHover={{ scale: 1.05 }}
                                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                             >
-                                <Plus className="h-7 w-7 stroke-[3]" />
+                                <Plus className="h-8 w-8 stroke-[3]" />
                             </motion.button>
                         </div>
                     );
@@ -251,13 +253,13 @@ export default function Navbar() {
                         <button 
                             key="menu"
                             onClick={() => {
-                                if (navigator.vibrate) navigator.vibrate(5);
+                                if (navigator.vibrate) navigator.vibrate(10);
                                 handleOpenMobileMenu();
                             }}
-                            className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-xl transition-all duration-200 ${isMobileMenuOpen ? 'text-blue-500' : 'text-gray-500'}`}
+                             className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-2xl transition-all duration-200 ${isMobileMenuOpen ? 'text-blue-400 bg-blue-500/10' : 'text-gray-500 hover:text-gray-300'}`}
                         >
                             <MoreHorizontal className={`h-6 w-6 ${isMobileMenuOpen ? 'stroke-[2.5px]' : ''}`} />
-                            <span className="text-[10px] font-medium">More</span>
+                            {isMobileMenuOpen && <span className="absolute -bottom-1 w-1 h-1 bg-blue-400 rounded-full"></span>}
                         </button>
                     )
                 }
@@ -267,17 +269,14 @@ export default function Navbar() {
                         key={item.href}
                         href={item.href}
                         onClick={() => {
-                          if (navigator.vibrate) navigator.vibrate(5);
+                          if (navigator.vibrate) navigator.vibrate(10);
                         }}
-                        className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-xl transition-all duration-200 ${isActive ? 'text-blue-500' : 'text-gray-500'}`}
+                        className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-2xl transition-all duration-200 ${isActive ? 'text-blue-400 bg-blue-500/10' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         <Icon 
-                            className={`h-6 w-6 transition-all duration-200 ${isActive ? 'fill-current' : ''}`} 
-                            strokeWidth={isActive ? 0 : 2}
+                            className={`h-6 w-6 transition-all duration-200 ${isActive ? 'stroke-[2.5px]' : ''}`} 
                         />
-                         <span className="text-[10px] font-medium">
-                             {item.label}
-                         </span>
+                         {isActive && <span className="absolute -bottom-1 w-1 h-1 bg-blue-400 rounded-full"></span>}
                     </Link>
                 );
             })}

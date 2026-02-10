@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#111827",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -35,6 +35,7 @@ export const viewport: Viewport = {
 import { ClerkProvider } from '@clerk/nextjs';
 import { AuthProvider } from "../context/AuthContext";
 import { LocalFirstProvider } from "../context/LocalFirstContext";
+import { ToastProvider } from "../context/ToastContext";
 import SyncStatusIndicator from "@/components/ui/SyncStatus";
 import IOSInstallPrompt from "@/components/IOSInstallPrompt";
 
@@ -51,9 +52,11 @@ export default function RootLayout({
         >
           <AuthProvider>
             <LocalFirstProvider>
-              {children}
-              {/* <SyncStatusIndicator /> - Moved to Navbar */}
-              <IOSInstallPrompt />
+              <ToastProvider>
+                {children}
+                {/* <SyncStatusIndicator /> - Moved to Navbar */}
+                <IOSInstallPrompt />
+              </ToastProvider>
             </LocalFirstProvider>
           </AuthProvider>
         </body>

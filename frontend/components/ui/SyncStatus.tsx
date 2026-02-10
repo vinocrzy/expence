@@ -65,7 +65,7 @@ const SyncStatusIndicator = () => {
                                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                    className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-2xl w-full max-w-sm pointer-events-auto max-h-[90dvh] overflow-y-auto"
+                                    className="glass-panel p-5 shadow-2xl w-full max-w-sm pointer-events-auto max-h-[90dvh] overflow-y-auto"
                                 >
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-white font-bold text-lg flex items-center gap-2">

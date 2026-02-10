@@ -2,14 +2,17 @@
 
 import { useState } from 'react';
 import Navbar from '../../../components/Navbar';
+import NativeHeader from '../../../components/dashboard/NativeHeader';
 import CategoryModal from '../../../components/CategoryModal';
 import { useCategories } from '../../../hooks/useLocalData';
+import { useAuth } from '../../../context/AuthContext';
 import { Category } from '../../../lib/db-types';
-import { Plus, Tag, Trash2, Edit2, ArrowDownCircle, ArrowUpCircle, RefreshCw, EyeOff, CheckCircle } from 'lucide-react';
+import { Plus, Tag, Edit2, ArrowDownCircle, ArrowUpCircle, RefreshCw, EyeOff, CheckCircle, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export default function CategoriesSettingsPage() {
+  const { user } = useAuth();
   const { categories, loading, addCategory, updateCategory, refresh } = useCategories();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -37,7 +40,8 @@ export default function CategoriesSettingsPage() {
     }
   };
 
-  const toggleStatus = async (category: Category) => {
+  const toggleStatus = async (e: React.MouseEvent, category: Category) => {
+      e.stopPropagation();
       try {
           await updateCategory(category.id, { isActive: !category.isActive });
       } catch (error) {
@@ -47,67 +51,63 @@ export default function CategoriesSettingsPage() {
   };
 
   const filteredCategories = categories.filter(c => filter === 'ALL' || c.type === filter);
-  
-  // Group by type for display if filter is ALL, or just list
   const expenseCategories = filteredCategories.filter(c => c.type === 'EXPENSE');
   const incomeCategories = filteredCategories.filter(c => c.type === 'INCOME');
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
+    <div className="min-h-screen bg-black text-white font-sans pb-24 selection:bg-purple-500 selection:text-white">
       <Navbar />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-                <Tag className="h-8 w-8 text-pink-500" />
-                Category Settings
-            </h1>
-            <p className="text-gray-400">Manage your expense and income categories.</p>
-          </div>
-          <button
-            onClick={handleCreate}
-            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-white bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 transition-all font-bold shadow-lg shadow-pink-500/25"
-          >
-            <Plus className="h-5 w-5" />
-            Add New
-          </button>
-        </div>
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <NativeHeader 
+            userName={user?.firstName || 'User'} 
+            photoUrl={user?.imageUrl}
+            title="Categories"
+        />
 
-        {/* Filters */}
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-            {['ALL', 'EXPENSE', 'INCOME'].map(f => (
-                <button
-                    key={f}
-                    onClick={() => setFilter(f as any)}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filter === f ? 'bg-white text-gray-900 shadow-md' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
-                >
-                    {f === 'ALL' ? 'All Categories' : f.charAt(0) + f.slice(1).toLowerCase()}
-                </button>
-            ))}
+        {/* Action Header */}
+        <div className="flex items-center justify-between">
+            <div className="bg-[#1c1c1e] rounded-xl p-1 flex items-center border border-white/5">
+                {['ALL', 'EXPENSE', 'INCOME'].map(f => (
+                    <button
+                        key={f}
+                        onClick={() => setFilter(f as any)}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filter === f ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        {f === 'ALL' ? 'All' : f.charAt(0) + f.slice(1).toLowerCase()}
+                    </button>
+                ))}
+            </div>
+
+            <button
+                onClick={handleCreate}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/20"
+            >
+                <Plus className="w-5 h-5" />
+            </button>
         </div>
 
         {loading ? (
            <div className="flex flex-col items-center justify-center py-24 space-y-4">
-               <RefreshCw className="h-8 w-8 animate-spin text-gray-600" />
-               <p className="text-gray-500">Loading your categories...</p>
+               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+               <p className="text-gray-500 text-sm">Loading categories...</p>
            </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6">
               {/* Expense Section */}
               {(filter === 'ALL' || filter === 'EXPENSE') && expenseCategories.length > 0 && (
                   <section>
-                      <h3 className="text-lg font-bold text-gray-400 mb-4 flex items-center gap-2">
-                          <ArrowDownCircle className="h-5 w-5 text-red-400" /> Expenses
+                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2 flex items-center gap-2">
+                          Expenses
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {expenseCategories.map(cat => (
-                              <CategoryCard 
+                      <div className="bg-[#1c1c1e] rounded-3xl border border-white/5 overflow-hidden">
+                          {expenseCategories.map((cat, i) => (
+                              <CategoryRow 
                                 key={cat.id} 
                                 category={cat} 
+                                isLast={i === expenseCategories.length - 1}
                                 onEdit={() => handleEdit(cat)} 
-                                onToggle={() => toggleStatus(cat)}
+                                onToggle={(e) => toggleStatus(e, cat)}
                               />
                           ))}
                       </div>
@@ -117,16 +117,17 @@ export default function CategoriesSettingsPage() {
               {/* Income Section */}
               {(filter === 'ALL' || filter === 'INCOME') && incomeCategories.length > 0 && (
                   <section>
-                      <h3 className="text-lg font-bold text-gray-400 mb-4 flex items-center gap-2">
-                          <ArrowUpCircle className="h-5 w-5 text-green-400" /> Income
+                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2 flex items-center gap-2">
+                          Income
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {incomeCategories.map(cat => (
-                              <CategoryCard 
+                      <div className="bg-[#1c1c1e] rounded-3xl border border-white/5 overflow-hidden">
+                          {incomeCategories.map((cat, i) => (
+                              <CategoryRow 
                                 key={cat.id} 
                                 category={cat} 
+                                isLast={i === incomeCategories.length - 1}
                                 onEdit={() => handleEdit(cat)} 
-                                onToggle={() => toggleStatus(cat)}
+                                onToggle={(e) => toggleStatus(e, cat)}
                               />
                           ))}
                       </div>
@@ -134,8 +135,10 @@ export default function CategoriesSettingsPage() {
               )}
 
               {filteredCategories.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
-                      No categories found. Start by adding one!
+                  <div className="text-center py-12 text-gray-500 bg-[#1c1c1e] rounded-3xl border border-white/5 mx-auto max-w-sm border-dashed">
+                      <Tag className="w-8 h-8 text-gray-600 mx-auto mb-3" />
+                      <p className="text-sm">No categories found.</p>
+                      <button onClick={handleCreate} className="text-blue-400 text-sm font-bold mt-2 hover:underline">Create One</button>
                   </div>
               )}
           </div>
@@ -152,38 +155,42 @@ export default function CategoriesSettingsPage() {
   );
 }
 
-function CategoryCard({ category, onEdit, onToggle }: { category: Category, onEdit: () => void, onToggle: () => void }) {
+function CategoryRow({ category, isLast, onEdit, onToggle }: { category: Category, isLast: boolean, onEdit: () => void, onToggle: (e: React.MouseEvent) => void }) {
     return (
-        <div className={`group relative flex items-center justify-between p-4 rounded-xl border transition-all ${category.isActive ? 'bg-gray-800 border-gray-700/50 hover:border-gray-600 shadow-sm' : 'bg-gray-800/50 border-gray-800 opacity-60'}`}>
+        <div 
+            onClick={onEdit}
+            className={`flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-colors group ${!isLast ? 'border-b border-white/5' : ''}`}
+        >
             <div className="flex items-center gap-4">
                 <div 
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white shadow-inner"
-                    style={{ backgroundColor: category.isActive ? category.color : '#374151' }}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-inner relative"
+                    style={{ backgroundColor: category.isActive ? category.color : '#27272a' }}
                 >
-                    <Tag className="h-5 w-5 fill-white/20" />
+                    <Tag className="h-4 w-4 fill-white/20" />
+                    {!category.isActive && (
+                        <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center">
+                            <EyeOff className="w-4 h-4 text-gray-400" />
+                        </div>
+                    )}
                 </div>
                 <div>
-                    <div className="font-bold text-white text-base flex items-center gap-2">
+                    <div className={clsx("font-bold text-[15px] transition-colors", category.isActive ? "text-white" : "text-gray-500 line-through")}>
                         {category.name}
-                        {!category.isActive && <span className="text-[10px] bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded uppercase tracking-wide">Disabled</span>}
                     </div>
                 </div>
             </div>
             
-            <div className="flex items-center gap-2">
-                <button 
-                    onClick={onEdit} 
-                    className="p-2 rounded-lg bg-gray-700/50 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
-                >
-                    <Edit2 className="h-4 w-4" />
-                </button>
-                <button 
+            <div className="flex items-center gap-3">
+                 <button 
                     onClick={onToggle}
-                    title={category.isActive ? "Disable Category" : "Enable Category"}
-                    className={`p-2 rounded-lg transition-colors ${category.isActive ? 'bg-gray-700/50 text-gray-400 hover:text-red-400 hover:bg-red-500/10' : 'bg-green-500/20 text-green-500 hover:bg-green-500/30'}`}
-                >
-                    {category.isActive ? <EyeOff className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                </button>
+                    className={clsx(
+                        "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                        category.isActive ? "bg-white/5 text-gray-400 hover:bg-red-500/20 hover:text-red-400" : "bg-green-500/20 text-green-400"
+                    )}
+                 >
+                     {category.isActive ? <EyeOff className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                 </button>
+                 <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400" />
             </div>
         </div>
     );
