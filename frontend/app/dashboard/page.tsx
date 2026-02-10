@@ -20,6 +20,8 @@ import RecentActivity from '../../components/dashboard/RecentActivity';
 import TopCategories from '../../components/dashboard/TopCategories';
 import FinancialHealth from '../../components/dashboard/FinancialHealth';
 import BudgetWidget from '../../components/dashboard/BudgetWidget';
+import TransactionModal from '../../components/TransactionModal';
+import { transactionService } from '../../lib/localdb-services';
 
 import LoadingScreen from '../../components/ui/LoadingScreen';
 
@@ -39,6 +41,27 @@ export default function DashboardPage() {
   const [trendData, setTrendData] = useState<any[]>([]);
   const [categoryBreakdown, setCategoryBreakdown] = useState<any[]>([]);
   const [netWorth, setNetWorth] = useState(0);
+
+  // Transaction Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+
+  const handleEditTransaction = (transaction: any) => {
+      setSelectedTransaction(transaction);
+      setIsModalOpen(true);
+  };
+
+  const handleUpdateTransaction = async (data: any) => {
+      if (!selectedTransaction) return;
+      
+      try {
+          await transactionService.update(selectedTransaction.id, data);
+          // Refresh data
+          window.location.reload(); // Simple refresh for now to ensure all stats update
+      } catch (err) {
+          console.error("Failed to update transaction", err);
+      }
+  };
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -133,6 +156,7 @@ export default function DashboardPage() {
                     transactions={sortedTransactions}
                     accountMap={accountMap}
                     categories={categories}
+                    onEdit={handleEditTransaction}
                 />
             </div>
             
@@ -150,6 +174,14 @@ export default function DashboardPage() {
         </div>
 
         <FAB />
+
+        <TransactionModal
+            isOpen={isModalOpen}
+            onClose={() => { setIsModalOpen(false); setSelectedTransaction(null); }}
+            initialData={selectedTransaction}
+            accounts={accounts}
+            onSubmit={handleUpdateTransaction}
+        />
       </main>
     </div>
   );

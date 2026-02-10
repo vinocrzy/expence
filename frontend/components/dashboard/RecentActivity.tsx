@@ -8,9 +8,10 @@ interface RecentActivityProps {
   transactions: Transaction[];
   accountMap: Record<string, Account>;
   categories: Category[];
+  onEdit?: (transaction: Transaction) => void;
 }
 
-export default function RecentActivity({ transactions, accountMap, categories }: RecentActivityProps) {
+export default function RecentActivity({ transactions, accountMap, categories, onEdit }: RecentActivityProps) {
   const recent = transactions.slice(0, 5);
 
   return (
@@ -42,7 +43,7 @@ export default function RecentActivity({ transactions, accountMap, categories }:
                           category={category}
                           categories={categories}
                           onDelete={() => {}} // Read only in dash
-                          onEdit={() => {}} // Read only in dash
+                          onEdit={onEdit} 
                       />
                   );
               })}

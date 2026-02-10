@@ -35,6 +35,9 @@ export default function AnalyticsPage() {
     const [barFilterId, setBarFilterId] = useState<string>('ALL'); // 'ALL' = Global Comparison
     const [isBarDropdownOpen, setIsBarDropdownOpen] = useState(false);
     
+    // Drill-down State
+    const [selectedDrilldownCategory, setSelectedDrilldownCategory] = useState<string | null>(null);
+    
     // Calculate date range for filtering transactions
     const dateRange = useMemo(() => {
         const end = new Date();
@@ -87,29 +90,59 @@ export default function AnalyticsPage() {
         };
     }, [transactions, dateRange]);
 
-    // 2. Calculate Category Breakdown
+    // 2. Calculate Category Breakdown (with Drill-down)
     const chartCategoryData = useMemo(() => {
         const catMap = new Map<string, number>();
+        
+        // If drill-down is active, find the category object
+        const activeCategory = selectedDrilldownCategory ? categories.find(c => c.name === selectedDrilldownCategory) : null;
 
         transactions.forEach(t => {
             const d = new Date(t.date);
             if (d >= dateRange.start && d <= dateRange.end && t.type === 'EXPENSE') {
                 if (pieFilterIds.length > 0 && t.categoryId && !pieFilterIds.includes(t.categoryId)) return;
-                const catName = categories.find(c => c.id === t.categoryId)?.name || 'Uncategorized';
-                catMap.set(catName, (catMap.get(catName) || 0) + t.amount);
+                
+                // Get Category object for this transaction
+                const cat = categories.find(c => c.id === t.categoryId);
+                const catName = cat?.name || 'Uncategorized';
+
+                if (selectedDrilldownCategory) {
+                    // DRILL-DOWN MODE: Show sub-categories for selected category
+                    if (catName === selectedDrilldownCategory) {
+                        // Determine sub-category name
+                        let subCatName = 'Uncategorized';
+                        if (t.subCategoryId && cat?.subCategories) {
+                             const sub = cat.subCategories.find(s => s.id === t.subCategoryId);
+                             if (sub) subCatName = sub.name;
+                        }
+                        
+                        catMap.set(subCatName, (catMap.get(subCatName) || 0) + t.amount);
+                    }
+                } else {
+                    // TOP-LEVEL MODE: Show aggregated categories
+                    catMap.set(catName, (catMap.get(catName) || 0) + t.amount);
+                }
             }
         });
 
+        // Determine colors based on mode
         return {
             chartData: Array.from(catMap.entries())
-                .map(([name, value], i) => ({
-                    name,
-                    value,
-                    color: categories.find(c => c.name === name)?.color || COLORS[i % COLORS.length]
-                }))
+                .map(([name, value], i) => {
+                    let color;
+                    if (selectedDrilldownCategory) {
+                        // Sub-category colors (shades of parent or palette)
+                        // Use base colors for now, maybe lighter opacity or standard palette
+                        color = COLORS[i % COLORS.length]; 
+                    } else {
+                        // Parent category color
+                        color = categories.find(c => c.name === name)?.color || COLORS[i % COLORS.length];
+                    }
+                    return { name, value, color };
+                })
                 .sort((a, b) => b.value - a.value)
         };
-    }, [transactions, dateRange, categories, pieFilterIds]);
+    }, [transactions, dateRange, categories, pieFilterIds, selectedDrilldownCategory]);
 
     // 3. Current Period Stats
     const currentStats = useMemo(() => {
@@ -285,9 +318,20 @@ export default function AnalyticsPage() {
 
                             {/* Expense Breakdown */}
                             <div className="bg-[#18181b] rounded-3xl p-5 border border-white/5 min-h-[300px]">
-                                <h3 className="text-sm font-bold text-gray-300 mb-2 flex items-center gap-2">
-                                    <PieIcon className="h-4 w-4 text-pink-500" /> Expense Breakdown
-                                </h3>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-sm font-bold text-gray-300 flex items-center gap-2">
+                                        <PieIcon className="h-4 w-4 text-pink-500" /> 
+                                        {selectedDrilldownCategory ? `${selectedDrilldownCategory} Breakdown` : 'Expense Breakdown'}
+                                    </h3>
+                                    {selectedDrilldownCategory && (
+                                        <button 
+                                            onClick={() => setSelectedDrilldownCategory(null)}
+                                            className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-blue-500/10 px-2 py-1 rounded-lg transition-colors"
+                                        >
+                                            <ArrowUpRight className="w-3 h-3 rotate-180" /> Back
+                                        </button>
+                                    )}
+                                </div>
                                 
                                 {chartCategoryData?.chartData?.length > 0 ? (
                                     <ResponsiveContainer width="100%" height={250}>
@@ -301,11 +345,19 @@ export default function AnalyticsPage() {
                                                 paddingAngle={4}
                                                 dataKey="value"
                                                 stroke="none"
+                                                onClick={(e) => {
+                                                    if (!selectedDrilldownCategory) {
+                                                        // Only allow drilling down from top-level
+                                                        setSelectedDrilldownCategory(e.name);
+                                                    }
+                                                }}
+                                                className={!selectedDrilldownCategory ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}
                                             >
                                                 {chartCategoryData.chartData.map((entry: any, index: number) => (
                                                     <Cell 
                                                         key={`cell-${index}`} 
                                                         fill={entry.color || COLORS[index % COLORS.length]} 
+                                                        style={{ outline: 'none' }}
                                                     />
                                                 ))}
                                             </Pie>

@@ -211,8 +211,8 @@ function TransactionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="glass-panel w-full max-w-md shadow-xl animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
+      <div className="glass-panel w-full max-w-md shadow-xl animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-white/10 shrink-0">
           <h2 className="text-xl font-bold text-white">
             {initialData ? 'Edit Transaction' : 'Add Transaction'}
           </h2>
@@ -221,200 +221,202 @@ function TransactionModal({
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {/* ... Error ... */}
-            {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">
-                    {error}
-                </div>
-            )}
-
-            {/* ... Type Toggle ... */}
-            <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/10 mb-4">
-                {['EXPENSE', 'INCOME', 'TRANSFER'].map((t) => (
-                    <button
-                        key={t}
-                        type="button"
-                        disabled={isEditMode}
-                        onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
-                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
-                            type === t 
-                            ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400' : t === 'EXPENSE' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400')
-                            : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                        } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                        {t}
-                    </button>
-                ))}
-            </div>
-
-            {/* Split Toggle */}
-            <div className="flex justify-end mb-2">
-                <button
-                    type="button"
-                    onClick={() => {
-                         const newIsSplit = !isSplit;
-                         setIsSplit(newIsSplit);
-                         
-                         // If turning on split and no splits exist, convert current transaction to first split
-                         if (newIsSplit && splits.length === 0 && amount) {
-                             setSplits([{
-                                 id: crypto.randomUUID(),
-                                 amount: parseFloat(amount),
-                                 categoryId: categoryId,
-                                 note: description
-                             }]);
-                             setSplitTotal(parseFloat(amount));
-                         }
-                         
-                         // Clear error when toggling
-                         setError('');
-                    }}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                        isSplit 
-                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' 
-                        : 'text-gray-400 hover:bg-gray-800 border border-transparent'
-                    }`}
-                >
-                    <Split className="w-4 h-4" />
-                    {isSplit ? 'Split Transaction Active' : 'Split Transaction?'}
-                </button>
-            </div>
-
-            {isSplit ? (
-                <SplitTransactionForm
-                    categories={filteredCategories}
-                    currencySymbol={accounts.find(a => a.id === accountId)?.currency === 'USD' ? '$' : accounts.find(a => a.id === accountId)?.currency === 'EUR' ? '€' : accounts.find(a => a.id === accountId)?.currency === 'GBP' ? '£' : '₹'}
-                    initialAmount={initialData?.amount?.toString() || amount}
-                    initialSplits={splits}
-                    isReadOnly={isEditMode}
-                    onValidationChange={(valid, total, newSplits) => {
-                        setIsSplitValid(valid);
-                        setSplitTotal(total);
-                        setSplits(newSplits);
-                    }}
-                />
-            ) : (
-                <>
-                  {/* ... Amount ... */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-300">Amount</label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
-                            {accounts.find(a => a.id === accountId)?.currency === 'USD' ? '$' : 
-                             accounts.find(a => a.id === accountId)?.currency === 'EUR' ? '€' :
-                             accounts.find(a => a.id === accountId)?.currency === 'GBP' ? '£' : '₹'}
-                        </span>
-                        <input
-                        type="number"
-                        step="0.01"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        disabled={isEditMode}
-                        className={`block w-full pl-8 pr-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono text-lg ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
-                        placeholder="0.00"
-                        required={!isSplit}
-                        />
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                {/* ... Error ... */}
+                {error && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">
+                        {error}
                     </div>
-                  </div>
+                )}
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-300">Category</label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <select
-                          value={categoryId}
-                          onChange={(e) => { setCategoryId(e.target.value); setSubCategoryId(''); }}
-                          className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-                          required={!isSplit}
+                {/* ... Type Toggle ... */}
+                <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/10 mb-4">
+                    {['EXPENSE', 'INCOME', 'TRANSFER'].map((t) => (
+                        <button
+                            key={t}
+                            type="button"
+                            disabled={isEditMode}
+                            onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
+                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
+                                type === t 
+                                ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400' : t === 'EXPENSE' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400')
+                                : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                            } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                          <option value="">Uncategorized</option>
-                          {filteredCategories.map(cat => (
-                              <option key={cat.id} value={cat.id}>{cat.name}</option>
-                          ))}
-                        </select>
-                        
-                        {activeSubCategories.length > 0 && (
-                             <select
-                                value={subCategoryId}
-                                onChange={(e) => setSubCategoryId(e.target.value)}
-                                className="block w-full sm:w-1/2 px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-                              >
-                                <option value="">Sub-category</option>
-                                {activeSubCategories.map(sub => (
-                                    <option key={sub.id} value={sub.id}>{sub.name}</option>
-                                ))}
-                              </select>
-                        )}
-                    </div>
-                  </div>
-                </>
-            )}
-
-          <div className="space-y-2">
-              {/* ... Description ... */}
-            <label className="text-sm font-medium text-gray-300 flex justify-between">
-                <span>Description</span>
-                {isSuggesting && <span className="text-xs text-purple-400 animate-pulse">✨ AI Suggesting...</span>}
-            </label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              onBlur={handleDescriptionBlur}
-              className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-              placeholder="What is this for? (e.g. Uber, Netflix)"
-            />
-          </div>
-
-          {/* Event Budget Tag */}
-          {activeEvents.length > 0 && (
-             <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Tag Event (Optional)</label>
-                <select
-                    value={selectedEventId}
-                    onChange={(e) => setSelectedEventId(e.target.value)}
-                    className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-                >
-                    <option value="">None (Regular Budget)</option>
-                    {activeEvents.map(evt => (
-                        <option key={evt.id} value={evt.id}>{evt.name}</option>
+                            {t}
+                        </button>
                     ))}
-                </select>
-            </div>
-          )}
+                </div>
 
-          <div className="grid grid-cols-2 gap-4">
-             {/* ... Account & Date ... */}
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Account</label>
-                <select
-                value={accountId}
-                onChange={(e) => setAccountId(e.target.value)}
-                className={`block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
-                required
-                disabled={isEditMode}
-                >
-                <option value="" disabled>Select Account</option>
-                {accounts.map(acc => (
-                    <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>
-                ))}
-                </select>
-            </div>
-            
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Date</label>
+                {/* Split Toggle */}
+                <div className="flex justify-end mb-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                             const newIsSplit = !isSplit;
+                             setIsSplit(newIsSplit);
+                             
+                             // If turning on split and no splits exist, convert current transaction to first split
+                             if (newIsSplit && splits.length === 0 && amount) {
+                                 setSplits([{
+                                     id: crypto.randomUUID(),
+                                     amount: parseFloat(amount),
+                                     categoryId: categoryId,
+                                     note: description
+                                 }]);
+                                 setSplitTotal(parseFloat(amount));
+                             }
+                             
+                             // Clear error when toggling
+                             setError('');
+                        }}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                            isSplit 
+                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' 
+                            : 'text-gray-400 hover:bg-gray-800 border border-transparent'
+                        }`}
+                    >
+                        <Split className="w-4 h-4" />
+                        {isSplit ? 'Split Transaction Active' : 'Split Transaction?'}
+                    </button>
+                </div>
+
+                {isSplit ? (
+                    <SplitTransactionForm
+                        categories={filteredCategories}
+                        currencySymbol={accounts.find(a => a.id === accountId)?.currency === 'USD' ? '$' : accounts.find(a => a.id === accountId)?.currency === 'EUR' ? '€' : accounts.find(a => a.id === accountId)?.currency === 'GBP' ? '£' : '₹'}
+                        initialAmount={initialData?.amount?.toString() || amount}
+                        initialSplits={splits}
+                        isReadOnly={isEditMode}
+                        onValidationChange={(valid, total, newSplits) => {
+                            setIsSplitValid(valid);
+                            setSplitTotal(total);
+                            setSplits(newSplits);
+                        }}
+                    />
+                ) : (
+                    <>
+                      {/* ... Amount ... */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">Amount</label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
+                                {accounts.find(a => a.id === accountId)?.currency === 'USD' ? '$' : 
+                                 accounts.find(a => a.id === accountId)?.currency === 'EUR' ? '€' :
+                                 accounts.find(a => a.id === accountId)?.currency === 'GBP' ? '£' : '₹'}
+                            </span>
+                            <input
+                            type="number"
+                            step="0.01"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            disabled={isEditMode}
+                            className={`block w-full pl-8 pr-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono text-lg ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
+                            placeholder="0.00"
+                            required={!isSplit}
+                            />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">Category</label>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <select
+                              value={categoryId}
+                              onChange={(e) => { setCategoryId(e.target.value); setSubCategoryId(''); }}
+                              className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                              required={!isSplit}
+                            >
+                              <option value="">Uncategorized</option>
+                              {filteredCategories.map(cat => (
+                                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                              ))}
+                            </select>
+                            
+                            {activeSubCategories.length > 0 && (
+                                 <select
+                                    value={subCategoryId}
+                                    onChange={(e) => setSubCategoryId(e.target.value)}
+                                    className="block w-full sm:w-1/2 px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                                  >
+                                    <option value="">Sub-category</option>
+                                    {activeSubCategories.map(sub => (
+                                        <option key={sub.id} value={sub.id}>{sub.name}</option>
+                                    ))}
+                                  </select>
+                            )}
+                        </div>
+                      </div>
+                    </>
+                )}
+
+              <div className="space-y-2">
+                  {/* ... Description ... */}
+                <label className="text-sm font-medium text-gray-300 flex justify-between">
+                    <span>Description</span>
+                    {isSuggesting && <span className="text-xs text-purple-400 animate-pulse">✨ AI Suggesting...</span>}
+                </label>
                 <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className={`block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
-                required
-                disabled={isEditMode}
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  onBlur={handleDescriptionBlur}
+                  className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                  placeholder="What is this for? (e.g. Uber, Netflix)"
                 />
-            </div>
+              </div>
+
+              {/* Event Budget Tag */}
+              {activeEvents.length > 0 && (
+                 <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Tag Event (Optional)</label>
+                    <select
+                        value={selectedEventId}
+                        onChange={(e) => setSelectedEventId(e.target.value)}
+                        className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                    >
+                        <option value="">None (Regular Budget)</option>
+                        {activeEvents.map(evt => (
+                            <option key={evt.id} value={evt.id}>{evt.name}</option>
+                        ))}
+                    </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                 {/* ... Account & Date ... */}
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Account</label>
+                    <select
+                    value={accountId}
+                    onChange={(e) => setAccountId(e.target.value)}
+                    className={`block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
+                    required
+                    disabled={isEditMode}
+                    >
+                    <option value="" disabled>Select Account</option>
+                    {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>
+                    ))}
+                    </select>
+                </div>
+                
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Date</label>
+                    <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className={`block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
+                    required
+                    disabled={isEditMode}
+                    />
+                </div>
+              </div>
           </div>
 
-          <div className="flex justify-end pt-4 gap-3">
+          <div className="flex justify-end p-6 border-t border-white/10 gap-3 bg-[#1c1c1e] z-10 shrink-0 rounded-b-2xl">
             <button
               type="button"
               onClick={onClose}
@@ -425,7 +427,7 @@ function TransactionModal({
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 disabled:opacity-50 transition-all ml-auto"
+              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 disabled:opacity-50 transition-all"
             >
               {loading ? 'Saving...' : (initialData ? 'Save Changes' : 'Save Transaction')}
             </button>
