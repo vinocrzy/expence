@@ -202,25 +202,7 @@ export default function Navbar() {
 
       {/* --- MOBILE NAVIGATION --- */}
       
-      {/* Top Bar (Mobile) - Hidden on Dashboard and Pages with NativeHeader */}
-      {!['/dashboard', '/finances', '/reports', '/settings/categories'].includes(pathname) && (
-      <nav className="md:hidden bg-gray-900/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-40 px-4 pt-safe pb-3 flex items-center justify-between transition-all duration-300">
-           <div className="flex items-center gap-3 pt-2"> {/* Added pt-2 for extra island clearance */}
-                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-purple-900/20">
-                 P
-                 </div>
-                 <span className="font-semibold text-white text-lg tracking-tight">PocketTogether</span>
-           </div>
-           
-            {/* Status Indicator (Mobile) */}
-            <div className="flex items-center gap-3 pt-2">
-                <SyncStatusIndicator />
-                <Link href="/profile" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-                    <User className="h-5 w-5" />
-                </Link>
-            </div>
-      </nav>
-      )}
+
 
        {/* Bottom Nav (Mobile) */}
        <nav className="md:hidden fixed bottom-6 left-4 right-4 bg-gray-900/95 backdrop-blur-2xl border border-white/10 z-50 rounded-[2rem] shadow-2xl shadow-black/80 transition-all duration-300 pb-2 pt-2 mb-safe">
