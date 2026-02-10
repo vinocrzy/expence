@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
+import NativeHeader from '../../components/dashboard/NativeHeader';
 import { useTransactions, useCategories } from '../../hooks/useLocalData';
 import { 
     BarChart2, TrendingUp, TrendingDown, 
@@ -155,9 +156,10 @@ export default function AnalyticsPage() {
             <Navbar />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 pt-4">
+                <NativeHeader title="Analytics" />
                 {/* Header & Controls */}
                 <div className="flex flex-col gap-4">
-                    <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 w-fit">
+                    <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 w-fit hidden md:block">
                         Analytics
                     </h1>
                     

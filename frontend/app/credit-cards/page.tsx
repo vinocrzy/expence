@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Navbar from '../../components/Navbar';
+import NativeHeader from '../../components/dashboard/NativeHeader';
 import CreditCardModal from '../../components/CreditCardModal';
 import { useCreditCards } from '../../hooks/useLocalData';
 import { creditCardService } from '../../lib/localdb-services';
@@ -35,8 +36,9 @@ export default function CreditCardsPage() {
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <NativeHeader title="Credit Cards" />
         <div className="flex justify-between items-center mb-6">
-          <div>
+          <div className="hidden md:block">
               <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
                 Credit Cards
               </h1>
@@ -98,7 +100,7 @@ export default function CreditCardsPage() {
                                             <span>****</span>
                                             <span>****</span>
                                             <span>****</span>
-                                            <span className="text-white">{card.last4Digits || 'CARD'}</span>
+                                            <span className="text-white">{card.lastFourDigits || 'CARD'}</span>
                                         </div>
 
                                         {/* Liquid Progress Bar for Utilization */}

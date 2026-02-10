@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Navbar from '../../components/Navbar';
+import NativeHeader from '../../components/dashboard/NativeHeader';
 import AccountModal from '../../components/AccountModal';
 import { useAccounts } from '../../hooks/useLocalData';
 import { accountService } from '../../lib/localdb-services';
@@ -136,7 +137,8 @@ export default function AccountsPage() {
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="flex flex-col gap-4 mb-6">
+        <NativeHeader title="Your Wallet" />
+        <div className="flex flex-col gap-4 mb-6 hidden md:flex">
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 w-fit">
                 Your Wallet
             </h1>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
+import NativeHeader from '../../components/dashboard/NativeHeader';
 import TransactionModal from '../../components/TransactionModal';
 import CalendarView from '../../components/CalendarView';
 import DayDetailsModal from '../../components/DayDetailsModal';
@@ -137,9 +138,12 @@ export default function TransactionsPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         
+
+        <NativeHeader title="Transactions" />
+        
         {/* Header & Controls */}
         <div className="flex items-center justify-between mb-6 sticky top-0 z-20 py-2 bg-black/80 backdrop-blur-xl">
-           <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
+           <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 hidden md:block">
                Transactions
            </h1>
            <div className="flex bg-gray-900 rounded-xl p-1 border border-gray-800">

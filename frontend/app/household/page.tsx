@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
+import NativeHeader from '../../components/dashboard/NativeHeader';
 import { householdService, sharedDataService } from '../../lib/localdb-services';
 import { Users, Copy, Check, UserPlus, LogOut, CloudUpload, RefreshCw, Home, Shield } from 'lucide-react';
 import { useAuth, useUser } from '@clerk/nextjs';
@@ -113,9 +114,10 @@ export default function HouseholdPage() {
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 py-8">
+        <NativeHeader title="Household" />
         
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-4 mb-8 hidden md:flex">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
                 <Home className="w-8 h-8 text-white" />
             </div>

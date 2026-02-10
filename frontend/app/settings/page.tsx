@@ -6,6 +6,7 @@ import { Loader2, Download, Upload, AlertTriangle, CheckCircle, Database, Chevro
 import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import NativeHeader from '@/components/dashboard/NativeHeader';
 
 export default function SettingsPage() {
     const [loading, setLoading] = useState(false);
@@ -57,7 +58,8 @@ export default function SettingsPage() {
             <Navbar />
             
              <main className="max-w-3xl mx-auto px-4 py-8">
-                 <h1 className="text-3xl font-bold text-white mb-8">Settings</h1>
+                 <NativeHeader title="Settings" />
+                 <h1 className="text-3xl font-bold text-white mb-8 hidden md:block">Settings</h1>
 
                  {/* Status Toast */}
                  {status && (

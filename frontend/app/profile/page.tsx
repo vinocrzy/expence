@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
+import NativeHeader from '../../components/dashboard/NativeHeader';
 import { User, Mail, Wallet, Calendar, Check, ChevronRight, Save, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useClerk } from '@clerk/nextjs';
 import { useToast } from '../../context/ToastContext';
 
 export default function Profile() {
   const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
   const { showToast } = useToast();
   
@@ -56,6 +58,7 @@ export default function Profile() {
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 py-8">
+        <NativeHeader title="Profile" />
         
         {/* iOS Style Header with Avatar */}
         <div className="flex flex-col items-center mb-8">
@@ -186,7 +189,7 @@ export default function Profile() {
             </button>
 
             <div className="text-center pt-8">
-                <button onClick={() => user.signOut()} className="text-red-500 text-sm font-medium hover:underline">
+                <button onClick={() => signOut()} className="text-red-500 text-sm font-medium hover:underline">
                     Sign Out
                 </button>
             </div>

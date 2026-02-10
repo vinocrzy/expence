@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
+import NativeHeader from '../../components/dashboard/NativeHeader';
 import { useBudgets } from '../../hooks/useLocalData';
 import { transactionService, getHouseholdId } from '../../lib/localdb-services';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -109,8 +110,9 @@ export default function BudgetsPage() {
       <Navbar />
       
       <main className="max-w-4xl mx-auto px-4 py-8">
+        <NativeHeader title="Budgets" />
         <div className="flex justify-between items-center mb-8">
-             <div>
+             <div className="hidden md:block">
                 <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
                     Budgets
                 </h1>
