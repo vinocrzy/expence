@@ -223,7 +223,7 @@ export default function Navbar() {
       )}
 
        {/* Bottom Nav (Mobile) */}
-       <nav className="md:hidden fixed bottom-6 left-4 right-4 bg-gray-900/95 backdrop-blur-2xl border border-white/10 z-50 rounded-[2rem] shadow-2xl shadow-black/80 transition-all duration-300 pb-2 pt-2 safe-area-bottom-margin">
+       <nav className="md:hidden fixed bottom-6 left-4 right-4 bg-gray-900/95 backdrop-blur-2xl border border-white/10 z-50 rounded-[2rem] shadow-2xl shadow-black/80 transition-all duration-300 pb-2 pt-2 mb-safe">
         <div className="flex items-center justify-between px-6">
             {mobileNavItems.map((item, index) => {
                 const Icon = item.icon;
