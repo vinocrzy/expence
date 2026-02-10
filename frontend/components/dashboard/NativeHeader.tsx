@@ -17,7 +17,7 @@ export default function NativeHeader({ userName, photoUrl, title }: NativeHeader
   };
 
   return (
-    <div className="flex items-center justify-between py-6 px-1 pt-safe pt-2">
+    <div className="flex items-center justify-between py-6 px-1 pt-safe pt-2 md:hidden">
       <div className="flex flex-col gap-0.5">
         <span className="text-gray-400 text-sm font-medium tracking-wide">
           {title ? (userName || 'User') : getGreeting()}
