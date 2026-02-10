@@ -136,8 +136,7 @@ export default function TransactionsPage() {
     <div className="min-h-screen bg-black text-white font-sans pb-32">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-4 pb-4">        
 
         <NativeHeader title="Transactions" />
         

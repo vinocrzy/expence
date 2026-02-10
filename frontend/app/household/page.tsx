@@ -113,8 +113,7 @@ export default function HouseholdPage() {
     <div className="min-h-screen bg-black text-white font-sans pb-24">
       <Navbar />
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <NativeHeader title="Household" />
+      <main className="max-w-3xl mx-auto px-4 pt-0 md:pt-8 pb-8">        <NativeHeader title="Household" />
         
         {/* Header */}
         <div className="flex items-center gap-4 mb-8 hidden md:flex">

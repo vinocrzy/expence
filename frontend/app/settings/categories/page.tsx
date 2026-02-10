@@ -60,8 +60,6 @@ export default function CategoriesSettingsPage() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <NativeHeader 
-            userName={user?.firstName || 'User'} 
-            photoUrl={user?.imageUrl}
             title="Categories"
         />
 

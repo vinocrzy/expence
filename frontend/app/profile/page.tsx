@@ -57,8 +57,7 @@ export default function Profile() {
     <div className="min-h-screen bg-black text-white font-sans pb-24">
       <Navbar />
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <NativeHeader title="Profile" />
+      <main className="max-w-3xl mx-auto px-4 pt-0 md:pt-8 pb-8">        <NativeHeader title="Profile" />
         
         {/* iOS Style Header with Avatar */}
         <div className="flex flex-col items-center mb-8">

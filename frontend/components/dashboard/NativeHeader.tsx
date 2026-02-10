@@ -1,14 +1,14 @@
-
 import { User, Bell } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
 
 // Update Props Interface
 interface NativeHeaderProps {
-  userName?: string | null;
-  photoUrl?: string | null;
   title?: string;
 }
 
-export default function NativeHeader({ userName, photoUrl, title }: NativeHeaderProps) {
+export default function NativeHeader({ title }: NativeHeaderProps) {
+  const { user } = useUser();
+  
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning,';
@@ -17,13 +17,13 @@ export default function NativeHeader({ userName, photoUrl, title }: NativeHeader
   };
 
   return (
-    <div className="flex items-center justify-between py-6 px-1 pt-safe pt-2 md:hidden">
+    <div className="flex items-center justify-between py-4 px-1 pt-safe md:hidden">
       <div className="flex flex-col gap-0.5">
         <span className="text-gray-400 text-sm font-medium tracking-wide">
-          {title ? (userName || 'User') : getGreeting()}
+          {title ? (user?.firstName || 'User') : getGreeting()}
         </span>
         <h1 className="text-2xl font-bold text-white tracking-tight">
-          {title || userName || 'User'}
+          {title || user?.firstName || 'User'}
         </h1>
       </div>
 
@@ -36,8 +36,8 @@ export default function NativeHeader({ userName, photoUrl, title }: NativeHeader
         {/* Avatar */}
         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[1.5px] shadow-lg shadow-purple-500/20">
             <div className="h-full w-full rounded-full bg-black flex items-center justify-center overflow-hidden">
-                {photoUrl ? (
-                    <img src={photoUrl} alt="Profile" className="h-full w-full object-cover" />
+                {user?.imageUrl ? (
+                    <img src={user.imageUrl} alt="Profile" className="h-full w-full object-cover" />
                 ) : (
                     <User className="h-5 w-5 text-gray-400" />
                 )}

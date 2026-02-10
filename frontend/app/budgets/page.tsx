@@ -109,8 +109,7 @@ export default function BudgetsPage() {
     <div className="min-h-screen bg-black text-white font-sans pb-32">
       <Navbar />
       
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <NativeHeader title="Budgets" />
+      <main className="max-w-4xl mx-auto px-4 pt-0 md:pt-8 pb-8">        <NativeHeader title="Budgets" />
         <div className="flex justify-between items-center mb-8">
              <div className="hidden md:block">
                 <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">

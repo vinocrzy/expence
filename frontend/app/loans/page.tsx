@@ -25,8 +25,7 @@ export default function LoansPage() {
     <div className="min-h-screen bg-black text-white font-sans pb-32">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <NativeHeader title="Loans" />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-8 pb-8">        <NativeHeader title="Loans" />
         <div className="flex items-center justify-between mb-6">
           <div className="hidden md:block">
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">

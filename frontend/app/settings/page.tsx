@@ -7,6 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import NativeHeader from '@/components/dashboard/NativeHeader';
+import SyncStatusIndicator from '@/components/ui/SyncStatus';
 
 export default function SettingsPage() {
     const [loading, setLoading] = useState(false);
@@ -123,7 +124,12 @@ export default function SettingsPage() {
                     {/* Group 3: Sync */}
                     <div>
                         <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-4">Sync</h2>
-                        <div className="bg-[#1c1c1e] rounded-2xl p-4">
+                        <div className="bg-[#1c1c1e] rounded-2xl p-4 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="font-medium text-white">Sync Status</span>
+                                <SyncStatusIndicator />
+                            </div>
+                            <div className="h-px bg-gray-800" />
                             <CouchDbSettings />
                         </div>
                     </div>

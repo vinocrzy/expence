@@ -136,8 +136,7 @@ export default function AccountsPage() {
     <div className="min-h-screen bg-black text-white font-sans pb-32">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <NativeHeader title="Your Wallet" />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 sm:pt-8 pb-8">        <NativeHeader title="Your Wallet" />
         <div className="flex flex-col gap-4 mb-6 hidden md:flex">
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 w-fit">
                 Your Wallet
