@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Category, Account } from '@/lib/db-types';
 
 type ReportType = 
+  | 'CONSOLIDATED'
   | 'EXPENSE' 
   | 'INCOME' 
   | 'ACCOUNT_SUMMARY' 
@@ -33,6 +34,7 @@ interface ReportBuilderModalProps {
 }
 
 const reportTypes = [
+  { value: 'CONSOLIDATED', label: 'Consolidated', description: 'Full analysis', icon: FileSpreadsheet },
   { value: 'EXPENSE', label: 'Expenses', description: 'Category breakdown', icon: FileText },
   { value: 'INCOME', label: 'Income', description: 'Source analysis', icon: FileSpreadsheet },
   { value: 'ACCOUNT_SUMMARY', label: 'Accounts', description: 'Balance & flows', icon: FileText },

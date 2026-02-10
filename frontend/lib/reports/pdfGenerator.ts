@@ -66,10 +66,8 @@ export async function generatePDF(data: ReportData, type: ReportType): Promise<B
       doc.text('Expense Breakdown', 14, startY);
       
       const entries = Object.entries(data.categoryBreakdown).sort((a,b) => b[1] - a[1]).slice(0, 6); // Top 6
-      
-      // Simple Pie Chart Draw Logic
       const total = entries.reduce((sum, item) => sum + item[1], 0);
-      let currentAngle = 0;
+      
       const centerX = 60;
       const centerY = startY + 40;
       const radius = 25;
@@ -82,21 +80,67 @@ export async function generatePDF(data: ReportData, type: ReportType): Promise<B
           [168, 85, 247], // Purple
           [236, 72, 153], // Pink
       ]
+
+      // Helper to draw a single sector
+      const drawSector = (cx: number, cy: number, r: number, startAngle: number, endAngle: number, color: number[]) => {
+          const rad = Math.PI / 180;
+          const x1 = cx + r * Math.cos(startAngle * rad);
+          const y1 = cy + r * Math.sin(startAngle * rad);
+          const x2 = cx + r * Math.cos(endAngle * rad);
+          const y2 = cy + r * Math.sin(endAngle * rad);
+
+          doc.setFillColor(color[0], color[1], color[2]);
+          
+          // If angle is 360, draw circle
+          if (endAngle - startAngle >= 360) {
+             doc.circle(cx, cy, r, 'F');
+             return;
+          }
+
+          doc.lines(
+             [[x1 - cx, y1 - cy], // Line to first point
+             ...approximateArc(cx, cy, r, startAngle, endAngle), // Arc points
+             [cx - x2, cy - y2]], // Line back to center
+             cx, cy, [1, 1], 'F', true // Scale 1,1, Fill, Closed
+          );
+      };
+
+      // Helper to generate small line segments for an arc (Simple approximation)
+      const approximateArc = (cx: number, cy: number, r: number, startAngle: number, endAngle: number) => {
+          const points = [];
+          const step = 10; // degrees per step
+          const rad = Math.PI / 180;
+          
+          let current = startAngle;
+          let lastX = cx + r * Math.cos(startAngle * rad);
+          let lastY = cy + r * Math.sin(startAngle * rad);
+
+          while (current < endAngle) {
+              current += step;
+              if (current > endAngle) current = endAngle;
+              
+              const x = cx + r * Math.cos(current * rad);
+              const y = cy + r * Math.sin(current * rad);
+              
+              points.push([x - lastX, y - lastY]);
+              lastX = x;
+              lastY = y;
+          }
+          return points;
+      };
       
+      let currentAngle = 0;
       entries.forEach(([cat, val], index) => {
           const sliceAngle = (val / total) * 360;
           const color = colors[index % colors.length];
-          doc.setFillColor(color[0], color[1], color[2]);
           
-          doc.path([
-             ['M', centerX, centerY],
-             ['L', centerX + radius * Math.cos(currentAngle * Math.PI / 180), centerY + radius * Math.sin(currentAngle * Math.PI / 180)],
-             ['A', radius, radius, 0, sliceAngle > 180 ? 1 : 0, 1, centerX + radius * Math.cos((currentAngle + sliceAngle) * Math.PI / 180), centerY + radius * Math.sin((currentAngle + sliceAngle) * Math.PI / 180)],
-             ['Z']
-          ]).fill();
+          if (sliceAngle > 0) {
+            drawSector(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle, color);
+          }
 
           // Legend
           const legendY = startY + 20 + (index * 8);
+          doc.setFillColor(color[0], color[1], color[2]);
           doc.rect(100, legendY - 3, 6, 6, 'F');
           doc.setTextColor(50);
           doc.setFontSize(10);
