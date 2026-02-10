@@ -1,11 +1,15 @@
 import React from 'react';
+import { Loader2 } from 'lucide-react';
 
 export default function LoadingScreen() {
   return (
-    <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50">
       <div className="relative flex flex-col items-center">
-        {/* Pulsing Logo/Icon Placeholder */}
-        <div className="w-16 h-16 bg-gradient-to-tr from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20 animate-pulse mb-8">
+        {/* Logo Container - Native Style */}
+        <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-700 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-purple-500/20 mb-8 relative">
+            {/* Subtle inner glow/border */}
+            <div className="absolute inset-0 rounded-[1.5rem] border border-white/10"></div>
+            
             <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 viewBox="0 0 24 24" 
@@ -14,7 +18,7 @@ export default function LoadingScreen() {
                 strokeWidth="2" 
                 strokeLinecap="round" 
                 strokeLinejoin="round" 
-                className="w-8 h-8 text-white"
+                className="w-10 h-10 text-white drop-shadow-md"
             >
                 <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
                 <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
@@ -22,17 +26,13 @@ export default function LoadingScreen() {
             </svg>
         </div>
 
-        {/* Brand Name */}
-        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 mb-2">
+        {/* Brand Name - Clean & Minimal */}
+        <h1 className="text-xl font-medium tracking-wide text-white mb-6">
             PocketTogether
         </h1>
 
-        {/* Loading Spinner */}
-        <div className="flex items-center gap-2 mt-4">
-             <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-             <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-             <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce"></div>
-        </div>
+        {/* Native-style Spinner */}
+        <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
       </div>
     </div>
   );
