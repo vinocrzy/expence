@@ -181,7 +181,7 @@ export default function AccountDetailsPage() {
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 h-80">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             {/* Trend Chart */}
             <div className="lg:col-span-2 bg-[#1c1c1e] p-6 rounded-3xl border border-white/5 h-full">
                 <h3 className="text-gray-400 text-sm font-bold mb-4 flex items-center gap-2">
