@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import NativeHeader from '@/components/dashboard/NativeHeader';
 import { budgetService, transactionService, categoryService, accountService, creditCardService, getHouseholdId } from '@/lib/localdb-services';
 import { 
     ArrowLeft, PieChart, TrendingUp, AlertCircle, 
@@ -215,13 +216,14 @@ export default function BudgetDetailPage() {
   const percentUsed = Math.min((totalSpent / budgetLimit || 0) * 100, 100);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans pb-24">
+    <div className="min-h-screen bg-black text-white font-sans pb-24">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-8 pb-8">
+        <NativeHeader title={budget.name} backUrl="/budgets" />
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 hidden md:flex">
             <div className="flex items-center gap-4">
                 <button onClick={() => router.back()} className="p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors">
                     <ArrowLeft className="h-6 w-6" />
@@ -245,14 +247,14 @@ export default function BudgetDetailPage() {
 
             {/* Month Selector for Recurring */}
             {isRecurring && (
-                <div className="flex items-center bg-gray-800 rounded-xl p-1 border border-gray-700">
-                    <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white">
+                <div className="flex items-center bg-[#1c1c1e] rounded-xl p-1 border border-white/10">
+                    <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white">
                         <ChevronLeft className="h-5 w-5" />
                     </button>
-                    <div className="px-4 font-bold min-w-[140px] text-center">
+                    <div className="px-4 font-bold min-w-[140px] text-center text-sm">
                         {start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                     </div>
-                    <button onClick={() => changeMonth(1)} className="p-2 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white">
+                    <button onClick={() => changeMonth(1)} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white">
                         <ChevronRight className="h-5 w-5" />
                     </button>
                 </div>
@@ -260,8 +262,31 @@ export default function BudgetDetailPage() {
             
             {/* Date Range for Event */}
             {!isRecurring && (
-                <div className="bg-gray-800 px-4 py-2 rounded-xl border border-gray-700 font-mono text-sm">
+                <div className="bg-[#1c1c1e] px-4 py-2 rounded-xl border border-white/10 font-mono text-sm">
                     {start.toLocaleDateString()} - {end.toLocaleDateString()}
+                </div>
+            )}
+        </div>
+
+        {/* Mobile Actions */}
+        <div className="grid grid-cols-2 gap-3 mb-6 md:hidden">
+            <button 
+                  onClick={() => router.push(`/budgets/edit/${budget.id}`)}
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-white rounded-2xl font-medium flex items-center justify-center gap-2 text-sm"
+            >
+                <Edit2 className="h-4 w-4" /> Edit Budget
+            </button>
+             {isRecurring && (
+                <div className="flex items-center justify-between bg-[#1c1c1e] rounded-2xl p-1 border border-white/10 px-2">
+                    <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white">
+                        <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <div className="font-bold text-xs text-center flex-1">
+                        {start.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}
+                    </div>
+                    <button onClick={() => changeMonth(1)} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white">
+                        <ChevronRight className="h-4 w-4" />
+                    </button>
                 </div>
             )}
         </div>
@@ -271,7 +296,7 @@ export default function BudgetDetailPage() {
             {/* Left Col: Overview & Insights */}
             <div className="space-y-6">
                 {/* Visual Card */}
-                <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50">
+                <div className="bg-[#1c1c1e] p-6 rounded-3xl border border-white/5 shadow-lg">
                     <div className="flex justify-between items-end mb-4">
                         <div>
                             <span className="text-gray-400 text-sm">Total Spend</span>
@@ -283,7 +308,7 @@ export default function BudgetDetailPage() {
                         </div>
                     </div>
                     
-                    <div className="h-4 bg-gray-700 rounded-full overflow-hidden mb-2">
+                    <div className="h-4 bg-gray-800 rounded-full overflow-hidden mb-2">
                         <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${percentUsed}%` }}
@@ -299,7 +324,7 @@ export default function BudgetDetailPage() {
                 {/* Insights List */}
                 {insights.length > 0 && (
                     <div className="space-y-3">
-                        <h3 className="font-bold text-gray-400 flex items-center gap-2">
+                        <h3 className="font-bold text-gray-400 flex items-center gap-2 pl-2">
                             <AlertCircle className="h-4 w-4 text-yellow-400" />
                             Insights & Alerts
                         </h3>
@@ -323,7 +348,7 @@ export default function BudgetDetailPage() {
                 )}
                  
                  {/* Payment Methods */}
-                 <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50">
+                 <div className="bg-[#1c1c1e] p-6 rounded-3xl border border-white/5 shadow-lg">
                      <h3 className="font-bold text-gray-400 mb-4 flex items-center gap-2">
                          <Wallet className="h-4 w-4" /> Payment Methods
                      </h3>
@@ -346,7 +371,7 @@ export default function BudgetDetailPage() {
             <div className="lg:col-span-2 space-y-6">
                 
                 {/* Category Breakdown Table */}
-                <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50">
+                <div className="bg-[#1c1c1e] p-6 rounded-3xl border border-white/5 shadow-lg">
                     <h3 className="font-bold text-gray-400 mb-6 flex items-center gap-2">
                         <PieChart className="h-4 w-4 text-purple-400" />
                         Category Performance
@@ -360,29 +385,29 @@ export default function BudgetDetailPage() {
 
                     <div className="space-y-4">
                         {categoryBreakdown.map((cat: any) => (
-                            <div key={cat.id} className="p-3 bg-gray-900/50 rounded-xl border border-gray-800/50">
+                            <div key={cat.id} className="p-3 bg-black/40 rounded-xl border border-white/5">
                                 <div className="grid grid-cols-12 items-center mb-2">
                                     <div className="col-span-8 flex items-center gap-3">
                                         <div 
-                                            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+                                            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg shadow-sm"
                                             style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
                                         >
                                             {cat.icon || cat.name[0]}
                                         </div>
                                         <div>
-                                            <div className="font-bold text-sm">{cat.name}</div>
+                                            <div className="font-bold text-sm text-white">{cat.name}</div>
                                             {cat.limit === 0 && <div className="text-[10px] text-gray-500">Unplanned</div>}
                                         </div>
                                     </div>
                                     <div className="col-span-4 text-right">
-                                        <div className="font-mono text-sm">₹{cat.spent.toLocaleString()}</div>
+                                        <div className="font-mono text-sm text-white">₹{cat.spent.toLocaleString()}</div>
                                         {cat.limit > 0 && <div className="text-[10px] text-gray-500">of ₹{cat.limit.toLocaleString()}</div>}
                                     </div>
                                 </div>
                                 
                                 {/* Progress Bar */}
                                 {cat.limit > 0 && (
-                                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden w-full">
+                                    <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden w-full">
                                         <div 
                                             className={`h-full rounded-full ${cat.isOverBudget ? 'bg-red-500' : 'bg-blue-500'}`}
                                             style={{ width: `${Math.min(cat.percentage, 100)}%` }}
@@ -396,7 +421,7 @@ export default function BudgetDetailPage() {
                 </div>
 
                 {/* Spending Split Pie */}
-                <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50">
+                <div className="bg-[#1c1c1e] p-6 rounded-3xl border border-white/5 shadow-lg">
                      <h3 className="font-bold text-gray-400 mb-6">Distribution</h3>
                      <div className="h-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -407,12 +432,16 @@ export default function BudgetDetailPage() {
                                     outerRadius={70}
                                     paddingAngle={5}
                                     dataKey="spent"
+                                    stroke="none"
                                 >
                                     {categoryBreakdown.map((entry: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                                     ))}
                                 </Pie>
-                                <ReTooltip contentStyle={{ backgroundColor: '#1F2937', borderRadius: '12px' }} itemStyle={{ color: '#fff' }} />
+                                <ReTooltip 
+                                    contentStyle={{ backgroundColor: '#1c1c1e', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }} 
+                                    itemStyle={{ color: '#fff' }} 
+                                />
                             </RePieChart>
                         </ResponsiveContainer>
                      </div>

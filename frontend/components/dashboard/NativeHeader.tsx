@@ -1,12 +1,14 @@
-import { User, Bell } from 'lucide-react';
+import { User, Bell, ChevronLeft } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
+import Link from 'next/link';
 
 // Update Props Interface
 interface NativeHeaderProps {
   title?: string;
+  backUrl?: string;
 }
 
-export default function NativeHeader({ title }: NativeHeaderProps) {
+export default function NativeHeader({ title, backUrl }: NativeHeaderProps) {
   const { user } = useUser();
   
   const getGreeting = () => {
@@ -19,12 +21,25 @@ export default function NativeHeader({ title }: NativeHeaderProps) {
   return (
     <div className="flex items-center justify-between py-4 px-1 pt-safe md:hidden">
       <div className="flex flex-col gap-0.5">
-        <span className="text-gray-400 text-sm font-medium tracking-wide">
-          {title ? (user?.firstName || 'User') : getGreeting()}
-        </span>
-        <h1 className="text-2xl font-bold text-white tracking-tight">
-          {title || user?.firstName || 'User'}
-        </h1>
+        {backUrl ? (
+            <div className="flex items-center gap-2">
+                <Link href={backUrl} className="p-1 -ml-1 text-gray-400 hover:text-white transition-colors">
+                    <ChevronLeft className="w-6 h-6" />
+                </Link>
+                <h1 className="text-xl font-bold text-white tracking-tight">
+                    {title}
+                </h1>
+            </div>
+        ) : (
+            <>
+                <span className="text-gray-400 text-sm font-medium tracking-wide">
+                {title ? (user?.firstName || 'User') : getGreeting()}
+                </span>
+                <h1 className="text-2xl font-bold text-white tracking-tight">
+                {title || user?.firstName || 'User'}
+                </h1>
+            </>
+        )}
       </div>
 
       <div className="flex items-center gap-4">

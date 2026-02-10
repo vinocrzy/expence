@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../../components/Navbar';
+import NativeHeader from '../../../components/dashboard/NativeHeader';
 import PrepaymentModal from '../../../components/PrepaymentModal';
 import { loanService } from '../../../lib/localdb-services';
 import { 
@@ -177,11 +178,13 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
   const nextEmi = loan.emis.find((e: any) => e.status === 'PENDING');
   
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white pb-20">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-purple-500 selection:text-white pb-24">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-8 pb-8">
+        <NativeHeader title={loan.name} backUrl="/loans" />
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 hidden md:flex">
             <div>
                 <h1 className="text-3xl font-bold text-white flex items-center gap-3">
                     {loan.name}
@@ -219,23 +222,50 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
             </div>
         </div>
 
+        {/* Mobile Actions (Visible only on mobile) */}
+        <div className="grid grid-cols-3 gap-3 mb-6 md:hidden">
+             <button 
+                  onClick={() => handlePayEmi()}
+                  className="col-span-3 py-3 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2"
+            >
+                <CheckCircle className="h-5 w-5" /> Pay EMI
+            </button>
+            <button 
+                  onClick={() => setIsPrepaymentOpen(true)}
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-white rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+            >
+                <TrendingDown className="h-5 w-5 text-purple-400" /> Prepay
+            </button>
+             <button 
+                  onClick={handleDelete}
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-red-400 rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+            >
+                <Trash2 className="h-5 w-5" /> Delete
+            </button>
+             <button 
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-gray-400 rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+            >
+                <RefreshCw className="h-5 w-5" /> Refresh
+            </button>
+        </div>
+
         {/* Top Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Outstanding Balance</div>
                 <div className="text-2xl font-bold text-white">₹ {Number(loan.outstandingPrincipal).toLocaleString()}</div>
                 <div className="text-xs text-gray-500 mt-2">
                     of ₹ {Number(loan.principal).toLocaleString()} Principal
                 </div>
             </div>
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+             <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Interest Rate</div>
                 <div className="text-2xl font-bold text-white mb-2">{loan.interestRate}%</div>
                 <div className="inline-block bg-purple-500/10 text-purple-400 text-xs px-2 py-1 rounded-md font-medium border border-purple-500/20">
                     {loan.interestType}
                 </div>
             </div>
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+             <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Next EMI</div>
                 {nextEmi ? (
                      <>
@@ -250,7 +280,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                     </div>
                 )}
             </div>
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+             <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Progress</div>
                 <div className="text-2xl font-bold text-white">
                     {Math.round(((Number(loan.principal) - Number(loan.outstandingPrincipal)) / Number(loan.principal)) * 100)}%

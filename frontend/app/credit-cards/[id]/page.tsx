@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import Navbar from '../../../components/Navbar';
+import NativeHeader from '../../../components/dashboard/NativeHeader';
 import CreditCardPaymentModal from '../../../components/CreditCardPaymentModal';
 import TransactionModal from '../../../components/TransactionModal';
 import { creditCardService, transactionService, accountService } from '../../../lib/localdb-services';
@@ -130,11 +131,13 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
   const totalDue = lastStatement ? Number(lastStatement.closingBalance) : outstanding;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white pb-20">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-purple-500 selection:text-white pb-24">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-8 pb-8">
+        <NativeHeader title={card.bankName} backUrl="/credit-cards" />
+
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8 hidden md:flex">
             <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center text-blue-400">
                     <CreditCardIcon className="h-6 w-6" />
@@ -169,9 +172,36 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
             </div>
         </div>
 
+        {/* Mobile Actions */}
+        <div className="grid grid-cols-3 gap-3 mb-6 md:hidden">
+             <button 
+                  onClick={() => setIsPaymentOpen(true)}
+                  className="col-span-3 py-3 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2"
+            >
+                <DollarSign className="h-5 w-5" /> Pay Bill
+            </button>
+            <button 
+                  onClick={handleGenerateStatement}
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-white rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+            >
+                <List className="h-5 w-5 text-gray-400" /> Statement
+            </button>
+             <button 
+                  onClick={handleSimulateCharge}
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-white rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+            >
+                <Upload className="h-5 w-5 text-gray-400" /> Charge
+            </button>
+             <button 
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-gray-400 rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+            >
+                <TrendingUp className="h-5 w-5" /> Analytics
+            </button>
+        </div>
+
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg relative overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+             <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg relative overflow-hidden">
                 <div className="relative z-10">
                     <div className="text-gray-400 text-sm font-medium mb-1">Outstanding Balance</div>
                     <div className="text-2xl font-bold text-white">₹ {outstanding.toLocaleString()}</div>
@@ -185,7 +215,7 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
                 </div>
              </div>
              
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+             <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Available Credit</div>
                 <div className="text-2xl font-bold text-green-400">₹ {available.toLocaleString()}</div>
                 <div className="text-xs text-gray-500 mt-2">
@@ -193,7 +223,7 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
                 </div>
             </div>
             
-            <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+            <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Next Payment Due</div>
                 <div className="text-2xl font-bold text-white">
                     {lastStatement ? `₹ ${Number(lastStatement.minimumDue).toLocaleString()}` : '-'}
@@ -204,7 +234,7 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
                 </div>
             </div>
             
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+             <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Last Statement</div>
                 <div className="text-2xl font-bold text-white">
                     {lastStatement ? `₹ ${Number(lastStatement.closingBalance).toLocaleString()}` : '-'}
