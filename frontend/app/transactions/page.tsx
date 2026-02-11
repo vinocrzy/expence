@@ -91,6 +91,14 @@ export default function TransactionsPage() {
     }
   };
 
+  const handleTypeChange = async (id: string, type: 'INVESTMENT' | 'DEBT') => {
+      try {
+          await updateTransaction(id, { type });
+      } catch (err) {
+          console.error("Failed to update transaction type", err);
+      }
+  };
+
   const filteredTransactions = transactions.filter(t => {
     const typeMatch = filterType === 'ALL' || t.type === filterType;
     const catMatch = filterCategories.length === 0 || (t.categoryId && filterCategories.includes(t.categoryId));
@@ -261,6 +269,7 @@ export default function TransactionsPage() {
                     onDelete={handleDelete}
                     onEdit={handleEdit}
                     onQuickEdit={handleQuickEdit}
+                    onTypeChange={handleTypeChange}
                 />
               ) : (
                 <div className="h-[600px]">

@@ -63,6 +63,15 @@ export default function DashboardPage() {
       }
   };
 
+  const handleTypeChange = async (id: string, type: 'INVESTMENT' | 'DEBT') => {
+      try {
+          await transactionService.update(id, { type });
+          window.location.reload();
+      } catch (err) {
+          console.error("Failed to update transaction type", err);
+      }
+  };
+
   useEffect(() => {
     async function loadDashboardData() {
         if (authLoading) return;
@@ -161,6 +170,7 @@ export default function DashboardPage() {
                     accountMap={accountMap}
                     categories={categories}
                     onEdit={handleEditTransaction}
+                    onTypeChange={handleTypeChange}
                 />
             </div>
             

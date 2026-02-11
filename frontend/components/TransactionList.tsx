@@ -12,6 +12,7 @@ interface TransactionListProps {
   onDelete: (id: string) => void;
   onEdit?: (transaction: Transaction) => void;
   onQuickEdit?: (transaction: Transaction) => void;
+  onTypeChange?: (id: string, type: 'INVESTMENT' | 'DEBT') => void;
 }
 
 export default function TransactionList({ 
@@ -20,7 +21,8 @@ export default function TransactionList({
   categories, 
   onEdit,
   onQuickEdit,
-  onDelete
+  onDelete,
+  onTypeChange
 }: TransactionListProps) {
     
   const [expandedSplits, setExpandedSplits] = useState<Set<string>>(new Set());
@@ -66,6 +68,7 @@ export default function TransactionList({
                         categories={categories}
                         onEdit={onEdit}
                         onDelete={onDelete}
+                        onTypeChange={onTypeChange}
                     />
                 </div>
 

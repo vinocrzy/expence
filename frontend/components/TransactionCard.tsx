@@ -13,6 +13,7 @@ interface TransactionCardProps {
   onDelete: (id: string) => void
   categories: Category[]
   accountCurrency?: string
+  onTypeChange?: (id: string, type: 'INVESTMENT' | 'DEBT') => void
 }
 
 export function TransactionCard({
@@ -22,7 +23,8 @@ export function TransactionCard({
   onEdit,
   onDelete,
   categories,
-  accountCurrency
+  accountCurrency,
+  onTypeChange
 }: TransactionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -173,6 +175,27 @@ export function TransactionCard({
                     <Trash2 className="h-4 w-4" />
                 </button>
             </div>
+            
+            {/* Type Conversion Options */}
+            {onTypeChange && transaction.type !== 'INVESTMENT' && transaction.type !== 'DEBT' && (
+                <div className="flex gap-2 animate-in slide-in-from-right-8 duration-300 delay-75">
+                     <div className="w-[1px] bg-white/20 h-10 mx-1" />
+                     <button 
+                        onClick={(e) => { e.stopPropagation(); onTypeChange(transaction.id, 'INVESTMENT'); setIsMenuOpen(false); }}
+                        className="h-10 w-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shadow-lg hover:bg-amber-500/30 active:scale-95 transition-all"
+                        title="Mark as Investment"
+                    >
+                        <TrendingUp className="h-4 w-4" />
+                    </button>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onTypeChange(transaction.id, 'DEBT'); setIsMenuOpen(false); }}
+                        className="h-10 w-10 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center shadow-lg hover:bg-purple-500/30 active:scale-95 transition-all"
+                        title="Mark as Debt Repayment"
+                    >
+                        <HandCoins className="h-4 w-4" />
+                    </button>
+                </div>
+            )}
         </div>
       )}
     </div>
