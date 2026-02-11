@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import { Account, Transaction, Category } from '@/lib/db-types';
 import { TransactionCard } from '@/components/TransactionCard'; // Assuming we have this, or I'll implement a list item
+import PieChartDetailsList from '@/components/dashboard/PieChartDetailsList';
 
 export default function AccountDetailsPage() {
   const { id } = useParams();
@@ -231,7 +232,7 @@ export default function AccountDetailsPage() {
                                 data={analytics?.categoryData || []}
                                 innerRadius={60}
                                 outerRadius={80}
-                                paddingAngle={5}
+                                paddingAngle={4}
                                 dataKey="value"
                                 stroke="none"
                             >
@@ -240,7 +241,7 @@ export default function AccountDetailsPage() {
                                 ))}
                             </Pie>
                             <ReTooltip 
-                                contentStyle={{ backgroundColor: '#1c1c1e', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }} 
+                                contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px', fontSize: '12px' }}
                                 itemStyle={{ color: '#fff' }} 
                                 formatter={(value: any) => `₹${Number(value).toLocaleString()}`}
                             />
@@ -248,6 +249,7 @@ export default function AccountDetailsPage() {
                         </PieChart>
                     </ResponsiveContainer>
                  </div>
+                 <PieChartDetailsList data={analytics?.categoryData || []} />
             </div>
         </div>
 

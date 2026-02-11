@@ -12,6 +12,7 @@ import {
 import { 
     PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid 
 } from 'recharts';
+import PieChartDetailsList from '../../../components/dashboard/PieChartDetailsList';
 
 // Imports for payment
 import LoanPaymentModal from '../../../components/LoanPaymentModal';
@@ -307,7 +308,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                                 cy="50%"
                                 innerRadius={60}
                                 outerRadius={80}
-                                paddingAngle={5}
+                                paddingAngle={4}
                                 dataKey="value"
                             >
                                 {pieData.map((entry, index) => (
@@ -315,7 +316,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                                 ))}
                             </Pie>
                             <Tooltip 
-                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px', fontSize: '12px' }}
                                 itemStyle={{ color: '#fff' }}
                                 formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
                             />
@@ -323,6 +324,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                         </PieChart>
                     </ResponsiveContainer>
                 </div>
+                <PieChartDetailsList data={pieData} />
             </div>
             
             {/* Recent Prepayments */}

@@ -16,6 +16,7 @@ import {
     Tooltip as ReTooltip, BarChart, Bar, XAxis, YAxis, Legend
 } from 'recharts';
 import { Transaction, Budget, Category, Account, CreditCard, BudgetCategoryLimit } from '@/lib/db-types';
+import PieChartDetailsList from '@/components/dashboard/PieChartDetailsList';
 
 export default function BudgetDetailPage() {
   const { id } = useParams();
@@ -428,9 +429,9 @@ export default function BudgetDetailPage() {
                             <RePieChart>
                                 <Pie
                                     data={categoryBreakdown}
-                                    innerRadius={50}
-                                    outerRadius={70}
-                                    paddingAngle={5}
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={4}
                                     dataKey="spent"
                                     stroke="none"
                                 >
@@ -439,7 +440,7 @@ export default function BudgetDetailPage() {
                                     ))}
                                 </Pie>
                                 <ReTooltip 
-                                    contentStyle={{ backgroundColor: '#1c1c1e', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }} 
+                                    contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px', fontSize: '12px' }}
                                     itemStyle={{ color: '#fff' }} 
                                     formatter={(value: any) => `₹${Number(value).toLocaleString()}`}
                                 />
@@ -447,6 +448,9 @@ export default function BudgetDetailPage() {
                             </RePieChart>
                         </ResponsiveContainer>
                      </div>
+                     <PieChartDetailsList 
+                        data={categoryBreakdown.map(c => ({ name: c.name, value: c.spent, color: c.color }))} 
+                     />
                 </div>
 
             </div>
