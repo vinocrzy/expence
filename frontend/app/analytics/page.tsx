@@ -7,7 +7,8 @@ import { useTransactions, useCategories } from '../../hooks/useLocalData';
 import { 
     BarChart2, TrendingUp, TrendingDown, 
     RefreshCw, Layers, PieChart as PieIcon, Activity,
-    AlertCircle, Check, ChevronDown, Filter, ArrowUpRight
+    AlertCircle, Check, ChevronDown, Filter, ArrowUpRight,
+    PiggyBank, HandCoins
 } from 'lucide-react';
 import { 
     PieChart, Pie, Cell, BarChart, Bar, 
@@ -63,14 +64,14 @@ export default function AnalyticsPage() {
     
     // 1. Calculate Monthly Trend Data
     const chartMonthlyData = useMemo(() => {
-        const data: Record<string, { income: number; expense: number }> = {};
+        const data: Record<string, { income: number; expense: number; investment: number; debt: number }> = {};
         
         // Initialize months map
         let current = new Date(dateRange.start);
         const end = new Date(dateRange.end);
         while (current <= end) {
             const key = format(current, 'MMM');
-            data[key] = { income: 0, expense: 0 };
+            data[key] = { income: 0, expense: 0, investment: 0, debt: 0 };
             current.setMonth(current.getMonth() + 1);
         }
 
@@ -81,6 +82,8 @@ export default function AnalyticsPage() {
                 if (data[key]) {
                     if (t.type === 'INCOME') data[key].income += t.amount;
                     if (t.type === 'EXPENSE') data[key].expense += t.amount;
+                    if (t.type === 'INVESTMENT') data[key].investment += t.amount;
+                    if (t.type === 'DEBT') data[key].debt += t.amount;
                 }
             }
         });
@@ -89,7 +92,9 @@ export default function AnalyticsPage() {
             data: Object.entries(data).map(([month, stats]) => ({
                 month,
                 income: stats.income,
-                expense: stats.expense
+                expense: stats.expense,
+                investment: stats.investment || 0,
+                debt: stats.debt || 0
             }))
         };
     }, [transactions, dateRange]);
@@ -165,8 +170,10 @@ export default function AnalyticsPage() {
         return chartMonthlyData.data.reduce((acc, curr) => ({
             income: acc.income + curr.income,
             expense: acc.expense + curr.expense,
+            investment: acc.investment + curr.investment,
+            debt: acc.debt + curr.debt,
             net: acc.net + (curr.income - curr.expense)
-        }), { income: 0, expense: 0, net: 0 });
+        }), { income: 0, expense: 0, investment: 0, debt: 0, net: 0 });
     }, [chartMonthlyData]);
 
     const savingsRate = currentStats.income > 0 ? (currentStats.net / currentStats.income) * 100 : 0;
@@ -247,8 +254,8 @@ export default function AnalyticsPage() {
                      <div className="flex justify-center py-20"><RefreshCw className="animate-spin h-8 w-8 text-gray-500" /></div>
                 ) : (
                     <>
-                        {/* Summary Grid (2x2) */}
-                        <div className="grid grid-cols-2 gap-3">
+                        {/* Summary Grid (Responsive) */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <SummaryCard 
                                 title="Income" 
                                 value={currentStats.income} 
@@ -261,6 +268,20 @@ export default function AnalyticsPage() {
                                 value={currentStats.expense} 
                                 icon={TrendingDown} 
                                 color="text-red-400" 
+                                bg="bg-[#18181b]" 
+                            />
+                             <SummaryCard 
+                                title="Investments" 
+                                value={currentStats.investment} 
+                                icon={PiggyBank} 
+                                color="text-amber-400" 
+                                bg="bg-[#18181b]" 
+                            />
+                            <SummaryCard 
+                                title="Debt Paid" 
+                                value={currentStats.debt} 
+                                icon={HandCoins} 
+                                color="text-purple-400" 
                                 bg="bg-[#18181b]" 
                             />
                             <SummaryCard 
