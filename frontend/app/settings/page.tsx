@@ -212,7 +212,7 @@ function CouchDbSettings() {
                          <input 
                             type="checkbox" 
                             checked={config.enabled} 
-                            onChange={e => setConfig({...config, enabled: e.target.checked})}
+                            onChange={e => setConfig({...config, enabled: e.target.checked,forceEnable:e.target.checked})}
                             className="w-5 h-5 rounded border-gray-700 bg-gray-800 text-purple-600 focus:ring-purple-500"
                          />
                     </div>
