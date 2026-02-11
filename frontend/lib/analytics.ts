@@ -60,9 +60,11 @@ export async function calculateMonthlyStats(
     const stats = monthlyMap.get(monthKey)!;
     if (t.type === 'INCOME') {
       stats.income += t.amount;
-    } else {
+    } else if (t.type === 'EXPENSE') {
       stats.expense += t.amount;
     }
+    // Investments are excluded from Monthly Income/Expense stats for now, 
+    // or we could add a separate 'investment' field if we want to track it there.
   });
 
   // Convert to array
@@ -303,7 +305,30 @@ export async function getTopSpendingCategories(
  * Calculate net worth (sum of all account balances)
  */
 export async function calculateNetWorth(householdId: string): Promise<number> {
-  return accountService.calculateTotalBalance(householdId);
+  const accountBalance = await accountService.calculateTotalBalance(householdId);
+  
+  // Get all-time investments
+  // Note: specific date range 'all time' - using a wide range
+  const start = new Date(0); 
+  const end = new Date();
+  end.setFullYear(end.getFullYear() + 100); // Future proof
+
+  const investments = await transactionService.getTotalInvestments(householdId, start, end);
+
+  return accountBalance + investments;
+}
+
+export async function calculateTotalInvestments(
+  householdId: string,
+  startDate?: Date,
+  endDate?: Date
+): Promise<number> {
+    const start = startDate || new Date(0);
+    const end = endDate || new Date(); 
+    end.setHours(23,59,59,999);
+    if (!endDate) end.setFullYear(end.getFullYear() + 100);
+
+    return transactionService.getTotalInvestments(householdId, start, end);
 }
 
 /**

@@ -1,7 +1,7 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { ArrowUpRight, ArrowDownLeft, ArrowRightLeft, MoreHorizontal, Edit, Trash2, Split, ChevronDown } from "lucide-react"
+import { ArrowUpRight, ArrowDownLeft, ArrowRightLeft, MoreHorizontal, Edit, Trash2, Split, ChevronDown, TrendingUp } from "lucide-react"
 import { Transaction, Category } from "../lib/db-types"
 import { cn } from "@/lib/utils"
 
@@ -33,6 +33,7 @@ export function TransactionCard({
       case 'INCOME': return <ArrowDownLeft className="h-5 w-5 text-emerald-400" />
       case 'EXPENSE': return <ArrowUpRight className="h-5 w-5 text-rose-400" />
       case 'TRANSFER': return <ArrowRightLeft className="h-5 w-5 text-blue-400" />
+      case 'INVESTMENT': return <TrendingUp className="h-5 w-5 text-amber-400" />
       default: return <div className="h-5 w-5" />
     }
   }
@@ -43,6 +44,7 @@ export function TransactionCard({
       case 'INCOME': return "text-emerald-400"
       case 'EXPENSE': return "text-white" // Standard white for expense in dark mode often looks cleaner
       case 'TRANSFER': return "text-blue-400"
+      case 'INVESTMENT': return "text-amber-400"
       default: return "text-white"
     }
   }
@@ -68,7 +70,8 @@ export function TransactionCard({
             "bg-white/5 border border-white/5", // Subtle glass effect
             transaction.type === 'INCOME' && "bg-emerald-500/10 border-emerald-500/20",
             transaction.type === 'EXPENSE' && "bg-rose-500/10 border-rose-500/20",
-            transaction.type === 'TRANSFER' && "bg-blue-500/10 border-blue-500/20"
+            transaction.type === 'TRANSFER' && "bg-blue-500/10 border-blue-500/20",
+            transaction.type === 'INVESTMENT' && "bg-amber-500/10 border-amber-500/20"
         )}>
             {getIcon(transaction.type)}
         </div>
@@ -84,7 +87,7 @@ export function TransactionCard({
                     "text-[17px] font-bold font-mono tracking-tight whitespace-nowrap",
                     getAmountColor(transaction.type)
                 )}>
-                    {transaction.type === 'EXPENSE' ? '-' : '+'}
+                    {transaction.type === 'EXPENSE' || transaction.type === 'INVESTMENT' ? '-' : '+'}
                     {currency} {Number(transaction.amount).toLocaleString()}
                 </span>
             </div>

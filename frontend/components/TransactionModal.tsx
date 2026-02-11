@@ -232,7 +232,7 @@ function TransactionModal({
 
                 {/* ... Type Toggle ... */}
                 <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/10 mb-4">
-                    {['EXPENSE', 'INCOME', 'TRANSFER'].map((t) => (
+                    {['EXPENSE', 'INCOME', 'TRANSFER', 'INVESTMENT'].map((t) => (
                         <button
                             key={t}
                             type="button"
@@ -240,7 +240,7 @@ function TransactionModal({
                             onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
                             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
                                 type === t 
-                                ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400' : t === 'EXPENSE' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400')
+                                ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400' : t === 'EXPENSE' ? 'bg-red-500/20 text-red-400' : t === 'INVESTMENT' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400')
                                 : 'text-gray-400 hover:text-white hover:bg-gray-700'
                             } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >

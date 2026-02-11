@@ -529,6 +529,13 @@ export const transactionService = {
       .filter(t => t.type === 'EXPENSE')
       .reduce((sum, t) => sum + t.amount, 0);
   },
+
+  async getTotalInvestments(householdId: string, startDate: Date, endDate: Date): Promise<number> {
+    const transactions = await this.getByDateRange(householdId, startDate, endDate);
+    return transactions
+      .filter(t => t.type === 'INVESTMENT')
+      .reduce((sum, t) => sum + t.amount, 0);
+  },
 };
 
 // ============================================

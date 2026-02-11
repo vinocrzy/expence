@@ -17,7 +17,7 @@ export interface Account {
 export interface Transaction {
   id: string;
   amount: number;
-  type: string; // INCOME, EXPENSE, TRANSFER
+  type: string; // INCOME, EXPENSE, TRANSFER, INVESTMENT
   description?: string;
   date: string;
   categoryId?: string;
