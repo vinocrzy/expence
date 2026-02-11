@@ -20,13 +20,13 @@ export default function StatsRow({ netWorth, totalIncome, totalExpense, savingsR
             </div>
             <div className="relative z-10 flex flex-col justify-between h-full min-h-[140px]">
                 <div className="space-y-1">
-                    <span className="text-indigo-200 text-sm font-medium">Total Balance</span>
+                    <span className="text-indigo-200 text-sm font-medium">Available Balance</span>
                     <h2 className="text-3xl font-bold tracking-tight">
                         ₹{netWorth.toLocaleString()}
                     </h2>
                 </div>
                 <div className="flex items-center gap-2 text-indigo-100 text-xs bg-white/10 w-fit px-3 py-1.5 rounded-full backdrop-blur-sm">
-                    <span>Net Worth</span>
+                    <span>Cash - CC Debt</span>
                 </div>
             </div>
         </div>

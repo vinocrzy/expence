@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { useAccounts, useTransactions, useCategories, useCreditCards } from '../../hooks/useLocalData';
-import { getHouseholdId } from '../../lib/localdb-services';
+import { getHouseholdId, creditCardService } from '../../lib/localdb-services';
 import { 
   getCashFlowSummary, 
   calculateTrends, 
@@ -84,17 +84,21 @@ export default function DashboardPage() {
             const endOfTrend = new Date();
             endOfTrend.setHours(23, 59, 59, 999);
 
-            const [cf, trends, cats, nw] = await Promise.all([
+            const [cf, trends, cats, totalAssets, activeCards] = await Promise.all([
                 getCashFlowSummary(householdId, startOfTrend, endOfTrend),
                 calculateTrends(householdId, startOfTrend, endOfTrend, 'daily'),
                 calculateCategoryBreakdown(householdId, startOfTrend, endOfTrend),
-                calculateNetWorth(householdId)
+                calculateNetWorth(householdId), // This returns Total Assets (Cash/Bank)
+                creditCardService.getAllActive(householdId)
             ]);
+
+            const totalCreditCardDebt = activeCards.reduce((sum, card) => sum + (card.currentOutstanding || 0), 0);
+            const trueNetWorth = totalAssets - totalCreditCardDebt;
 
             setCashFlow(cf);
             setTrendData(trends);
             setCategoryBreakdown(cats);
-            setNetWorth(nw);
+            setNetWorth(trueNetWorth);
         } catch (error) {
             console.error(error);
         } finally {

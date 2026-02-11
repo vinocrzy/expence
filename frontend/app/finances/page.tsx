@@ -52,11 +52,32 @@ export default function FinancesPage() {
             title="My Finances"
         />
 
+        {/* Net Available Balance */}
+        <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-6 shadow-lg shadow-purple-500/20 relative overflow-hidden"
+        >
+             <div className="relative z-10 flex justify-between items-center">
+                <div>
+                     <div className="text-blue-100 text-sm font-medium mb-1">Available Balance</div>
+                     <div className="text-3xl font-bold text-white tracking-tight">
+                        ₹{(totalBankBalance - totalCcOutstanding).toLocaleString()}
+                     </div>
+                     <div className="text-xs text-blue-200 mt-1">Total Cash - Credit Card Due</div>
+                </div>
+                <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
+                    <Wallet className="w-8 h-8 text-white" />
+                </div>
+             </div>
+        </motion.div>
+
         {/* Total Cash & CC Due Hero */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
                 className="bg-[#1c1c1e] rounded-3xl p-6 border border-white/5 relative overflow-hidden"
             >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
@@ -64,9 +85,9 @@ export default function FinancesPage() {
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="p-2 bg-green-500/10 rounded-xl text-green-400">
-                            <Wallet className="w-5 h-5" />
+                            <Landmark className="w-5 h-5" />
                         </div>
-                        <span className="text-gray-400 text-sm font-medium">Total Cash Balance</span>
+                        <span className="text-gray-400 text-sm font-medium">Total Cash Assets</span>
                     </div>
                     <div className="text-3xl font-bold text-white tracking-tight">
                         ₹{totalBankBalance.toLocaleString()}
@@ -77,7 +98,7 @@ export default function FinancesPage() {
             <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
+                transition={{ delay: 0.2 }}
                 className="bg-[#1c1c1e] rounded-3xl p-6 border border-white/5 relative overflow-hidden"
             >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
@@ -87,7 +108,7 @@ export default function FinancesPage() {
                         <div className="p-2 bg-red-500/10 rounded-xl text-red-400">
                             <CreditCard className="w-5 h-5" />
                         </div>
-                        <span className="text-gray-400 text-sm font-medium">Credit Card Due</span>
+                        <span className="text-gray-400 text-sm font-medium">Total Credit Card Due</span>
                     </div>
                     <div className="text-3xl font-bold text-white tracking-tight">
                         ₹{totalCcOutstanding.toLocaleString()}
