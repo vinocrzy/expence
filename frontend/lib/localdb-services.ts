@@ -305,7 +305,7 @@ export const transactionService = {
             const currentBalance = accountDoc.balance || 0;
             const newBalance = data.type === 'INCOME' 
                 ? currentBalance + data.amount
-                : currentBalance - data.amount;
+                : currentBalance - data.amount; // EXPENSE, TRANSFER, DEBT, INVESTMENT all decrease balance
             
             await accountsDB.put({
                 ...accountDoc,
@@ -322,7 +322,7 @@ export const transactionService = {
                      const currentOutstanding = Number(ccDoc.currentOutstanding || 0);
                      console.log('Current Outstanding:', currentOutstanding);
 
-                     const newOutstanding = data.type === 'EXPENSE'
+                     const newOutstanding = (data.type === 'EXPENSE' || data.type === 'DEBT')
                         ? currentOutstanding + Number(data.amount)
                         : currentOutstanding - Number(data.amount);
                      
@@ -421,7 +421,7 @@ export const transactionService = {
                          const newAmount = data.amount ?? oldTx.amount;
                          const newType = data.type ?? oldTx.type;
                          
-                         outstanding = newType === 'EXPENSE'
+                         outstanding = newType === 'EXPENSE' || newType === 'DEBT'
                             ? outstanding + newAmount
                             : outstanding - newAmount;
 

@@ -258,7 +258,7 @@ export async function calculateTrends(
     const trend = trendMap.get(dateKey)!;
     if (t.type === 'INCOME') {
       trend.income += t.amount;
-    } else {
+    } else if (t.type === 'EXPENSE') {
       trend.expense += t.amount;
     }
   });
