@@ -39,8 +39,6 @@ import { ToastProvider } from "../context/ToastContext";
 import SyncStatusIndicator from "@/components/ui/SyncStatus";
 import IOSInstallPrompt from "@/components/IOSInstallPrompt";
 
-import SyncManager from "@/components/SyncManager";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -55,7 +53,6 @@ export default function RootLayout({
           <AuthProvider>
             <LocalFirstProvider>
               <ToastProvider>
-                <SyncManager />
                 {children}
                 {/* <SyncStatusIndicator /> - Moved to Navbar */}
                 <IOSInstallPrompt />
