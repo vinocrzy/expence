@@ -12,7 +12,7 @@ import {
 import { motion } from 'framer-motion';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer,
-    PieChart, Pie, Cell 
+    PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { Account, Transaction, Category } from '@/lib/db-types';
 import { TransactionCard } from '@/components/TransactionCard'; // Assuming we have this, or I'll implement a list item
@@ -200,14 +200,22 @@ export default function AccountDetailsPage() {
                                     <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                                 </linearGradient>
                             </defs>
-                            <XAxis dataKey="date" hide />
+                            <XAxis 
+                                dataKey="date" 
+                                stroke="#4b5563" 
+                                fontSize={10} 
+                                tickLine={false} 
+                                axisLine={false}
+                                interval="preserveStartEnd"
+                            />
                             <YAxis hide />
                             <ReTooltip 
                                 contentStyle={{ backgroundColor: '#1c1c1e', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }} 
                                 itemStyle={{ color: '#fff' }} 
                             />
-                            <Area type="monotone" dataKey="income" stroke="#10b981" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={2} />
-                            <Area type="monotone" dataKey="expense" stroke="#ef4444" fillOpacity={1} fill="url(#colorExpense)" strokeWidth={2} />
+                            <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} iconType="circle" />
+                            <Area type="monotone" dataKey="income" name="Income" stroke="#10b981" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={2} />
+                            <Area type="monotone" dataKey="expense" name="Expense" stroke="#ef4444" fillOpacity={1} fill="url(#colorExpense)" strokeWidth={2} />
                         </AreaChart>
                     </ResponsiveContainer>
                 </div>
@@ -234,7 +242,9 @@ export default function AccountDetailsPage() {
                             <ReTooltip 
                                 contentStyle={{ backgroundColor: '#1c1c1e', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }} 
                                 itemStyle={{ color: '#fff' }} 
+                                formatter={(value: any) => `₹${Number(value).toLocaleString()}`}
                             />
+                            <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '10px' }} iconType="circle" layout="vertical" align="right" verticalAlign="middle" />
                         </PieChart>
                     </ResponsiveContainer>
                  </div>

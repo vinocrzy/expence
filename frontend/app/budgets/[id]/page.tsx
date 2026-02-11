@@ -13,7 +13,7 @@ import {
 import { motion } from 'framer-motion';
 import { 
     PieChart as RePieChart, Pie, Cell, ResponsiveContainer, 
-    Tooltip as ReTooltip, BarChart, Bar, XAxis, YAxis 
+    Tooltip as ReTooltip, BarChart, Bar, XAxis, YAxis, Legend
 } from 'recharts';
 import { Transaction, Budget, Category, Account, CreditCard, BudgetCategoryLimit } from '@/lib/db-types';
 
@@ -441,7 +441,9 @@ export default function BudgetDetailPage() {
                                 <ReTooltip 
                                     contentStyle={{ backgroundColor: '#1c1c1e', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }} 
                                     itemStyle={{ color: '#fff' }} 
+                                    formatter={(value: any) => `₹${Number(value).toLocaleString()}`}
                                 />
+                                <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} iconType="circle" />
                             </RePieChart>
                         </ResponsiveContainer>
                      </div>

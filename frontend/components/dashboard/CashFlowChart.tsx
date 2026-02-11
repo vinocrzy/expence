@@ -76,7 +76,7 @@ export default function CashFlowChart({ data }: CashFlowChartProps) {
               itemStyle={{ fontSize: '12px', fontWeight: 500 }}
               labelStyle={{ color: '#9CA3AF', fontSize: '11px', marginBottom: '8px' }}
               cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '4 4' }}
-              formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, '']}
+              formatter={(value: any, name: any) => [`₹${Number(value).toLocaleString()}`, name]}
             />
             <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconType="circle" />
             <Area 

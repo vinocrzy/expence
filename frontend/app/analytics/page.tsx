@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { 
     PieChart, Pie, Cell, BarChart, Bar, 
-    XAxis, YAxis, Tooltip, ResponsiveContainer
+    XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import clsx from 'clsx';
 import { format } from 'date-fns';
@@ -296,14 +296,22 @@ export default function AnalyticsPage() {
                                                 tickLine={false} 
                                                 axisLine={false} 
                                             />
+                                            <YAxis 
+                                                stroke="#4b5563" 
+                                                fontSize={10} 
+                                                tickLine={false} 
+                                                axisLine={false} 
+                                                tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                                            />
                                             <Tooltip 
                                                 cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 4 }}
                                                 contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px', fontSize: '12px' }}
                                                 itemStyle={{ color: '#fff' }}
-                                                formatter={(value: any) => [`₹${(Number(value)/1000).toFixed(1)}k`, '']}
+                                                formatter={(value: any, name: any) => [`₹${(Number(value)/1000).toFixed(1)}k`, name]}
                                             />
-                                            <Bar dataKey="income" fill="#10b981" radius={[4, 4, 4, 4]} maxBarSize={12} />
-                                            <Bar dataKey="expense" fill="#ef4444" radius={[4, 4, 4, 4]} maxBarSize={12} />
+                                            <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} iconType="circle" />
+                                            <Bar dataKey="income" name="Income" fill="#10b981" radius={[4, 4, 4, 4]} maxBarSize={12} />
+                                            <Bar dataKey="expense" name="Expense" fill="#ef4444" radius={[4, 4, 4, 4]} maxBarSize={12} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 ) : (
@@ -326,7 +334,7 @@ export default function AnalyticsPage() {
                                         <Tooltip 
                                             cursor={{ fill: 'transparent' }}
                                             contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '8px' }}
-                                            formatter={(value: any) => [`₹${Math.round(Number(value || 0)).toLocaleString()}`, '']}
+                                            formatter={(value: any, name: any) => [`₹${Math.round(Number(value || 0)).toLocaleString()}`, name]}
                                         />
                                         <Bar dataKey="amount" radius={[0, 4, 4, 0]} barSize={24} label={{ position: 'right', fill: '#fff', fontSize: 12, formatter: (val: any) => `₹${(val/1000).toFixed(1)}k` }}>
                                             {comparisonData.map((entry, index) => (
