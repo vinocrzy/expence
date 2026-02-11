@@ -43,17 +43,6 @@ export default function Home() {
                     Get Started <ArrowRight className="h-5 w-5" />
                 </span>
             </button>
-
-            <button
-                onClick={() => {
-                  if (window.confirm("Active Guest Mode?\n\nWarning: Your data will be stored LOCALLY on this device only. If you clear your browser cache, you will lose your data.\n\nYou can sync your data later by creating an account.")) {
-                    router.push('/dashboard');
-                  }
-                }}
-                className="w-full flex items-center justify-center py-3 px-4 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 font-medium transition-all"
-            >
-                Continue as Guest
-            </button>
         </div>
       </div>
     </div>
