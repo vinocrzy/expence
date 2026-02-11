@@ -55,7 +55,7 @@ export default function Navbar() {
   const handleOpenMobileMenu = useCallback(() => setIsMobileMenuOpen(true), []);
   const handleCloseMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
   
-  // if (!user) return null; // ALLOW GUEST ACCESS
+  if (!user) return null;
 
   // Mobile Bottom Nav Items (optimized count: 5)
   const mobileNavItems = [
@@ -189,13 +189,11 @@ export default function Navbar() {
                     </Link>
                     <Link href="/profile" className="flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white">
                         <User className="h-5 w-5" />
-                        <span className="hidden lg:inline">{user?.name || 'Guest'}</span>
+                        <span className="hidden lg:inline">{user?.name}</span>
                     </Link>
-                    {user && (
-                        <button onClick={logout} className="text-gray-500 hover:text-white">
-                            <LogOut className="h-5 w-5" />
-                        </button>
-                    )}
+                    <button onClick={logout} className="text-gray-500 hover:text-white">
+                        <LogOut className="h-5 w-5" />
+                    </button>
                </div>
             </div>
           </div>
@@ -374,11 +372,9 @@ export default function Navbar() {
                             </Link>
                         </div>
 
-                        {user && (
-                            <button onClick={logout} className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 text-red-500 rounded-2xl font-bold hover:bg-red-500/20 transition-colors">
-                                 <LogOut className="h-5 w-5" /> Log Out
-                            </button>
-                        )}
+                        <button onClick={logout} className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 text-red-500 rounded-2xl font-bold hover:bg-red-500/20 transition-colors">
+                             <LogOut className="h-5 w-5" /> Log Out
+                        </button>
                         
                         <div className="h-8" />
                     </div>
