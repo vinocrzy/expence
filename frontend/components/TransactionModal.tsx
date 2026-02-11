@@ -230,23 +230,45 @@ function TransactionModal({
                     </div>
                 )}
 
-                {/* ... Type Toggle ... */}
-                <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/10 mb-4">
-                    {['EXPENSE', 'INCOME', 'TRANSFER', 'INVESTMENT', 'DEBT'].map((t) => (
-                        <button
-                            key={t}
-                            type="button"
-                            disabled={isEditMode}
-                            onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
-                            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
-                                type === t 
-                                ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400' : t === 'EXPENSE' ? 'bg-red-500/20 text-red-400' : t === 'INVESTMENT' ? 'bg-amber-500/20 text-amber-400' : t === 'DEBT' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400')
-                                : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                            } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                            {t}
-                        </button>
-                    ))}
+                {/* ... Type Toggle (New UX Grid) ... */}
+                <div className="space-y-2 mb-4">
+                    {/* Primary Actions (Top Row) */}
+                    <div className="grid grid-cols-2 gap-2">
+                        {['EXPENSE', 'INCOME'].map((t) => (
+                             <button
+                                key={t}
+                                type="button"
+                                disabled={isEditMode}
+                                onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
+                                className={`py-3 text-sm font-bold rounded-xl transition-all shadow-sm ${
+                                    type === t 
+                                    ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400 ring-1 ring-green-500/50' : 'bg-red-500/20 text-red-400 ring-1 ring-red-500/50')
+                                    : 'bg-zinc-900/50 text-gray-400 hover:text-white hover:bg-zinc-800'
+                                } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Secondary Actions (Bottom Row) */}
+                     <div className="grid grid-cols-3 gap-2">
+                        {['TRANSFER', 'INVESTMENT', 'DEBT'].map((t) => (
+                             <button
+                                key={t}
+                                type="button"
+                                disabled={isEditMode}
+                                onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
+                                className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                                    type === t 
+                                    ? (t === 'INVESTMENT' ? 'bg-amber-500/20 text-amber-400' : t === 'DEBT' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400')
+                                    : 'bg-zinc-900/30 text-zinc-500 hover:text-white hover:bg-zinc-800'
+                                } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Split Toggle */}
