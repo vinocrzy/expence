@@ -2,17 +2,19 @@
 
 import React, { useState } from 'react';
 import { downloadBackup, readBackupFile, importBackup } from '@/lib/backup';
-import { Loader2, Download, Upload, AlertTriangle, CheckCircle, Database, ChevronRight, User, Folder, Shield, Cloud } from 'lucide-react';
+import { Loader2, Download, Upload, AlertTriangle, CheckCircle, Database, ChevronRight, User, Folder, Shield, Cloud, RefreshCw } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import NativeHeader from '@/components/dashboard/NativeHeader';
 import SyncStatusIndicator from '@/components/ui/SyncStatus';
+import { useServiceWorker } from '@/hooks/useServiceWorker';
 
 export default function SettingsPage() {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null);
     const { user } = useUser();
+    const { isUpdateAvailable, updateApp, autoUpdateEnabled, toggleAutoUpdate } = useServiceWorker();
 
     const handleExport = async () => {
         try {
@@ -61,6 +63,55 @@ export default function SettingsPage() {
              <main className="max-w-3xl mx-auto px-4 py-8">
                  <NativeHeader title="Settings" />
                  <h1 className="text-3xl font-bold text-white mb-8 hidden md:block">Settings</h1>
+
+                 {/* Update Available Card */}
+                 {/* Update Available Card */}
+                 <div className="mb-6 space-y-4 animate-in fade-in slide-in-from-top-2">
+                    
+                    {/* Auto Update Toggle */}
+                     <div className="flex items-center justify-between p-4 rounded-2xl bg-[#1c1c1e] border border-gray-800">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                <RefreshCw className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-white text-sm">Auto Updates</h3>
+                                <p className="text-xs text-gray-400">Install updates automatically</p>
+                            </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={autoUpdateEnabled}
+                                onChange={(e) => toggleAutoUpdate(e.target.checked)}
+                            />
+                            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                     </div>
+
+                    {isUpdateAvailable && (
+                        <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/30">
+                                    <RefreshCw className="w-5 h-5 animate-spin-slow" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white">Update Available</h3>
+                                    <p className="text-xs text-gray-300">
+                                        Version {process.env.NEXT_PUBLIC_APP_VERSION} is ready.
+                                    </p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={updateApp}
+                                className="px-4 py-2 bg-white text-black text-sm font-bold rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg"
+                            >
+                                Update Now
+                            </button>
+                        </div>
+                    )}
+                 </div>
 
                  {/* Status Toast */}
                  {status && (
