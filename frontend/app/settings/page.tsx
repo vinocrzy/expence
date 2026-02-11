@@ -186,7 +186,7 @@ function CouchDbSettings() {
 
     return (
         <div>
-            <div className="flex items-center justify-between" onClick={() => setExpanded(!expanded)}>
+            <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpanded(!expanded)}>
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white">
                         <Cloud className="w-5 h-5" />
@@ -196,8 +196,11 @@ function CouchDbSettings() {
                         <div className="text-xs text-gray-500">{config.enabled ? 'Enabled' : 'Disabled'}</div>
                     </div>
                 </div>
-                 <div className={`text-xs px-3 py-1 rounded-full ${config.enabled ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'}`}>
-                    {config.enabled ? 'Active' : 'Off'}
+                 <div className="flex items-center gap-3">
+                     <div className={`text-xs px-3 py-1 rounded-full ${config.enabled ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'}`}>
+                        {config.enabled ? 'Active' : 'Off'}
+                     </div>
+                     <ChevronRight className={`w-5 h-5 text-gray-500 transition-transform ${expanded ? 'rotate-90' : ''}`} />
                  </div>
             </div>
 
