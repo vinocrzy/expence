@@ -253,12 +253,14 @@ export default function Navbar() {
                         onClick={() => {
                           if (navigator.vibrate) navigator.vibrate(10);
                         }}
-                        className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-2xl transition-all duration-200 ${isActive ? 'text-blue-400 bg-blue-500/10' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-2xl transition-all duration-200 ${isActive ? 'text-blue-400 bg-blue-500/20' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         <Icon 
-                            className={`h-6 w-6 transition-all duration-200 ${isActive ? 'stroke-[2.5px]' : ''}`} 
+                            className={`h-6 w-6 transition-all duration-200 ${isActive ? 'stroke-[2.5px]' : ''}`}
+                            fill={isActive ? "currentColor" : "none"}
+                            fillOpacity={isActive ? 0.2 : 0}
                         />
-                         {isActive && <span className="absolute -bottom-1 w-1 h-1 bg-blue-400 rounded-full"></span>}
+                         {isActive && <span className="absolute -bottom-1 w-1 h-1 bg-blue-400 rounded-full shadow-[0_0_8px_rgba(96,165,250,0.8)]"></span>}
                     </Link>
                 );
             })}

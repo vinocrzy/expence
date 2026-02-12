@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
 import { format } from 'date-fns';
 
@@ -16,10 +16,33 @@ interface CashFlowChartProps {
 
 export default function CashFlowChart({ data }: CashFlowChartProps) {
   // Format dates for display
-  const chartData = data.map(item => ({
+  const chartData = data.map((item: any) => ({
     ...item,
     formattedDate: format(new Date(item.date), 'MMM d'),
   }));
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-[#1c1c1e]/95 backdrop-blur-md border border-white/10 p-3 rounded-2xl shadow-2xl">
+          <p className="text-gray-400 text-xs font-medium mb-2">{label}</p>
+          {payload.map((entry: any, index: number) => {
+             if (entry.value === 0) return null; // Hide zero values
+             return (
+              <div key={index} className="flex items-center gap-2 mb-1 last:mb-0">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                <span className="text-xs font-medium text-gray-300 capitalize">{entry.name}:</span>
+                <span className="text-xs font-bold text-white tabular-nums">
+                    ₹{Number(entry.value).toLocaleString()}
+                </span>
+              </div>
+             );
+          })}
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="bg-[#1c1c1e]/80 backdrop-blur-xl p-6 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden group">
@@ -29,34 +52,16 @@ export default function CashFlowChart({ data }: CashFlowChartProps) {
       <div className="flex items-center justify-between mb-6 relative z-10">
         <div>
             <h3 className="text-lg font-bold text-white">Cash Flow</h3>
-            <p className="text-xs text-gray-500 font-medium">Income vs Expense Trend</p>
+            <p className="text-sm text-gray-400 font-medium">Income vs Expense Trend</p>
         </div>
-        <select className="bg-black/20 border border-white/10 text-xs rounded-lg px-3 py-1.5 text-gray-300 focus:outline-none hover:bg-black/40 transition-colors cursor-pointer">
+        <select className="bg-white/10 border border-white/10 text-sm rounded-lg px-3 py-1.5 text-gray-200 focus:outline-none hover:bg-white/20 transition-colors cursor-pointer">
           <option>Last 30 Days</option>
         </select>
       </div>
       
       <div className="h-[280px] w-full relative z-10">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#34D399" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="#34D399" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#F87171" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="#F87171" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id="colorInvestment" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id="colorDebt" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#A855F7" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="#A855F7" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
+          <BarChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }} barGap={2}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
             <XAxis 
               dataKey="formattedDate" 
@@ -74,62 +79,38 @@ export default function CashFlowChart({ data }: CashFlowChartProps) {
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip 
-              contentStyle={{ 
-                  backgroundColor: 'rgba(28, 28, 30, 0.95)', 
-                  borderColor: 'rgba(255,255,255,0.1)', 
-                  color: '#fff', 
-                  borderRadius: '16px',
-                  boxShadow: '0 10px 40px -10px rgba(0,0,0,0.5)',
-                  padding: '12px'
-              }}
-              itemStyle={{ fontSize: '12px', fontWeight: 500 }}
-              labelStyle={{ color: '#9CA3AF', fontSize: '11px', marginBottom: '8px' }}
-              cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '4 4' }}
-              formatter={(value: any, name: any) => [`₹${Number(value).toLocaleString()}`, name]}
-            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
             <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconType="circle" />
-            <Area 
-              type="monotone" 
+            
+            <Bar 
               dataKey="income" 
               name="Income" 
-              stroke="#34D399" 
-              fillOpacity={1} 
-              fill="url(#colorIncome)" 
-              strokeWidth={3}
-              activeDot={{ r: 6, strokeWidth: 2, stroke: '#1c1c1e' }}
+              fill="#34D399" 
+              radius={[4, 4, 0, 0]}
+              maxBarSize={40}
             />
-            <Area 
-              type="monotone" 
+            <Bar 
               dataKey="expense" 
               name="Expense" 
-              stroke="#F87171" 
-              fillOpacity={1} 
-              fill="url(#colorExpense)" 
-              strokeWidth={3}
-              activeDot={{ r: 6, strokeWidth: 2, stroke: '#1c1c1e' }}
+              fill="#F87171" 
+              radius={[4, 4, 0, 0]}
+              maxBarSize={40}
             />
-            <Area 
-              type="monotone" 
+            <Bar 
               dataKey="investment" 
               name="Investment" 
-              stroke="#3B82F6" 
-              fillOpacity={1} 
-              fill="url(#colorInvestment)" 
-              strokeWidth={3}
-              activeDot={{ r: 6, strokeWidth: 2, stroke: '#1c1c1e' }}
+              fill="#3B82F6" 
+              radius={[4, 4, 0, 0]}
+              maxBarSize={40}
             />
-            <Area 
-              type="monotone" 
+            <Bar 
               dataKey="debt" 
               name="Debt" 
-              stroke="#A855F7" 
-              fillOpacity={1} 
-              fill="url(#colorDebt)" 
-              strokeWidth={3}
-              activeDot={{ r: 6, strokeWidth: 2, stroke: '#1c1c1e' }}
+              fill="#A855F7" 
+              radius={[4, 4, 0, 0]}
+              maxBarSize={40}
             />
-          </AreaChart>
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>

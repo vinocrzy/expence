@@ -19,7 +19,7 @@ export default function NativeHeader({ title, backUrl }: NativeHeaderProps) {
   };
 
   return (
-    <div className="flex items-center justify-between py-4 px-1 pt-safe md:hidden">
+    <div className="flex items-center justify-between py-4 pt-safe md:hidden">
       <div className="flex flex-col gap-0.5">
         {backUrl ? (
             <div className="flex items-center gap-2">

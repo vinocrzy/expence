@@ -57,6 +57,7 @@ export default function DashboardPage() {
   // Transaction Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [showLiabilities, setShowLiabilities] = useState(false);
 
   const handleEditTransaction = (transaction: any) => {
       setSelectedTransaction(transaction);
@@ -220,29 +221,57 @@ export default function DashboardPage() {
             savingsRate={cashFlow?.savingsRate || 0}
         />
 
-        {/* Investment & Debt Summary Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-2">
-            <div className="glass-panel p-4 rounded-3xl flex items-center justify-between relative overflow-hidden">
-                <div className="relative z-10">
-                    <p className="text-gray-400 text-xs font-medium mb-1">Total Savings & Investment</p>
-                    <h3 className="text-xl font-bold text-white">₹{investmentTotal.toLocaleString()}</h3>
-                </div>
-                <div className="p-3 bg-emerald-500/10 rounded-full text-emerald-400">
-                    <TrendingUp className="w-5 h-5" />
-                </div>
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl" />
-            </div>
+        {/* Financial Overview Section (Assets vs Liabilities) */}
+        <div className="bg-[#1c1c1e]/80 backdrop-blur-xl p-1 rounded-2xl flex items-center justify-between border border-white/5 mb-4 relative overflow-hidden">
+             {/* Toggle */}
+             <div className="grid grid-cols-2 w-full p-1 gap-1 bg-black/20 rounded-xl">
+                <button 
+                    onClick={() => setShowLiabilities(false)}
+                    className={`py-2 px-4 rounded-lg text-xs font-bold transition-all ${!showLiabilities ? 'bg-gray-700 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                    Assets & Savings
+                </button>
+                <button 
+                    onClick={() => setShowLiabilities(true)}
+                    className={`py-2 px-4 rounded-lg text-xs font-bold transition-all ${showLiabilities ? 'bg-red-900/40 text-red-200 shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                    Liabilities
+                </button>
+             </div>
+        </div>
 
-            <div className="glass-panel p-4 rounded-3xl flex items-center justify-between relative overflow-hidden">
-                <div className="relative z-10">
-                    <p className="text-gray-400 text-xs font-medium mb-1">Total Debt Liability</p>
-                    <h3 className="text-xl font-bold text-white">₹{debtTotal.toLocaleString()}</h3>
+        <div className="mb-6">
+            {!showLiabilities ? (
+                <div className="glass-panel p-5 rounded-3xl flex items-center justify-between relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="relative z-10 space-y-1">
+                        <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Total Assets</p>
+                        <h3 className="text-2xl font-bold text-white tabular-nums tracking-tight">₹{investmentTotal.toLocaleString()}</h3>
+                        <p className="text-emerald-400 text-xs flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" /> 
+                            <span>Investments & Savings</span>
+                        </p>
+                    </div>
+                    <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-400 relative z-10">
+                        <PiggyBank className="w-6 h-6" />
+                    </div>
+                    <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl" />
                 </div>
-                <div className="p-3 bg-red-500/10 rounded-full text-red-400">
-                    <TrendingDown className="w-5 h-5" />
+            ) : (
+                <div className="glass-panel p-5 rounded-3xl flex items-center justify-between relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500 border-l-4 border-red-500/50">
+                     <div className="relative z-10 space-y-1">
+                        <p className="text-red-300/80 text-xs font-medium uppercase tracking-wider">Total Liability</p>
+                        <h3 className="text-2xl font-bold text-white tabular-nums tracking-tight">₹{debtTotal.toLocaleString()}</h3>
+                         <p className="text-red-400 text-xs flex items-center gap-1">
+                            <TrendingDown className="w-3 h-3" /> 
+                            <span>Loans & Credit Cards</span>
+                        </p>
+                    </div>
+                    <div className="p-4 bg-red-500/10 rounded-full text-red-400 relative z-10">
+                        <TrendingDown className="w-6 h-6" />
+                    </div>
+                    <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-red-500/10 rounded-full blur-2xl" />
                 </div>
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-red-500/5 rounded-full blur-xl" />
-            </div>
+            )}
         </div>
 
         {/* Hidden: Traditional Stats Grid 
