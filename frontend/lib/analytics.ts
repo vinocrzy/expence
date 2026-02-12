@@ -14,6 +14,8 @@ export interface MonthlyStats {
   month: string;
   income: number;
   expense: number;
+  investment: number;
+  debt: number;
   net: number;
 }
 
@@ -30,6 +32,8 @@ export interface TrendData {
   date: string;
   income: number;
   expense: number;
+  investment: number;
+  debt: number;
 }
 
 /**
@@ -46,15 +50,14 @@ export async function calculateMonthlyStats(
     endDate
   );
 
-  // Group by month
-  const monthlyMap = new Map<string, { income: number; expense: number }>();
+  const monthlyMap = new Map<string, { income: number; expense: number; investment: number; debt: number }>();
 
   transactions.forEach((t) => {
     const date = new Date(t.date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     
     if (!monthlyMap.has(monthKey)) {
-      monthlyMap.set(monthKey, { income: 0, expense: 0 });
+      monthlyMap.set(monthKey, { income: 0, expense: 0, investment: 0, debt: 0 });
     }
 
     const stats = monthlyMap.get(monthKey)!;
@@ -62,9 +65,12 @@ export async function calculateMonthlyStats(
       stats.income += t.amount;
     } else if (t.type === 'EXPENSE') {
       stats.expense += t.amount;
+    } else if (t.type === 'INVESTMENT') {
+      stats.investment += t.amount;
+    } else if (t.type === 'DEBT') {
+        // Debt payments usually count as "outflow" but are distinct from expense
+        stats.debt += t.amount;
     }
-    // Investments are excluded from Monthly Income/Expense stats for now, 
-    // or we could add a separate 'investment' field if we want to track it there.
   });
 
   // Convert to array
@@ -72,7 +78,10 @@ export async function calculateMonthlyStats(
     month,
     income: stats.income,
     expense: stats.expense,
-    net: stats.income - stats.expense,
+    investment: stats.investment,
+    debt: stats.debt,
+    net: stats.income - stats.expense, // Net Cash Flow usually just Income - Expense? Or should it include Investment outflow?
+    // For now, let's keep Net = Income - Expense. Investment is "Asset reallocation".
   })).sort((a, b) => a.month.localeCompare(b.month));
 }
 
@@ -102,6 +111,13 @@ export async function calculateCategoryBreakdown(
     if (t.isSplit && t.splits) {
         t.splits.forEach(split => {
             const categoryId = split.categoryId || 'uncategorized';
+            
+            // Exclude Investment/Debt from Expense Breakdown
+            if (type === 'EXPENSE') {
+                const category = categoryLookup.get(categoryId);
+                if (category && (category.type === 'INVESTMENT' || category.type === 'DEBT')) return;
+            }
+
             if (!categoryMap.has(categoryId)) {
                 categoryMap.set(categoryId, { amount: 0, count: 0 });
             }
@@ -111,6 +127,13 @@ export async function calculateCategoryBreakdown(
         });
     } else {
         const categoryId = t.categoryId || 'uncategorized';
+
+        // Exclude Investment/Debt from Expense Breakdown
+        if (type === 'EXPENSE') {
+            const category = categoryLookup.get(categoryId);
+            if (category && (category.type === 'INVESTMENT' || category.type === 'DEBT')) return;
+        }
+
         if (!categoryMap.has(categoryId)) {
             categoryMap.set(categoryId, { amount: 0, count: 0 });
         }
@@ -234,7 +257,7 @@ export async function calculateTrends(
   );
 
   // Group by date
-  const trendMap = new Map<string, { income: number; expense: number }>();
+  const trendMap = new Map<string, { income: number; expense: number; investment: number; debt: number }>();
 
   transactions.forEach((t) => {
     let dateKey: string;
@@ -252,7 +275,7 @@ export async function calculateTrends(
     }
 
     if (!trendMap.has(dateKey)) {
-      trendMap.set(dateKey, { income: 0, expense: 0 });
+      trendMap.set(dateKey, { income: 0, expense: 0, investment: 0, debt: 0 });
     }
 
     const trend = trendMap.get(dateKey)!;
@@ -260,6 +283,10 @@ export async function calculateTrends(
       trend.income += t.amount;
     } else if (t.type === 'EXPENSE') {
       trend.expense += t.amount;
+    } else if (t.type === 'INVESTMENT') {
+      trend.investment += t.amount;
+    } else if (t.type === 'DEBT') {
+      trend.debt += t.amount;
     }
   });
 
@@ -269,6 +296,8 @@ export async function calculateTrends(
       date,
       income: data.income,
       expense: data.expense,
+      investment: data.investment,
+      debt: data.debt,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }

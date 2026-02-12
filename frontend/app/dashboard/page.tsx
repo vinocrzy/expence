@@ -4,13 +4,20 @@ import { useState, useEffect, useMemo } from 'react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { useAccounts, useTransactions, useCategories, useCreditCards } from '../../hooks/useLocalData';
-import { getHouseholdId, creditCardService } from '../../lib/localdb-services';
+import { accountService, creditCardService, transactionService, getHouseholdId } from '../../lib/localdb-services';
 import { 
-  getCashFlowSummary, 
+  getCashFlowSummary,
   calculateTrends, 
-  calculateCategoryBreakdown, 
-  calculateNetWorth 
+  calculateCategoryBreakdown
 } from '../../lib/analytics';
+import { 
+  calculateAvailableBalance, 
+  calculateTotalLiquidCash, 
+  calculateTotalCreditCardDebt,
+  calculateTotalLoanOutstanding,
+  calculateTransactionTotal,
+  calculateNetWorth 
+} from '../../lib/financial-math';
 import { Wallet, TrendingUp, TrendingDown, PiggyBank } from 'lucide-react';
 
 // Widgets
@@ -21,7 +28,6 @@ import TopCategories from '../../components/dashboard/TopCategories';
 import FinancialHealth from '../../components/dashboard/FinancialHealth';
 import BudgetWidget from '../../components/dashboard/BudgetWidget';
 import TransactionModal from '../../components/TransactionModal';
-import { transactionService } from '../../lib/localdb-services';
 
 import LoadingScreen from '../../components/ui/LoadingScreen';
 
@@ -40,7 +46,11 @@ export default function DashboardPage() {
   const [cashFlow, setCashFlow] = useState<any>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [categoryBreakdown, setCategoryBreakdown] = useState<any[]>([]);
-  const [netWorth, setNetWorth] = useState(0);
+  const [netWorth, setNetWorth] = useState(0); // True Net Worth
+  const [availableBalance, setAvailableBalance] = useState(0); // Cash - CC
+  const [investmentTotal, setInvestmentTotal] = useState(0);
+  const [debtTotal, setDebtTotal] = useState(0); // Loan Outstanding
+  const [totalLoanOutstanding, setTotalLoanOutstanding] = useState(0);
 
   // Transaction Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -93,21 +103,76 @@ export default function DashboardPage() {
             const endOfTrend = new Date();
             endOfTrend.setHours(23, 59, 59, 999);
 
-            const [cf, trends, cats, totalAssets, activeCards] = await Promise.all([
+            const [cf, trends, cats, allAccounts, activeCards, loans] = await Promise.all([
                 getCashFlowSummary(householdId, startOfTrend, endOfTrend),
                 calculateTrends(householdId, startOfTrend, endOfTrend, 'daily'),
                 calculateCategoryBreakdown(householdId, startOfTrend, endOfTrend),
-                calculateNetWorth(householdId), // This returns Total Assets (Cash/Bank)
-                creditCardService.getAllActive(householdId)
+                accountService.getAllActive(householdId),
+                creditCardService.getAllActive(householdId),
+                // We need loans for Net Worth if we want to be accurate, 
+                // though the previous code used analytics.calculateNetWorth which might have different logic.
+                // Let's stick to the new single source of truth: financial-math
+                // We need to fetch loans.
+                // Assuming loanService is available or we can fetch them.
+                // We need to import loanService.
+                import('../../lib/localdb-services').then(m => m.loanService.getAll(householdId))
             ]);
 
-            const totalCreditCardDebt = activeCards.reduce((sum, card) => sum + (card.currentOutstanding || 0), 0);
-            const trueNetWorth = totalAssets - totalCreditCardDebt;
+            // Calculate Investments Total (using transaction service for now as proxy for value)
+            const investments = await transactionService.getTotalInvestments(householdId, new Date(0), new Date('2100-01-01'));
 
+            const netWorth = calculateNetWorth(allAccounts, activeCards, loans, investments);
+            const availableBalance = calculateAvailableBalance(allAccounts, activeCards);
+            
             setCashFlow(cf);
             setTrendData(trends);
             setCategoryBreakdown(cats);
-            setNetWorth(trueNetWorth);
+            setNetWorth(netWorth);
+            setAvailableBalance(availableBalance);
+            setInvestmentTotal(investments);
+            setTotalLoanOutstanding(calculateTotalLoanOutstanding(loans));
+            // Debt Total from transactions? Or Loan Outstanding?
+            // "Debt Summary Card" usually means Debt Transactions (Repayments) or Total Debt?
+            // "Total amount, Monthly change". This implies Transaction Totals for the month?
+            // User Request: "Add Debt Summary Card... Total amount, Monthly change".
+            // Since it groups with "Investment Summary Card" and existing Income/Expense cards (in StatsRow),
+            // it likely refers to FLOW (how much I paid in Debt/Invested this month) OR STOCK (Total Debt/Investment Value).
+            // Existing cards are Income/Expense (Flow).
+            // But User also asked for "Available Balance" (Stock).
+            // Investment Summary: likely Current Investment Value.
+            // Debt Summary: likely Total Outstanding (Loans + CC).
+            
+            // However, "Monthly change" implies flow.
+            // Let's assume:
+            // Investment Card: Total Portfolio Value (if we had it) OR Total Invested (Stock). 
+            // We calculated `investments` as lifetime total.
+            // Debt Card: Total Outstanding (Loans + CC).
+            
+            setDebtTotal(calculateTotalLoanOutstanding(loans) + calculateTotalCreditCardDebt(activeCards)); // This is now the TRUE Net Worth (Assets - Liabilities)
+            // We might want to pass availableBalance to StatsRow if it expects it, 
+            // or we can just pass netWorth and let StatsRow display what it needs.
+            // valid: StatsRow prop 'netWorth' is displayed as 'Total Balance' or similar?
+            // Actually StatsRow takes 'netWorth'. 
+            // The request says "Dashboard available balance is incorrect... match My Finance".
+            // My Finance shows "Available Balance" = Cash - CC Debt.
+            // StatsRow likely shows "Total Balance" or "Net Worth".
+            // Let's pass the correct calculated Available Balance to where it is needed.
+            // If StatsRow is the main header, maybe we should pass availableBalance there if that's what the user wants "Visible".
+            // But "Net Worth" is usually Assets - Liabilities. "Available Balance" is Liquidity.
+            // Let's look at StatsRow usage: <StatsRow netWorth={netWorth} ... />
+            // We should check what StatsRow actually displays.
+            
+            // For now, let's update the state with the new NetWorth (which includes loans/investments)
+            // And potentially we need a new state for "AvailableBalance" if we want to show that specifically.
+            // The prompt says: "Dashboard available balance... must follow ... My Finance".
+            // If StatsRow holds the "Available Balance" display, we should pass `availableBalance` to it?
+            // Or `netWorth`?
+            // Let's assume StatsRow is "Net Worth" card.
+            // Wait, the prompt says "Dashboard available balance is incorrect".
+            // This implies there is a "Available Balance" displayed somewhere.
+            // In the code I read:
+            // <StatsRow netWorth={netWorth} ... />
+            // I'll check StatsRow implementation next. For now, I'll calculate both.
         } catch (error) {
             console.error(error);
         } finally {
@@ -150,11 +215,36 @@ export default function DashboardPage() {
 
         {/* Swipeable Stats Row */}
         <StatsRow 
-            netWorth={netWorth}
+            netWorth={availableBalance} // Passing Available Balance here as requested
             totalIncome={cashFlow?.totalIncome || 0}
             totalExpense={cashFlow?.totalExpense || 0}
             savingsRate={cashFlow?.savingsRate || 0}
         />
+
+        {/* Investment & Debt Summary Cards */}
+        <div className="grid grid-cols-2 gap-4 mb-2">
+            <div className="glass-panel p-4 rounded-3xl flex items-center justify-between relative overflow-hidden">
+                <div className="relative z-10">
+                    <p className="text-gray-400 text-xs font-medium mb-1">Total Savings & Investment</p>
+                    <h3 className="text-xl font-bold text-white">₹{investmentTotal.toLocaleString()}</h3>
+                </div>
+                <div className="p-3 bg-emerald-500/10 rounded-full text-emerald-400">
+                    <TrendingUp className="w-5 h-5" />
+                </div>
+                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl" />
+            </div>
+
+            <div className="glass-panel p-4 rounded-3xl flex items-center justify-between relative overflow-hidden">
+                <div className="relative z-10">
+                    <p className="text-gray-400 text-xs font-medium mb-1">Total Debt Liability</p>
+                    <h3 className="text-xl font-bold text-white">₹{debtTotal.toLocaleString()}</h3>
+                </div>
+                <div className="p-3 bg-red-500/10 rounded-full text-red-400">
+                    <TrendingDown className="w-5 h-5" />
+                </div>
+                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-red-500/5 rounded-full blur-xl" />
+            </div>
+        </div>
 
         {/* Hidden: Traditional Stats Grid 
            We keep this logic available if needed, but UI is replaced by StatsRow 

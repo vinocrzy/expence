@@ -130,6 +130,9 @@ export default function ReportsPage() {
            <div className="bg-[#1c1c1e] rounded-3xl border border-white/5 overflow-hidden">
                 {[
                 { name: 'Expense Report', desc: 'Category breakdown', icon: TrendingUp },
+                { name: 'Income Report', desc: 'Source analysis', icon: FileSpreadsheet },
+                { name: 'Investment Report', desc: 'Portfolio tracking', icon: TrendingUp },
+                { name: 'Debt Report', desc: 'Transaction history', icon: FileText },
                 { name: 'Account Summary', desc: 'Balances & flows', icon: FileSpreadsheet },
                 { name: 'Loan Metrics', desc: 'EMI & Interest', icon: FileText },
                 { name: 'Budget Analysis', desc: 'Planned vs Actual', icon: Calendar },

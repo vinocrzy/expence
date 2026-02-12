@@ -42,7 +42,8 @@ export default function TransactionList({
     switch (type) {
       case 'INCOME': return <ArrowDownLeft className="h-5 w-5 text-green-400" />;
       case 'EXPENSE': return <ArrowUpRight className="h-5 w-5 text-red-400" />;
-      case 'TRANSFER': return <ArrowRightLeft className="h-5 w-5 text-blue-400" />;
+      case 'INVESTMENT': return <ArrowUpRight className="h-5 w-5 text-amber-400" />; // Outflow typically
+      case 'DEBT': return <ArrowUpRight className="h-5 w-5 text-purple-400" />; // Payment is outflow
       default: return <div className="h-5 w-5" />;
     }
   };
@@ -83,7 +84,9 @@ export default function TransactionList({
                                 "p-3 rounded-xl",
                                 t.type === 'INCOME' && "bg-green-500/10",
                                 t.type === 'EXPENSE' && "bg-red-500/10",
-                                t.type === 'TRANSFER' && "bg-blue-500/10"
+                                t.type === 'TRANSFER' && "bg-blue-500/10",
+                                t.type === 'INVESTMENT' && "bg-amber-500/10",
+                                t.type === 'DEBT' && "bg-purple-500/10"
                             )}>
                                 {getIcon(t.type)}
                             </div>
@@ -121,7 +124,9 @@ export default function TransactionList({
                                 "text-right font-mono font-bold text-lg",
                                 t.type === 'INCOME' && "text-green-400",
                                 t.type === 'EXPENSE' && "text-red-400",
-                                t.type === 'TRANSFER' && "text-blue-400"
+                                t.type === 'TRANSFER' && "text-blue-400",
+                                t.type === 'INVESTMENT' && "text-amber-400",
+                                t.type === 'DEBT' && "text-purple-400"
                             )}>
                                 {t.type === 'EXPENSE' ? '-' : '+'}
                                 {accountMap[t.accountId]?.currency} {Number(t.amount).toLocaleString()}

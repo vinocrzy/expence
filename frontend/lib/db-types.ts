@@ -17,7 +17,7 @@ export interface Account {
 export interface Transaction {
   id: string;
   amount: number;
-  type: string; // INCOME, EXPENSE, TRANSFER, INVESTMENT, DEBT
+  type: 'INCOME' | 'EXPENSE' | 'TRANSFER' | 'INVESTMENT' | 'DEBT';
   description?: string;
   date: string;
   categoryId?: string;
@@ -37,7 +37,7 @@ export interface Transaction {
 export interface Category {
   id: string;
   name: string;
-  type?: string; // INCOME, EXPENSE
+  type?: 'INCOME' | 'EXPENSE' | 'INVESTMENT' | 'DEBT';
   icon?: string;
   color?: string;
   subCategories?: { id: string; name: string }[]; // New: Sub-categories

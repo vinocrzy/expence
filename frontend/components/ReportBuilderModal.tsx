@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, FileDown, FileSpreadsheet, FileText, Calendar, Check, ChevronDown, Filter } from 'lucide-react';
+import { X, FileDown, FileSpreadsheet, FileText, Calendar, Check, ChevronDown, Filter, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { Category, Account } from '@/lib/db-types';
@@ -37,6 +37,8 @@ const reportTypes = [
   { value: 'CONSOLIDATED', label: 'Consolidated', description: 'Full analysis', icon: FileSpreadsheet },
   { value: 'EXPENSE', label: 'Expenses', description: 'Category breakdown', icon: FileText },
   { value: 'INCOME', label: 'Income', description: 'Source analysis', icon: FileSpreadsheet },
+  { value: 'INVESTMENT', label: 'Investments', description: 'Portfolio tracking', icon: TrendingUp },
+  { value: 'DEBT', label: 'Debt Log', description: 'Transaction history', icon: FileText },
   { value: 'ACCOUNT_SUMMARY', label: 'Accounts', description: 'Balance & flows', icon: FileText },
   { value: 'YEARLY_SUMMARY', label: 'Yearly', description: 'Annual trends', icon: Calendar },
   { value: 'LOAN', label: 'Loans', description: 'EMI details', icon: FileText },

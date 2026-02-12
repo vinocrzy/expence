@@ -183,7 +183,7 @@ export default function TransactionsPage() {
 
              <div className="h-8 w-[1px] bg-gray-800 mx-1 flex-shrink-0" />
 
-             {['ALL', 'EXPENSE', 'INCOME', 'TRANSFER'].map(type => (
+             {['ALL', 'EXPENSE', 'INCOME', 'TRANSFER', 'INVESTMENT', 'DEBT'].map(type => (
                  <button
                     key={type}
                     onClick={() => {

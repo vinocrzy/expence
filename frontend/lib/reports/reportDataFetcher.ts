@@ -48,7 +48,9 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
 
   switch (type) {
     case 'EXPENSE':
-    case 'INCOME': {
+    case 'INCOME':
+    case 'INVESTMENT':
+    case 'DEBT': {
       const transactions = await transactionService.getByDateRange(householdId, startDate, endDate);
       const filtered = transactions.filter(t => {
         const matchesType = t.type === type;
@@ -97,8 +99,16 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
           }
       });
 
+      const getTitle = () => {
+          if (type === 'EXPENSE') return 'Expense Report';
+          if (type === 'INCOME') return 'Income Report';
+          if (type === 'INVESTMENT') return 'Investment Report';
+          if (type === 'DEBT') return 'Debt Transaction Report';
+          return 'Report';
+      };
+
       return {
-        title: `${type === 'EXPENSE' ? 'Expense' : 'Income'} Report`,
+        title: getTitle(),
         subtitle: `${format(startDate, 'PP')} - ${format(endDate, 'PP')}`,
         generatedAt,
         headers: ['Date', 'Description', 'Category', 'Account', 'Amount'],
@@ -241,107 +251,188 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
         return {
           name: format(d, 'MMMM'),
           income: 0,
-          expense: 0
+          expense: 0,
+          investment: 0,
+          debt: 0
         };
       });
 
       transactions.forEach(t => {
         const monthIndex = new Date(t.date).getMonth();
         if (t.type === 'INCOME') months[monthIndex].income += t.amount;
-        if (t.type === 'EXPENSE') months[monthIndex].expense += t.amount;
+        else if (t.type === 'EXPENSE') months[monthIndex].expense += t.amount;
+        else if (t.type === 'INVESTMENT') months[monthIndex].investment += t.amount;
+        else if (t.type === 'DEBT') months[monthIndex].debt += t.amount;
       });
 
       const totalIncome = months.reduce((acc, m) => acc + m.income, 0);
       const totalExpense = months.reduce((acc, m) => acc + m.expense, 0);
+      const totalInvestment = months.reduce((acc, m) => acc + m.investment, 0);
+      const totalDebt = months.reduce((acc, m) => acc + m.debt, 0);
 
+      // Net Savings = Income - Expenses (Investment/Debt are usually considered allocation of savings or liability payments)
+      // If we consider Investment as savings, then Net 'Cash' Flow = Income - Expense - Investment - Debt
+      // But usually Net Savings = Income - Expense. Investment is where savings go.
+      // Let's display columns: Month, Income, Expense, Invest/Debt, Net Flow
+      
       return {
         title: `Yearly Summary - ${year}`,
         generatedAt,
-        headers: ['Month', 'Income', 'Expense', 'Net Savings'],
+        headers: ['Month', 'Income', 'Expense', 'Invest', 'Debt', 'Net Flow'],
         rows: months.map(m => [
           m.name,
           m.income,
           m.expense,
-          m.income - m.expense
+          m.investment,
+          m.debt,
+          m.income - m.expense - m.investment - m.debt
         ]),
         summary: {
           'Total Income': totalIncome,
           'Total Expense': totalExpense,
-          'Net Savings': totalIncome - totalExpense
+          'Total Investment': totalInvestment,
+          'Total Debt Payment': totalDebt,
+          'Net Cash Flow': totalIncome - totalExpense - totalInvestment - totalDebt
         }
       };
     }
 
     case 'CONSOLIDATED': {
-      // 1. Get ALL transactions from Start Date to NOW (to calculate closing balance at End Date)
-      // Actually, strategy:
-      // Current Balance is known.
-      // Balance at EndDate = CurrentBalance - (Transactions > EndDate)
-      // Balance at StartDate = Balance at EndDate - (Transactions between Start & End)
-      
       const today = new Date();
-      // Ensure we have transactions up to today to reverse-calculate
-      // However, simplified approach:
-      // Fetch transactions relative to the REPORT PERIOD
-      // But to get accurate Opening Balance, we need an anchor.
-      // Anchor = Current Balance (from accounts DB)
-      
-      // Fetch all transactions from Report Start Date to NOW
       const allTxFromStart = await transactionService.getByDateRange(householdId, startDate, today);
-      
-      // Filter primarily by account if needed
-      // Note: credit cards are liabilities, accounts are assets.
-      // Ideally handled separately or unified. For now, focus on Accounts (Bank/Cash).
       
       const txInPeriod = allTxFromStart.filter(t => new Date(t.date) <= endDate);
       const txAfterPeriod = allTxFromStart.filter(t => new Date(t.date) > endDate);
 
       const activeAccounts = await accountService.getAllActive(householdId);
+      const activeCards = await creditCardService.getAllActive(householdId);
+
       const consolidatedSummary = [];
       
       let totalIncomePeriod = 0;
       let totalExpensePeriod = 0;
+      let totalInvestmentPeriod = 0;
+      let totalDebtPeriod = 0;
 
+      // 1. Process Bank Accounts (Assets)
       for (const acc of activeAccounts) {
-        // 1. Calculate Closing Balance at EndDate
-        // Current Balance (DB) - (Sum of Income after EndDate) + (Sum of Expense after EndDate)
-        // Income adds to balance, Expense subtracts. So to reverse:
-        // Reverse Income = -Amount
-        // Reverse Expense = +Amount
-        
+        // Calculate Closing Balance at EndDate
         const accTxAfter = txAfterPeriod.filter(t => t.accountId === acc.id);
         
         let closingBal = acc.balance || 0;
         accTxAfter.forEach(t => {
             if (t.type === 'INCOME') closingBal -= t.amount;
-            else if (t.type === 'EXPENSE') closingBal += t.amount;
+            else closingBal += t.amount; // EXPENSE, INVESTMENT, DEBT all reduce balance, so adding back
         });
 
-        // 2. Calculate Opening Balance at StartDate
-        // Closing Balance - (Sum of Income in Period) + (Sum of Expense in Period)
+        // Calculate Opening Balance at StartDate
         const accTxInPeriod = txInPeriod.filter(t => t.accountId === acc.id);
         
+        // Calculate Flows
         let income = 0;
         let expense = 0;
+        let investment = 0;
+        let debt = 0;
         
         accTxInPeriod.forEach(t => {
             if (t.type === 'INCOME') income += t.amount;
             else if (t.type === 'EXPENSE') expense += t.amount;
+            else if (t.type === 'INVESTMENT') investment += t.amount;
+            else if (t.type === 'DEBT') debt += t.amount;
         });
 
-        const openingBal = closingBal - income + expense;
+        const outflows = expense + investment + debt;
+        const openingBal = closingBal - income + outflows;
 
         totalIncomePeriod += income;
         totalExpensePeriod += expense;
+        totalInvestmentPeriod += investment;
+        totalDebtPeriod += debt;
 
         consolidatedSummary.push({
             accountId: acc.id,
             accountName: acc.name,
             openingBalance: openingBal,
             income,
-            expense,
-            closingBalance: closingBal
+            expense: outflows,
+            closingBalance: closingBal,
+            type: 'Asset'
         });
+      }
+
+      // 2. Process Credit Cards (Liabilities)
+      for (const card of activeCards) {
+          // Current Outstanding is Debt (Positive Value)
+          // Expense increases Debt. Income (Payment) decreases Debt.
+          
+          const cardTxAfter = txAfterPeriod.filter(t => t.accountId === card.id);
+          
+          let closingOutstanding = card.currentOutstanding || 0;
+          
+          // Reverse from Today to EndDate
+          cardTxAfter.forEach(t => {
+              if (t.type === 'INCOME') closingOutstanding += t.amount; // Payment reduced debt, so add back to go back in time
+              else closingOutstanding -= t.amount; // Expense increased debt, so subtract to go back
+          });
+
+          // Reverse from EndDate to StartDate (to get Opening)
+          const cardTxInPeriod = txInPeriod.filter(t => t.accountId === card.id);
+          
+          let payments = 0;
+          let strategies = 0; // Expenses on card
+          
+          cardTxInPeriod.forEach(t => {
+              if (t.type === 'INCOME') payments += t.amount;
+              else strategies += t.amount; // Expense
+          });
+          
+          // Logic: Opening + Expense - Payment = Closing
+          // So: Opening = Closing - Expense + Payment
+          const openingOutstanding = closingOutstanding - strategies + payments;
+          
+          // For consolidated summary, we might want to show "Spending" as Expense and "Payments" as Income equivalent?
+           // However, CC spending is not "Expense" in the same way if we sum it up with Bank expense (double counting if we pay CC from Bank).
+           // But usually `CONSOLIDATED` is about "Where did money go?".
+           // If I spend on CC, it IS an expense.
+           // If I pay CC from Bank, it is a Transfer (or Debt payment).
+           // If transaction type is DEBT/TRANSFER, we handle it.
+           // `transactionService` marks CC payments from Bank as TRANSFER or DEBT usually?
+           // If I pay CC, it's usually a Transfer or specific type.
+           
+           // For this summary, let's just list the Card flows.
+           // We won't add them to `totalExpensePeriod` to avoid double counting if the user also tracks the payment from bank?
+           // Actually, if `strategies` (Expenses on CC) are "Groceries", they ARE expenses.
+           // The "Payment" from Bank is just a Transfer.
+           // So `strategies` SHOULD be added to `totalExpensePeriod` IF they are typed as EXPENSE.
+           // And `payments` (INCOME on CC) is usually a transfer from Bank.
+           
+           // We should probably rely on the Transaction Type aggregation we did above (which iterated ALL transactions in period).
+           // Wait, I iterated `txInPeriod` separately inside the Account loop above. 
+           // `totalIncomePeriod` etc are sums of transactions *linked to Bank Accounts*.
+           // Transactions linked to Credit Cards were NOT included in `total**Period` above.
+           // So I SHOULD add them here if I want a Total Consolidated View.
+           
+           let cardExpense = 0;
+           let cardRefusals = 0; // Income on card (Refunds?) or Payments?
+           
+           cardTxInPeriod.forEach(t => {
+               if (t.type === 'EXPENSE') {
+                   cardExpense += t.amount;
+                   totalExpensePeriod += t.amount; 
+               }
+               // Note: Payment to CC is usually type TRANSFER or INCOME (on CC side). 
+               // If it's INCOME on CC, it's a credit.
+           });
+           
+           consolidatedSummary.push({
+               accountId: card.id,
+               accountName: `${card.name} (CC)`,
+               openingBalance: -openingOutstanding, // Represent liability as negative for consistency? Or just label it.
+               income: payments,
+               expense: strategies,
+               closingBalance: -closingOutstanding,
+               type: 'Liability'
+           });
       }
 
       // Prepare Category Breakdown & Rows for the period (Flattening Splits)
@@ -354,11 +445,25 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
              if (t.isSplit && t.splits && t.splits.length > 0) {
                  t.splits.forEach(split => {
                      const catName = getCategoryName(split.categoryId, undefined);
-                     categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + split.amount;
+                     
+                     // Check Category Type - Exclude DEBT/INVESTMENT from Expense Breakdown
+                     const cat = categoryObjMap.get(split.categoryId || '');
+                     const isExcluded = cat && (cat.type === 'DEBT' || cat.type === 'INVESTMENT');
+                     
+                     if (!isExcluded) {
+                        categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + split.amount;
+                     }
                  });
              } else {
-                 const catName = getCategoryName(t.categoryId, t.subCategoryId);
-                 categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + t.amount;
+                  const catName = getCategoryName(t.categoryId, t.subCategoryId);
+                  
+                  // Check Category Type - Exclude DEBT/INVESTMENT from Expense Breakdown
+                  const cat = categoryObjMap.get(t.categoryId || '');
+                  const isExcluded = cat && (cat.type === 'DEBT' || cat.type === 'INVESTMENT');
+
+                  if (!isExcluded) {
+                      categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + t.amount;
+                  }
              }
         }
 
@@ -397,7 +502,9 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
         summary: {
             'Total Income': totalIncomePeriod,
             'Total Expense': totalExpensePeriod,
-            'Net Change': totalIncomePeriod - totalExpensePeriod
+            'Total Investment': totalInvestmentPeriod,
+            'Total Debt': totalDebtPeriod,
+            'Net Change': totalIncomePeriod - (totalExpensePeriod + totalInvestmentPeriod + totalDebtPeriod)
         },
         categoryBreakdown,
         consolidatedSummary

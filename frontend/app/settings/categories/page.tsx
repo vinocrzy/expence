@@ -16,7 +16,7 @@ export default function CategoriesSettingsPage() {
   const { categories, loading, addCategory, updateCategory, refresh } = useCategories();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [filter, setFilter] = useState<'ALL' | 'EXPENSE' | 'INCOME'>('ALL');
+  const [filter, setFilter] = useState<'ALL' | 'EXPENSE' | 'INCOME' | 'INVESTMENT' | 'DEBT'>('ALL');
 
   const handleCreate = () => {
     setEditingCategory(null);
@@ -53,6 +53,8 @@ export default function CategoriesSettingsPage() {
   const filteredCategories = categories.filter(c => filter === 'ALL' || c.type === filter);
   const expenseCategories = filteredCategories.filter(c => c.type === 'EXPENSE');
   const incomeCategories = filteredCategories.filter(c => c.type === 'INCOME');
+  const investmentCategories = filteredCategories.filter(c => c.type === 'INVESTMENT');
+  const debtCategories = filteredCategories.filter(c => c.type === 'DEBT');
 
   return (
     <div className="min-h-screen bg-black text-white font-sans pb-24 selection:bg-purple-500 selection:text-white">
@@ -65,12 +67,12 @@ export default function CategoriesSettingsPage() {
 
         {/* Action Header */}
         <div className="flex items-center justify-between">
-            <div className="bg-[#1c1c1e] rounded-xl p-1 flex items-center border border-white/5">
-                {['ALL', 'EXPENSE', 'INCOME'].map(f => (
+            <div className="bg-[#1c1c1e] rounded-xl p-1 flex items-center border border-white/5 overflow-x-auto scrollbar-hide">
+                {['ALL', 'EXPENSE', 'INCOME', 'INVESTMENT', 'DEBT'].map(f => (
                     <button
                         key={f}
                         onClick={() => setFilter(f as any)}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filter === f ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${filter === f ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
                     >
                         {f === 'ALL' ? 'All' : f.charAt(0) + f.slice(1).toLowerCase()}
                     </button>

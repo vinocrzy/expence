@@ -61,7 +61,7 @@ export const accountService = {
       }
     });
     
-    return result.docs as unknown as Account[];
+    return result.docs.filter((doc: any) => doc._id !== 'household_metadata') as unknown as Account[];
   },
 
   async getAllActive(householdId: string): Promise<Account[]> {
@@ -72,7 +72,7 @@ export const accountService = {
       }
     });
     
-    return result.docs as unknown as Account[];
+    return result.docs.filter((doc: any) => doc._id !== 'household_metadata') as unknown as Account[];
   },
 
   async getById(id: string): Promise<Account | undefined> {

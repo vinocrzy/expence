@@ -116,6 +116,11 @@ export default function AnalyticsPage() {
 
                     // Get Category object
                     const cat = categories.find(c => c.id === catId);
+                    
+                    // Exclude DEBT/INVESTMENT types from Expense Breakdown
+                    // (Even if transaction type is EXPENSE, if category is improper, exclude it to match user request)
+                    if (cat && (cat.type === 'DEBT' || cat.type === 'INVESTMENT')) return;
+
                     const catName = cat?.name || 'Uncategorized';
 
                     if (selectedDrilldownCategory) {

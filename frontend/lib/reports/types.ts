@@ -1,6 +1,8 @@
 export type ReportType = 
   | 'EXPENSE' 
   | 'INCOME' 
+  | 'INVESTMENT'
+  | 'DEBT'
   | 'ACCOUNT_SUMMARY' 
   | 'LOAN' 
   | 'CREDIT_CARD' 

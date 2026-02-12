@@ -12,8 +12,8 @@ interface CategoryModalProps {
 }
 
 export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }: CategoryModalProps) {
-  const [name, setName] = useState('');
-  const [type, setType] = useState('EXPENSE');
+  const [name, setName] = useState(initialData?.name || '');
+  const [type, setType] = useState<'INCOME' | 'EXPENSE' | 'INVESTMENT' | 'DEBT'>(initialData?.type || 'EXPENSE');
   const [color, setColor] = useState('#808080');
   const [subCategories, setSubCategories] = useState<{id: string, name: string}[]>([]);
   const [newSubCategory, setNewSubCategory] = useState('');
@@ -100,15 +100,15 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, initialData }
                 </div>
             )}
 
-            <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/10 mb-4">
-                {['EXPENSE', 'INCOME'].map((t) => (
+            <div className="grid grid-cols-2 gap-2 p-1 bg-black/40 rounded-xl border border-white/10 mb-4">
+                {(['EXPENSE', 'INCOME', 'INVESTMENT', 'DEBT'] as const).map((t) => (
                     <button
                         key={t}
                         type="button"
                         onClick={() => setType(t)}
-                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
+                        className={`py-2 text-xs font-bold rounded-lg transition-all ${
                             type === t 
-                            ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400')
+                            ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400' : t === 'INVESTMENT' ? 'bg-blue-500/20 text-blue-400' : t === 'DEBT' ? 'bg-purple-500/20 text-purple-400' : 'bg-red-500/20 text-red-400')
                             : 'text-gray-400 hover:text-white hover:bg-gray-700'
                         }`}
                     >

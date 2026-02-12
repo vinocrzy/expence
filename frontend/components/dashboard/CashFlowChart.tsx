@@ -9,6 +9,8 @@ interface CashFlowChartProps {
     date: string;
     income: number;
     expense: number;
+    investment: number;
+    debt: number;
   }[];
 }
 
@@ -45,6 +47,14 @@ export default function CashFlowChart({ data }: CashFlowChartProps) {
               <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#F87171" stopOpacity={0.4}/>
                 <stop offset="95%" stopColor="#F87171" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorInvestment" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.4}/>
+                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorDebt" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#A855F7" stopOpacity={0.4}/>
+                <stop offset="95%" stopColor="#A855F7" stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
@@ -96,6 +106,26 @@ export default function CashFlowChart({ data }: CashFlowChartProps) {
               stroke="#F87171" 
               fillOpacity={1} 
               fill="url(#colorExpense)" 
+              strokeWidth={3}
+              activeDot={{ r: 6, strokeWidth: 2, stroke: '#1c1c1e' }}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="investment" 
+              name="Investment" 
+              stroke="#3B82F6" 
+              fillOpacity={1} 
+              fill="url(#colorInvestment)" 
+              strokeWidth={3}
+              activeDot={{ r: 6, strokeWidth: 2, stroke: '#1c1c1e' }}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="debt" 
+              name="Debt" 
+              stroke="#A855F7" 
+              fillOpacity={1} 
+              fill="url(#colorDebt)" 
               strokeWidth={3}
               activeDot={{ r: 6, strokeWidth: 2, stroke: '#1c1c1e' }}
             />

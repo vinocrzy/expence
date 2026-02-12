@@ -6,8 +6,14 @@ import NativeHeader from '../../components/dashboard/NativeHeader';
 import { useAccounts, useLoans, useCreditCards } from '../../hooks/useLocalData';
 import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
-import { Wallet, CreditCard, Landmark, ChevronRight, Plus, TrendingUp, AlertCircle } from 'lucide-react';
+import { 
+  calculateTotalLiquidCash, 
+  calculateTotalCreditCardDebt, 
+  calculateAvailableBalance,
+  calculateTotalLoanOutstanding
+} from '../../lib/financial-math';
 import { motion } from 'framer-motion';
+import { Wallet, CreditCard, Landmark, Plus, ChevronRight, TrendingUp, AlertCircle } from 'lucide-react';
 import { staggerContainer, fadeInUp } from '../../lib/motion';
 
 export default function FinancesPage() {
@@ -18,21 +24,27 @@ export default function FinancesPage() {
   
   const loading = accountsLoading || loansLoading || cardsLoading;
   
-  const data = useMemo(() => {
-    const bankAccounts = allAccounts.filter((a: any) => a.type !== 'CREDIT_CARD');
+  const { bankAccounts, allLoans, allCreditCards } = useMemo(() => {
+    // Filter out archived and credit cards from accounts
+    const banks = allAccounts.filter((a: any) => a.type !== 'CREDIT_CARD' && !a.isArchived);
+    const activeLoans = loans.filter((l: any) => !l.isArchived); // Assuming loans have isArchived
+    const activeCreditCards = creditCards.filter((c: any) => !c.isArchived);
+
     return {
-      accounts: bankAccounts,
-      loans: loans,
-      creditCards: creditCards
+      bankAccounts: banks,
+      allLoans: activeLoans,
+      allCreditCards: activeCreditCards
     };
   }, [allAccounts, loans, creditCards]);
 
-  const totalBankBalance = data.accounts.reduce((sum, a) => sum + Number(a.balance), 0);
-  const totalLoanOutstanding = data.loans.reduce((sum, l) => sum + Number(l.outstandingPrincipal), 0);
-  const totalCcOutstanding = data.creditCards.reduce((sum, c) => sum + Number(c.currentOutstanding || 0), 0);
-
-  // Net Position
-  const netPosition = totalBankBalance - totalLoanOutstanding - totalCcOutstanding;
+  // Calculate totals using shared utility
+  const totalLiquidCash = calculateTotalLiquidCash(bankAccounts);
+  const totalCreditCardDebt = calculateTotalCreditCardDebt(allCreditCards);
+  const availableBalance = calculateAvailableBalance(bankAccounts, allCreditCards);
+  const totalLoanOutstanding = calculateTotalLoanOutstanding(allLoans);
+  
+  const netAvailableBalance = availableBalance;
+  const totalDebt = totalCreditCardDebt + totalLoanOutstanding;
 
   if (loading) {
       return (
@@ -62,7 +74,7 @@ export default function FinancesPage() {
                 <div>
                      <div className="text-blue-100 text-sm font-medium mb-1">Available Balance</div>
                      <div className="text-3xl font-bold text-white tracking-tight">
-                        ₹{(totalBankBalance - totalCcOutstanding).toLocaleString()}
+                        ₹{(totalLiquidCash - totalCreditCardDebt).toLocaleString()}
                      </div>
                      <div className="text-xs text-blue-200 mt-1">Total Cash - Credit Card Due</div>
                 </div>
@@ -90,7 +102,7 @@ export default function FinancesPage() {
                         <span className="text-gray-400 text-sm font-medium">Total Cash Assets</span>
                     </div>
                     <div className="text-3xl font-bold text-white tracking-tight">
-                        ₹{totalBankBalance.toLocaleString()}
+                        ₹{totalLiquidCash.toLocaleString()}
                     </div>
                 </div>
             </motion.div>
@@ -111,7 +123,7 @@ export default function FinancesPage() {
                         <span className="text-gray-400 text-sm font-medium">Total Credit Card Due</span>
                     </div>
                     <div className="text-3xl font-bold text-white tracking-tight">
-                        ₹{totalCcOutstanding.toLocaleString()}
+                        ₹{totalCreditCardDebt.toLocaleString()}
                     </div>
                 </div>
             </motion.div>
@@ -134,25 +146,23 @@ export default function FinancesPage() {
             </div>
             
             <div className="space-y-3">
-                {data.accounts.length === 0 ? (
+                {bankAccounts.length === 0 ? (
                     <div className="p-8 text-center bg-[#1c1c1e] rounded-3xl border border-white/5 text-gray-500 text-sm">
                         No bank accounts added
                     </div>
                 ) : (
-                    data.accounts.map(acc => (
-                        <motion.div variants={fadeInUp} key={acc.id}>
-                            <Link href={`/accounts`} className="block bg-[#1c1c1e] border border-white/5 p-4 rounded-3xl flex justify-between items-center hover:bg-white/5 transition-all group active:scale-[0.98]">
+                    bankAccounts.map((account: any) => (
+                        <motion.div variants={fadeInUp} key={account.id}>
+                            <Link href={`/finances/accounts/${account.id}`} className="block bg-[#1c1c1e] border border-white/5 p-4 rounded-3xl flex justify-between items-center hover:bg-white/5 transition-all group active:scale-[0.98]">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
                                         <Wallet className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <div className="font-bold text-white text-[15px]">{acc.name}</div>
-                                        <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">{acc.type}</div>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="font-mono font-bold text-white">₹{Number(acc.balance).toLocaleString()}</div>
+                                    <div className="font-mono font-bold text-white">₹{Number(account.balance).toLocaleString()}</div>
                                 </div>
                             </Link>
                         </motion.div>
@@ -177,26 +187,26 @@ export default function FinancesPage() {
                 </Link>
             </div>
              <div className="space-y-3">
-                {data.creditCards.length === 0 ? (
+                {allCreditCards.length === 0 ? (
                      <div className="p-8 text-center bg-[#1c1c1e] rounded-3xl border border-white/5 text-gray-500 text-sm">
                         No credit cards added
                     </div>
                 ) : (
-                    data.creditCards.map(acc => (
-                        <motion.div variants={fadeInUp} key={acc.id}>
-                            <Link href={`/credit-cards/${acc.id}`} className="block bg-[#1c1c1e] border border-white/5 p-4 rounded-3xl flex justify-between items-center hover:bg-white/5 transition-all group active:scale-[0.98]">
+                    allCreditCards.map(card => (
+                        <motion.div variants={fadeInUp} key={card.id}>
+                            <Link href={`/credit-cards/${card.id}`} className="block bg-[#1c1c1e] border border-white/5 p-4 rounded-3xl flex justify-between items-center hover:bg-white/5 transition-all group active:scale-[0.98]">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
                                         <CreditCard className="w-5 h-5" />
                                     </div>
                                      <div>
-                                        <div className="font-bold text-white text-[15px]">{acc.bankName || acc.name}</div>
-                                        <div className="text-xs text-gray-500">{acc.name}</div>
+                                        <div className="font-bold text-white text-[15px]">{card.bankName || card.name}</div>
+                                        <div className="text-xs text-gray-500">{card.name}</div>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <div className="text-[10px] text-gray-500 uppercase font-bold mb-0.5">Due</div>
-                                    <div className="font-mono font-bold text-white">₹{Number(acc.currentOutstanding || 0).toLocaleString()}</div>
+                                    <div className="font-mono font-bold text-white">₹{Number(card.currentOutstanding || 0).toLocaleString()}</div>
                                 </div>
                             </Link>
                         </motion.div>
@@ -221,12 +231,12 @@ export default function FinancesPage() {
                 </Link>
             </div>
              <div className="space-y-3">
-                {data.loans.length === 0 ? (
+                {allLoans.length === 0 ? (
                      <div className="p-8 text-center bg-[#1c1c1e] rounded-3xl border border-white/5 text-gray-500 text-sm">
                         No active loans
                     </div>
                 ) : (
-                    data.loans.map(loan => (
+                    allLoans.map((loan: any, index: number) => (
                         <motion.div variants={fadeInUp} key={loan.id}>
                             <Link href={`/loans/${loan.id}`} className="block bg-[#1c1c1e] border border-white/5 p-4 rounded-3xl flex justify-between items-center hover:bg-white/5 transition-all group active:scale-[0.98]">
                                 <div className="flex items-center gap-4">
