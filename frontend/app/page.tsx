@@ -26,7 +26,7 @@ export default function Home() {
                 </div>
                 <div className="animate-pulse flex flex-col items-center gap-2">
                      <h1 className="text-2xl font-bold text-white tracking-tight">PocketTogether</h1>
-                     {user && <p className="text-gray-400 text-sm">Welcome back, {user.name?.split(' ')[0] || user.name}...</p>}
+                     {user && <p className="text-gray-400 text-sm">Welcome back, {user?.name?.split(' ')[0] || user?.name}...</p>}
                 </div>
             </div>
         </div>
