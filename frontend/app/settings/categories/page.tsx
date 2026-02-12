@@ -134,6 +134,46 @@ export default function CategoriesSettingsPage() {
                   </section>
               )}
 
+              {/* Investment Section */}
+              {(filter === 'ALL' || filter === 'INVESTMENT') && investmentCategories.length > 0 && (
+                  <section>
+                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2 flex items-center gap-2">
+                          Investments
+                      </h3>
+                      <div className="bg-[#1c1c1e] rounded-3xl border border-white/5 overflow-hidden">
+                          {investmentCategories.map((cat, i) => (
+                              <CategoryRow 
+                                key={cat.id} 
+                                category={cat} 
+                                isLast={i === investmentCategories.length - 1}
+                                onEdit={() => handleEdit(cat)} 
+                                onToggle={(e) => toggleStatus(e, cat)}
+                              />
+                          ))}
+                      </div>
+                  </section>
+              )}
+
+              {/* Debt Section */}
+              {(filter === 'ALL' || filter === 'DEBT') && debtCategories.length > 0 && (
+                  <section>
+                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2 flex items-center gap-2">
+                          Debt / Loans
+                      </h3>
+                      <div className="bg-[#1c1c1e] rounded-3xl border border-white/5 overflow-hidden">
+                          {debtCategories.map((cat, i) => (
+                              <CategoryRow 
+                                key={cat.id} 
+                                category={cat} 
+                                isLast={i === debtCategories.length - 1}
+                                onEdit={() => handleEdit(cat)} 
+                                onToggle={(e) => toggleStatus(e, cat)}
+                              />
+                          ))}
+                      </div>
+                  </section>
+              )}
+
               {filteredCategories.length === 0 && (
                   <div className="text-center py-12 text-gray-500 bg-[#1c1c1e] rounded-3xl border border-white/5 mx-auto max-w-sm border-dashed">
                       <Tag className="w-8 h-8 text-gray-600 mx-auto mb-3" />
