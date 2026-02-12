@@ -10,11 +10,37 @@ interface RecentActivityProps {
   categories: Category[];
   onEdit?: (transaction: Transaction) => void;
   onTypeChange?: (id: string, type: 'INVESTMENT' | 'DEBT') => void;
+  loading?: boolean;
 }
 
 
-export default function RecentActivity({ transactions, accountMap, categories, onEdit, onTypeChange }: RecentActivityProps) {
+export default function RecentActivity({ transactions, accountMap, categories, onEdit, onTypeChange, loading }: RecentActivityProps) {
   const recent = transactions.slice(0, 5);
+
+  if (loading) {
+      return (
+          <div className="space-y-4">
+               <div className="flex items-center justify-between px-2">
+                   <div className="h-6 w-32 bg-[#1c1c1e] rounded-lg animate-pulse" />
+                   <div className="h-4 w-16 bg-[#1c1c1e] rounded-lg animate-pulse" />
+               </div>
+               <div className="space-y-3">
+                   {[1, 2, 3].map(i => (
+                       <div key={i} className="bg-[#1c1c1e] p-4 rounded-2xl border border-white/5 animate-pulse flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-white/10" />
+                                <div className="space-y-2">
+                                    <div className="h-4 w-24 bg-white/10 rounded-full" />
+                                    <div className="h-3 w-16 bg-white/10 rounded-full" />
+                                </div>
+                            </div>
+                            <div className="h-5 w-16 bg-white/10 rounded-lg" />
+                       </div>
+                   ))}
+               </div>
+          </div>
+      );
+  }
 
   return (
     <div className="space-y-4">
@@ -34,14 +60,14 @@ export default function RecentActivity({ transactions, accountMap, categories, o
       ) : (
           <div className="space-y-3">
               {recent.map(transaction => {
-                  const account = accountMap[transaction.accountId];
+                  const account = accountMap[transaction.accountId] || {}; // Handle missing account gracefully
                   const category = categories.find(c => c.id === transaction.categoryId);
                   
                   return (
                       <TransactionCard 
                           key={transaction.id}
                           transaction={transaction}
-                          account={account}
+                          account={account as Account}
                           category={category}
                           categories={categories}
                           onDelete={() => {}} // Read only in dash

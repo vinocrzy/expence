@@ -6,9 +6,10 @@ import { motion } from 'framer-motion';
 
 interface TopCategoriesProps {
   categories: CategoryBreakdown[];
+  loading?: boolean;
 }
 
-export default function TopCategories({ categories }: TopCategoriesProps) {
+export default function TopCategories({ categories, loading }: TopCategoriesProps) {
   const [excludedIds, setExcludedIds] = useState<string[]>([]);
   const [showFilter, setShowFilter] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -38,6 +39,38 @@ export default function TopCategories({ categories }: TopCategoriesProps) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  if (loading) {
+      return (
+        <div className="bg-[#1c1c1e]/80 backdrop-blur-xl p-6 rounded-3xl border border-white/5 shadow-2xl relative overflow-visible z-0 animate-pulse">
+            <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 bg-white/10 rounded-lg" />
+                    <div className="h-6 w-32 bg-white/10 rounded-lg" />
+                </div>
+            </div>
+            <div className="space-y-6">
+                {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="space-y-2">
+                        <div className="flex justify-between">
+                            <div className="flex gap-3">
+                                <div className="h-8 w-8 rounded-full bg-white/10" />
+                                <div className="space-y-1">
+                                    <div className="h-4 w-24 bg-white/10 rounded-full" />
+                                    <div className="h-3 w-16 bg-white/10 rounded-full" />
+                                </div>
+                            </div>
+                            <div className="h-5 w-20 bg-white/10 rounded-lg" />
+                        </div>
+                        <div className="w-full bg-gray-800 rounded-full h-1 mt-2">
+                            <div className="h-full bg-white/10 rounded-full w-1/2" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+      );
+  }
 
   const visibleCategories = categories.filter(c => !excludedIds.includes(c.categoryId));
   const topCategories = visibleCategories.slice(0, 5);

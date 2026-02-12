@@ -114,7 +114,23 @@ export default function RecurringPage() {
             </div>
 
             {loading ? (
-                <div className="text-center text-gray-500 mt-10">Loading...</div>
+                 <div className="grid gap-4">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 animate-pulse">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-gray-800" />
+                                    <div>
+                                        <div className="h-5 w-32 bg-gray-800 rounded mb-2" />
+                                        <div className="h-4 w-24 bg-gray-800 rounded" />
+                                    </div>
+                                </div>
+                                <div className="h-6 w-20 bg-gray-800 rounded" />
+                            </div>
+                            <div className="h-10 w-full bg-gray-800 rounded mx-auto" />
+                        </div>
+                    ))}
+                </div>
             ) : items.length === 0 ? (
                 <div className="text-center py-20 bg-[#1c1c1e] rounded-3xl border border-white/5">
                     <RefreshCw className="w-12 h-12 text-gray-600 mx-auto mb-4" />

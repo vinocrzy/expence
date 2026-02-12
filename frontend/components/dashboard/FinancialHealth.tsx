@@ -5,9 +5,25 @@ import { Shield, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 interface FinancialHealthProps {
   savingsRate: number;
   netWorth: number;
+  loading?: boolean;
 }
 
-export default function FinancialHealth({ savingsRate, netWorth }: FinancialHealthProps) {
+export default function FinancialHealth({ savingsRate, netWorth, loading }: FinancialHealthProps) {
+  if (loading) {
+      return (
+        <div className="bg-[#1c1c1e]/80 backdrop-blur-xl p-6 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden flex flex-col items-center animate-pulse">
+             <div className="h-4 w-32 bg-white/10 rounded-full mb-8" />
+             <div className="w-40 h-40 rounded-full border-8 border-white/5 mb-4 flex items-center justify-center">
+                 <div className="h-10 w-20 bg-white/10 rounded-lg" />
+             </div>
+             <div className="text-center space-y-2">
+                 <div className="h-6 w-24 bg-white/10 rounded-lg mx-auto" />
+                 <div className="h-6 w-32 bg-white/10 rounded-full mx-auto" />
+             </div>
+        </div>
+      );
+  }
+
   // Score Calculation
   const score = useMemo(() => {
     let s = Math.round(savingsRate * 2); 

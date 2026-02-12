@@ -55,7 +55,8 @@ export default function Navbar() {
   const handleOpenMobileMenu = useCallback(() => setIsMobileMenuOpen(true), []);
   const handleCloseMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
   
-  if (!user) return null;
+  // if (!user) return null; // Removed blocking return to allow skeleton rendering
+  const isLoading = !user;
 
   // Mobile Bottom Nav Items (optimized count: 5)
   const mobileNavItems = [
@@ -97,110 +98,101 @@ export default function Navbar() {
                </Link>
               
               {/* Desktop Links */}
-              <div className="flex items-center gap-5">
-                {/* Home link removed */}
-                <Link 
-                    href="/transactions" 
-                    className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/transactions' ? 'text-white' : 'text-gray-400'}`}
-                >
-                    Activity
-                </Link>
+              {!isLoading && (
+                  <div className="flex items-center gap-5">
+                    {/* Home link removed */}
+                    <Link 
+                        href="/transactions" 
+                        className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/transactions' ? 'text-white' : 'text-gray-400'}`}
+                    >
+                        Activity
+                    </Link>
 
-                {/* Finances Dropdown (Simple Hover Group) */}
-                <div className="relative group">
-                    <button className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-white ${
-                        ['/accounts', '/loans', '/credit-cards', '/finances'].some(p => pathname.startsWith(p)) ? 'text-white' : 'text-gray-400'
-                    }`}>
-                        Finances <ChevronDown className="h-4 w-4" />
-                    </button>
-                    {/* Dropdown Menu */}
-                    <div className="absolute top-full left-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-left">
-                        <Link href="/finances" className="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-t-xl">
-                            Overview
-                        </Link>
-                        <div className="h-px bg-gray-700/50 mx-2"></div>
-                        <Link href="/accounts" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50">
-                            <Wallet className="h-4 w-4" /> Accounts
-                        </Link>
-                         <Link href="/credit-cards" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50">
-                            <CreditCard className="h-4 w-4" /> Credit Cards
-                        </Link>
-                         <Link href="/loans" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-b-xl">
-                            <Landmark className="h-4 w-4" /> Loans
-                        </Link>
-                         <Link href="/budgets" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-b-xl">
-                            <ChartBar className="h-4 w-4" /> Budgets
-                        </Link>
+                    {/* Finances Dropdown (Simple Hover Group) */}
+                    <div className="relative group">
+                        <button className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-white ${
+                            ['/accounts', '/loans', '/credit-cards', '/finances'].some(p => pathname.startsWith(p)) ? 'text-white' : 'text-gray-400'
+                        }`}>
+                            Finances <ChevronDown className="h-4 w-4" />
+                        </button>
+                        {/* Dropdown Menu */}
+                        <div className="absolute top-full left-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-left">
+                            <Link href="/finances" className="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-t-xl">
+                                Overview
+                            </Link>
+                            <div className="h-px bg-gray-700/50 mx-2"></div>
+                            <Link href="/accounts" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50">
+                                <Wallet className="h-4 w-4" /> Accounts
+                            </Link>
+                             <Link href="/credit-cards" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50">
+                                <CreditCard className="h-4 w-4" /> Credit Cards
+                            </Link>
+                             <Link href="/loans" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-b-xl">
+                                <Landmark className="h-4 w-4" /> Loans
+                            </Link>
+                             <Link href="/budgets" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-b-xl">
+                                <ChartBar className="h-4 w-4" /> Budgets
+                            </Link>
+                        </div>
                     </div>
-                </div>
-                
-                 <Link 
-                    href="/analytics" 
-                    className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/analytics' ? 'text-white' : 'text-gray-400'}`}
-                >
-                    Insights
-                </Link>
-                <Link 
-                    href="/recurring" 
-                    className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/recurring' ? 'text-white' : 'text-gray-400'}`}
-                >
-                    Subscriptions
-                </Link>
-                <Link 
-                    href="/reports" 
-                    className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/reports' ? 'text-white' : 'text-gray-400'}`}
-                >
-                    Reports
-                </Link>
+                    
+                     <Link 
+                        href="/analytics" 
+                        className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/analytics' ? 'text-white' : 'text-gray-400'}`}
+                    >
+                        Insights
+                    </Link>
+                    <Link 
+                        href="/recurring" 
+                        className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/recurring' ? 'text-white' : 'text-gray-400'}`}
+                    >
+                        Subscriptions
+                    </Link>
+                    <Link 
+                        href="/reports" 
+                        className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/reports' ? 'text-white' : 'text-gray-400'}`}
+                    >
+                        Reports
+                    </Link>
 
-                {/* Household Dropdown - HIDDEN FOR NOW
-                <div className="relative group">
-                    <button className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-white ${
-                        ['/household', '/shared-dashboard'].some(p => pathname.startsWith(p)) ? 'text-white' : 'text-gray-400'
-                    }`}>
-                        Household <ChevronDown className="h-4 w-4" />
-                    </button>
-                    <div className="absolute top-full left-0 mt-2 w-52 bg-gray-800 border border-gray-700 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-left">
-                        <Link href="/shared-dashboard" className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-t-xl">
-                             <div className="p-1 bg-blue-500/20 rounded text-blue-400"><Users className="h-3 w-3" /></div>
-                             Shared Dashboard
-                        </Link>
-                        <div className="h-px bg-gray-700/50 mx-2"></div>
-                        <Link href="/household" className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-b-xl">
-                             <Settings className="h-4 w-4" /> Settings
-                        </Link>
-                    </div>
-                </div>
-                */}
-
-              </div>
+                  </div>
+              )}
             </div>
 
             {/* Profile & Actions */}
             <div className="flex items-center gap-4">
-               <SyncStatusIndicator />
-               
-               <button 
-                onClick={handleOpenQuickAction}
-                className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-purple-600/20"
-               >
-                   <Plus className="h-4 w-4" /> <span className="hidden lg:inline">Add New</span><span className="lg:hidden">Add</span>
-               </button>
-               
-               <div className="h-6 w-px bg-gray-800"></div>
-               
-               <div className="flex items-center gap-3">
-                    <Link href="/settings" className="text-gray-400 hover:text-white transition-colors" title="Settings">
-                        <Settings className="h-5 w-5" />
-                    </Link>
-                    <Link href="/profile" className="flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white">
-                        <User className="h-5 w-5" />
-                        <span className="hidden lg:inline">{user?.name}</span>
-                    </Link>
-                    <button onClick={logout} className="text-gray-500 hover:text-white">
-                        <LogOut className="h-5 w-5" />
-                    </button>
-               </div>
+               {!isLoading ? (
+                   <>
+                       <SyncStatusIndicator />
+                       
+                       <button 
+                        onClick={handleOpenQuickAction}
+                        className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-lg shadow-purple-600/20"
+                       >
+                           <Plus className="h-4 w-4" /> <span className="hidden lg:inline">Add New</span><span className="lg:hidden">Add</span>
+                       </button>
+                       
+                       <div className="h-6 w-px bg-gray-800"></div>
+                       
+                       <div className="flex items-center gap-3">
+                            <Link href="/settings" className="text-gray-400 hover:text-white transition-colors" title="Settings">
+                                <Settings className="h-5 w-5" />
+                            </Link>
+                            <Link href="/profile" className="flex items-center gap-2 text-sm font-medium text-gray-300 hover:text-white">
+                                <User className="h-5 w-5" />
+                                <span className="hidden lg:inline">{user?.name}</span>
+                            </Link>
+                            <button onClick={logout} className="text-gray-500 hover:text-white">
+                                <LogOut className="h-5 w-5" />
+                            </button>
+                       </div>
+                   </>
+               ) : (
+                   <div className="flex items-center gap-4 animate-pulse">
+                        <div className="w-20 h-8 bg-white/10 rounded-lg"></div>
+                        <div className="w-8 h-8 bg-white/10 rounded-full"></div>
+                   </div>
+               )}
             </div>
           </div>
         </div>
@@ -222,12 +214,15 @@ export default function Navbar() {
                         <div key="fab" className="relative -top-10"> {/* Adjusted for floating nav */}
                             <motion.button 
                                 onClick={() => {
+                                    if (isLoading) return;
                                     if (navigator.vibrate) navigator.vibrate(15);
                                     handleOpenQuickAction();
                                 }}
-                                className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white shadow-xl shadow-purple-600/40 border-[6px] border-gray-900"
-                                whileTap={{ scale: 0.9 }}
-                                whileHover={{ scale: 1.05 }}
+                                className={`w-16 h-16 rounded-full flex items-center justify-center text-white shadow-xl shadow-purple-600/40 border-[6px] border-gray-900 ${
+                                    isLoading ? 'bg-gray-700 cursor-not-allowed opacity-50' : 'bg-gradient-to-tr from-blue-600 to-purple-600'
+                                }`}
+                                whileTap={!isLoading ? { scale: 0.9 } : undefined}
+                                whileHover={!isLoading ? { scale: 1.05 } : undefined}
                                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                             >
                                 <Plus className="h-8 w-8 stroke-[3]" />
@@ -241,10 +236,14 @@ export default function Navbar() {
                         <button 
                             key="menu"
                             onClick={() => {
+                                if (isLoading) return;
                                 if (navigator.vibrate) navigator.vibrate(10);
                                 handleOpenMobileMenu();
                             }}
-                             className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-2xl transition-all duration-200 ${isMobileMenuOpen ? 'text-blue-400 bg-blue-500/10' : 'text-gray-500 hover:text-gray-300'}`}
+                             className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-2xl transition-all duration-200 ${
+                                 isLoading ? 'opacity-50' : 
+                                 isMobileMenuOpen ? 'text-blue-400 bg-blue-500/10' : 'text-gray-500 hover:text-gray-300'
+                             }`}
                         >
                             <MoreHorizontal className={`h-6 w-6 ${isMobileMenuOpen ? 'stroke-[2.5px]' : ''}`} />
                             {isMobileMenuOpen && <span className="absolute -bottom-1 w-1 h-1 bg-blue-400 rounded-full"></span>}
@@ -255,11 +254,15 @@ export default function Navbar() {
                 return (
                     <Link 
                         key={item.href}
-                        href={item.href}
-                        onClick={() => {
-                          if (navigator.vibrate) navigator.vibrate(10);
+                        href={isLoading ? '#' : item.href}
+                        onClick={(e) => {
+                          if (isLoading) e.preventDefault();
+                          else if (navigator.vibrate) navigator.vibrate(10);
                         }}
-                        className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-2xl transition-all duration-200 ${isActive ? 'text-blue-400 bg-blue-500/20' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`relative flex flex-col items-center justify-center w-12 h-12 gap-1 rounded-2xl transition-all duration-200 ${
+                            isLoading ? 'opacity-50' : 
+                            isActive ? 'text-blue-400 bg-blue-500/20' : 'text-gray-500 hover:text-gray-300'
+                        }`}
                     >
                         <Icon 
                             className={`h-6 w-6 transition-all duration-200 ${isActive ? 'stroke-[2.5px]' : ''}`}

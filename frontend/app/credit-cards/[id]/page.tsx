@@ -122,20 +122,14 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
       }
   };
 
-  if (loading || !card) {
-      return (
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center text-gray-500">
-            Loading...
-        </div>
-      );
-  }
+  // if (loading || !card) return ... (Removed blocking loader)
 
-  const limit = Number(card.creditLimit);
-  const outstanding = Number(card.currentOutstanding || 0);
+  const limit = card ? Number(card.creditLimit) : 0;
+  const outstanding = card ? Number(card.currentOutstanding || 0) : 0;
   const utilization = limit > 0 ? (outstanding / limit) * 100 : 0;
   const available = limit - outstanding;
   
-  const lastStatement = (card.statements && card.statements.length > 0) ? card.statements[0] : null;
+  const lastStatement = (card && card.statements && card.statements.length > 0) ? card.statements[0] : null;
   const minDue = lastStatement ? Number(lastStatement.minimumDue) : 0;
   const totalDue = lastStatement ? Number(lastStatement.closingBalance) : outstanding;
 
@@ -144,7 +138,7 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-8 pb-8">
-        <NativeHeader title={card.bankName} backUrl="/credit-cards" />
+        <NativeHeader title={card?.bankName || 'Credit Card'} backUrl="/credit-cards" />
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8 hidden md:flex">
             <div className="flex items-center gap-4">
@@ -152,28 +146,39 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
                     <CreditCardIcon className="h-6 w-6" />
                 </div>
                 <div>
-                   <h1 className="text-3xl font-bold text-white">{card.bankName}</h1>
-                   <div className="text-gray-400">{card.name}</div>
+                   {loading || !card ? (
+                        <div className="h-8 w-48 bg-gray-800 rounded animate-pulse mb-1" />
+                   ) : (
+                        <h1 className="text-3xl font-bold text-white">{card.bankName}</h1>
+                   )}
+                   {loading || !card ? (
+                        <div className="h-4 w-32 bg-gray-800 rounded animate-pulse" />
+                   ) : (
+                        <div className="text-gray-400">{card.name}</div>
+                   )}
                 </div>
             </div>
             
             <div className="flex items-center gap-3">
                  <button 
                   onClick={handleSimulateCharge}
-                  className="px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-xl hover:bg-gray-700 transition-colors font-medium text-sm"
+                  disabled={loading}
+                  className="px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-xl hover:bg-gray-700 transition-colors font-medium text-sm disabled:opacity-50"
                 >
                     + Charge
                 </button>
                 <button 
                   onClick={handleGenerateStatement}
-                  className="px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-xl hover:bg-gray-700 transition-colors font-medium flex items-center gap-2 text-sm"
+                  disabled={loading}
+                  className="px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-xl hover:bg-gray-700 transition-colors font-medium flex items-center gap-2 text-sm disabled:opacity-50"
                 >
                     <List className="h-4 w-4" />
                     Gen Statement
                 </button>
                  <button 
                   onClick={() => setIsPaymentOpen(true)}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all font-bold shadow-lg shadow-purple-500/25 flex items-center gap-2"
+                  disabled={loading}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all font-bold shadow-lg shadow-purple-500/25 flex items-center gap-2 disabled:opacity-50"
                 >
                     <DollarSign className="h-4 w-4" />
                     Pay Bill
@@ -185,24 +190,27 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
         <div className="grid grid-cols-3 gap-3 mb-6 md:hidden">
              <button 
                   onClick={() => setIsPaymentOpen(true)}
-                  className="col-span-3 py-3 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className="col-span-3 py-3 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2 disabled:opacity-50"
             >
                 <DollarSign className="h-5 w-5" /> Pay Bill
             </button>
             <button 
                   onClick={handleGenerateStatement}
-                  className="py-3 bg-[#1c1c1e] border border-white/10 text-white rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+                  disabled={loading}
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-white rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs disabled:opacity-50"
             >
                 <List className="h-5 w-5 text-gray-400" /> Statement
             </button>
              <button 
                   onClick={handleSimulateCharge}
-                  className="py-3 bg-[#1c1c1e] border border-white/10 text-white rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+                  disabled={loading}
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-white rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs disabled:opacity-50"
             >
                 <Upload className="h-5 w-5 text-gray-400" /> Charge
             </button>
              <button 
-                  className="py-3 bg-[#1c1c1e] border border-white/10 text-gray-400 rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-gray-400 rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs disabled:opacity-50"
             >
                 <TrendingUp className="h-5 w-5" /> Analytics
             </button>
@@ -213,7 +221,11 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
              <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg relative overflow-hidden">
                 <div className="relative z-10">
                     <div className="text-gray-400 text-sm font-medium mb-1">Outstanding Balance</div>
-                    <div className="text-2xl font-bold text-white">₹ {outstanding.toLocaleString()}</div>
+                    {loading ? (
+                        <div className="h-8 w-32 bg-gray-800 rounded animate-pulse" />
+                    ) : (
+                        <div className="text-2xl font-bold text-white">₹ {outstanding.toLocaleString()}</div>
+                    )}
                     <div className="text-xs text-gray-500 mt-2">
                         {utilization.toFixed(1)}% Utilization
                     </div>
@@ -226,7 +238,11 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
              
              <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Available Credit</div>
-                <div className="text-2xl font-bold text-green-400">₹ {available.toLocaleString()}</div>
+                {loading ? (
+                    <div className="h-8 w-32 bg-gray-800 rounded animate-pulse" />
+                ) : (
+                    <div className="text-2xl font-bold text-green-400">₹ {available.toLocaleString()}</div>
+                )}
                 <div className="text-xs text-gray-500 mt-2">
                     of ₹ {limit.toLocaleString()} Limit
                 </div>
@@ -234,9 +250,13 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
             
             <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Next Payment Due</div>
-                <div className="text-2xl font-bold text-white">
-                    {lastStatement ? `₹ ${Number(lastStatement.minimumDue).toLocaleString()}` : '-'}
-                </div>
+                {loading ? (
+                    <div className="h-8 w-32 bg-gray-800 rounded animate-pulse" />
+                ) : (
+                    <div className="text-2xl font-bold text-white">
+                        {lastStatement ? `₹ ${Number(lastStatement.minimumDue).toLocaleString()}` : '-'}
+                    </div>
+                )}
                  <div className="text-xs text-orange-400 mt-2 flex items-center gap-1 font-medium">
                     <Calendar className="h-3 w-3" /> 
                     {lastStatement ? new Date(lastStatement.dueDate).toLocaleDateString() : 'No Due'}
@@ -245,9 +265,13 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
             
              <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Last Statement</div>
-                <div className="text-2xl font-bold text-white">
-                    {lastStatement ? `₹ ${Number(lastStatement.closingBalance).toLocaleString()}` : '-'}
-                </div>
+                {loading ? (
+                    <div className="h-8 w-32 bg-gray-800 rounded animate-pulse" />
+                ) : (
+                    <div className="text-2xl font-bold text-white">
+                        {lastStatement ? `₹ ${Number(lastStatement.closingBalance).toLocaleString()}` : '-'}
+                    </div>
+                )}
                 <div className="text-xs text-gray-500 mt-2">
                     {lastStatement ? new Date(lastStatement.statementDate).toLocaleDateString() : 'Not Generated'}
                 </div>
@@ -260,7 +284,13 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
                 <h3 className="text-sm font-bold text-gray-400 mb-6 uppercase tracking-wider flex items-center gap-2">
                     <List className="h-4 w-4" /> Recent Statements
                 </h3>
-                {card.statements && card.statements.length > 0 ? (
+                {loading ? (
+                    <div className="space-y-3">
+                         {[1].map(i => (
+                            <div key={i} className="bg-white/5 p-4 rounded-2xl h-24 animate-pulse" />
+                        ))}
+                    </div>
+                ) : card?.statements && card.statements.length > 0 ? (
                     <div className="space-y-3">
                         {card.statements?.map((stmt: any) => (
                             <div key={stmt.id} className="group bg-black/40 hover:bg-white/5 transition-colors p-4 rounded-2xl border border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -311,7 +341,21 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
                     <TrendingUp className="h-4 w-4" /> Recent Activity
                 </h3>
                  <div className="space-y-3">
-                    {transactions.length > 0 ? (
+                    {loading ? (
+                         <div className="space-y-3">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="flex items-center justify-between p-3 rounded-xl animate-pulse">
+                                     <div className="flex items-center gap-3">
+                                         <div className="w-10 h-10 rounded-xl bg-gray-800"/>
+                                         <div>
+                                             <div className="h-3 w-32 bg-gray-800 rounded mb-1"/>
+                                             <div className="h-2 w-20 bg-gray-800 rounded"/>
+                                         </div>
+                                     </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : transactions.length > 0 ? (
                         transactions.map(tx => {
                             const cat = categories.find(c => c.id === tx.categoryId);
                             return (
@@ -325,7 +369,7 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
                                         </div>
                                         <div>
                                             <div className="text-sm font-bold text-white group-hover:text-purple-300 transition-colors line-clamp-1">{tx.description}</div>
-                                            <div className="text-[10px] text-gray-500">{new Date(tx.date).toLocaleDateString()}</div>
+                                            <div className="text-xs text-gray-500">{new Date(tx.date).toLocaleDateString()}</div>
                                         </div>
                                     </div>
                                     <div className={`font-mono text-sm font-bold ${tx.type === 'INCOME' ? 'text-emerald-400' : 'text-white'}`}>

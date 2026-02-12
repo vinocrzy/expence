@@ -88,9 +88,16 @@ export default function CategoriesSettingsPage() {
         </div>
 
         {loading ? (
-           <div className="flex flex-col items-center justify-center py-24 space-y-4">
-               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-               <p className="text-gray-500 text-sm">Loading categories...</p>
+           <div className="space-y-4">
+               {[1, 2, 3, 4, 5].map(i => (
+                   <div key={i} className="flex items-center justify-between p-4 bg-[#1c1c1e] rounded-xl border border-white/5 animate-pulse">
+                       <div className="flex items-center gap-4">
+                           <div className="w-10 h-10 rounded-full bg-gray-800" />
+                           <div className="h-4 w-32 bg-gray-800 rounded" />
+                       </div>
+                       <div className="w-8 h-8 rounded-full bg-gray-800" />
+                   </div>
+               ))}
            </div>
         ) : (
           <div className="space-y-6">

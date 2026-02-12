@@ -46,13 +46,7 @@ export default function FinancesPage() {
   const netAvailableBalance = availableBalance;
   const totalDebt = totalCreditCardDebt + totalLoanOutstanding;
 
-  if (loading) {
-      return (
-          <div className="min-h-screen bg-black flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-          </div>
-      );
-  }
+  // if (loading) return ... (Removed blocking loader)
 
   return (
     <div className="min-h-screen bg-black text-white font-sans pb-32 md:pb-8 selection:bg-purple-500 selection:text-white">
@@ -70,18 +64,26 @@ export default function FinancesPage() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-6 shadow-lg shadow-purple-500/20 relative overflow-hidden"
         >
-             <div className="relative z-10 flex justify-between items-center">
-                <div>
-                     <div className="text-blue-100 text-sm font-medium mb-1">Available Balance</div>
-                     <div className="text-3xl font-bold text-white tracking-tight">
-                        ₹{(totalLiquidCash - totalCreditCardDebt).toLocaleString()}
-                     </div>
-                     <div className="text-xs text-blue-200 mt-1">Total Cash - Credit Card Due</div>
-                </div>
-                <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
-                    <Wallet className="w-8 h-8 text-white" />
-                </div>
-             </div>
+             {loading ? (
+                 <div className="animate-pulse">
+                     <div className="h-4 w-32 bg-white/20 rounded mb-2"></div>
+                     <div className="h-8 w-48 bg-white/20 rounded mb-2"></div>
+                     <div className="h-3 w-40 bg-white/20 rounded"></div>
+                 </div>
+             ) : (
+                 <div className="relative z-10 flex justify-between items-center">
+                    <div>
+                         <div className="text-blue-100 text-sm font-medium mb-1">Available Balance</div>
+                         <div className="text-3xl font-bold text-white tracking-tight">
+                            ₹{(totalLiquidCash - totalCreditCardDebt).toLocaleString()}
+                         </div>
+                         <div className="text-xs text-blue-200 mt-1">Total Cash - Credit Card Due</div>
+                    </div>
+                    <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
+                        <Wallet className="w-8 h-8 text-white" />
+                    </div>
+                 </div>
+             )}
         </motion.div>
 
         {/* Total Cash & CC Due Hero */}
@@ -101,9 +103,13 @@ export default function FinancesPage() {
                         </div>
                         <span className="text-gray-400 text-sm font-medium">Total Cash Assets</span>
                     </div>
-                    <div className="text-3xl font-bold text-white tracking-tight">
-                        ₹{totalLiquidCash.toLocaleString()}
-                    </div>
+                    {loading ? (
+                        <div className="h-8 w-32 bg-white/10 rounded animate-pulse"></div>
+                    ) : (
+                        <div className="text-3xl font-bold text-white tracking-tight">
+                            ₹{totalLiquidCash.toLocaleString()}
+                        </div>
+                    )}
                 </div>
             </motion.div>
 
@@ -122,9 +128,13 @@ export default function FinancesPage() {
                         </div>
                         <span className="text-gray-400 text-sm font-medium">Total Credit Card Due</span>
                     </div>
-                    <div className="text-3xl font-bold text-white tracking-tight">
-                        ₹{totalCreditCardDebt.toLocaleString()}
-                    </div>
+                    {loading ? (
+                        <div className="h-8 w-32 bg-white/10 rounded animate-pulse"></div>
+                    ) : (
+                        <div className="text-3xl font-bold text-white tracking-tight">
+                            ₹{totalCreditCardDebt.toLocaleString()}
+                        </div>
+                    )}
                 </div>
             </motion.div>
         </div>
@@ -146,7 +156,20 @@ export default function FinancesPage() {
             </div>
             
             <div className="space-y-3">
-                {bankAccounts.length === 0 ? (
+                {loading ? (
+                     [1, 2].map(i => (
+                        <div key={i} className="bg-[#1c1c1e] border border-white/5 p-4 rounded-3xl flex justify-between items-center animate-pulse">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-white/10"></div>
+                                <div>
+                                    <div className="h-4 w-32 bg-white/10 rounded mb-2"></div>
+                                    <div className="h-3 w-20 bg-white/10 rounded"></div>
+                                </div>
+                            </div>
+                            <div className="h-5 w-24 bg-white/10 rounded"></div>
+                        </div>
+                     ))
+                ) : bankAccounts.length === 0 ? (
                     <div className="p-8 text-center bg-[#1c1c1e] rounded-3xl border border-white/5 text-gray-500 text-sm">
                         No bank accounts added
                     </div>
@@ -189,7 +212,18 @@ export default function FinancesPage() {
                 </Link>
             </div>
              <div className="space-y-3">
-                {allCreditCards.length === 0 ? (
+                {loading ? (
+                     <div className="bg-[#1c1c1e] border border-white/5 p-4 rounded-3xl flex justify-between items-center animate-pulse">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-white/10"></div>
+                            <div>
+                                <div className="h-4 w-32 bg-white/10 rounded mb-2"></div>
+                                <div className="h-3 w-20 bg-white/10 rounded"></div>
+                            </div>
+                        </div>
+                        <div className="h-5 w-24 bg-white/10 rounded"></div>
+                    </div>
+                ) : allCreditCards.length === 0 ? (
                      <div className="p-8 text-center bg-[#1c1c1e] rounded-3xl border border-white/5 text-gray-500 text-sm">
                         No credit cards added
                     </div>
@@ -233,7 +267,18 @@ export default function FinancesPage() {
                 </Link>
             </div>
              <div className="space-y-3">
-                {allLoans.length === 0 ? (
+                {loading ? (
+                     <div className="bg-[#1c1c1e] border border-white/5 p-4 rounded-3xl flex justify-between items-center animate-pulse">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-white/10"></div>
+                            <div>
+                                <div className="h-4 w-32 bg-white/10 rounded mb-2"></div>
+                                <div className="h-3 w-20 bg-white/10 rounded"></div>
+                            </div>
+                        </div>
+                        <div className="h-5 w-24 bg-white/10 rounded"></div>
+                    </div>
+                ) : allLoans.length === 0 ? (
                      <div className="p-8 text-center bg-[#1c1c1e] rounded-3xl border border-white/5 text-gray-500 text-sm">
                         No active loans
                     </div>

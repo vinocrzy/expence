@@ -199,9 +199,7 @@ export default function DashboardPage() {
       return map;
   }, [categories]);
 
-  if (authLoading || loading || txLoading || accLoading) {
-    return <LoadingScreen />;
-  }
+  const isLoading = authLoading || loading || txLoading || accLoading;
 
   const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -219,6 +217,7 @@ export default function DashboardPage() {
             totalIncome={cashFlow?.totalIncome || 0}
             totalExpense={cashFlow?.totalExpense || 0}
             savingsRate={cashFlow?.savingsRate || 0}
+            loading={isLoading}
         />
 
         {/* Financial Overview Section (Assets vs Liabilities) */}
@@ -282,20 +281,21 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6 mb-8">
             {/* Left Column: Charts */}
             <div className="xl:col-span-2 space-y-4 md:space-y-6">
-                <CashFlowChart data={trendData} />
+                <CashFlowChart data={trendData} loading={isLoading} />
                 <RecentActivity 
                     transactions={sortedTransactions}
                     accountMap={accountMap}
                     categories={categories}
                     onEdit={handleEditTransaction}
                     onTypeChange={handleTypeChange}
+                    loading={isLoading}
                 />
             </div>
             
             {/* Right Column: Insights */}
             <div className="space-y-4 md:space-y-6">
                 {/* Upcoming Payments Widget */}
-                {upcomingTxs.length > 0 && (
+                {upcomingTxs.length > 0 && !isLoading && (
                     <div className="glass-panel p-5 rounded-3xl border border-white/5 space-y-4 bg-[#1c1c1e]">
                         <div className="flex justify-between items-center">
                             <h3 className="font-bold text-white text-lg">Upcoming Payments</h3>
@@ -324,9 +324,11 @@ export default function DashboardPage() {
                 <FinancialHealth 
                     savingsRate={cashFlow?.savingsRate || 0}
                     netWorth={netWorth}
+                    loading={isLoading}
                 />
                 <TopCategories 
                     categories={categoryBreakdown} 
+                    loading={isLoading}
                 />
             </div>
         </div>

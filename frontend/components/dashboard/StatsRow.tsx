@@ -7,9 +7,38 @@ interface StatsRowProps {
   totalIncome: number;
   totalExpense: number;
   savingsRate: number;
+  loading?: boolean;
 }
 
-export default function StatsRow({ netWorth, totalIncome, totalExpense, savingsRate }: StatsRowProps) {
+export default function StatsRow({ netWorth, totalIncome, totalExpense, savingsRate, loading }: StatsRowProps) {
+  if (loading) {
+      return (
+        <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory">
+            {/* Skeleton: Total Balance */}
+            <div className="snap-center shrink-0 w-[85%] sm:w-[320px] bg-[#1c1c1e] rounded-3xl p-6 border border-white/5 shadow-xl relative overflow-hidden animate-pulse">
+                <div className="space-y-4">
+                    <div className="h-4 w-32 bg-white/10 rounded-full" />
+                    <div className="h-10 w-48 bg-white/10 rounded-lg" />
+                    <div className="h-6 w-24 bg-white/10 rounded-full" />
+                </div>
+            </div>
+
+            {/* Skeleton: Small Cards */}
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="snap-center shrink-0 w-[42%] sm:w-[180px] bg-[#1c1c1e] rounded-3xl p-4 flex flex-col justify-between min-h-[140px] border border-white/5 animate-pulse">
+                    <div className="flex justify-end">
+                        <div className="w-8 h-8 rounded-full bg-white/10" />
+                    </div>
+                    <div className="space-y-2">
+                        <div className="h-3 w-16 bg-white/10 rounded-full" />
+                        <div className="h-6 w-24 bg-white/10 rounded-lg" />
+                    </div>
+                </div>
+            ))}
+        </div>
+      );
+  }
+
   return (
     <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide snap-x snap-mandatory">
         
