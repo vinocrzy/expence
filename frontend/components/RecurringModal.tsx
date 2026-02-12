@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, DollarSign, RefreshCw, Tag, CreditCard } from 'lucide-react';
 import { RecurringTransaction, Category, Account } from '@/lib/db-types';
-import { recurringService, categoryService, accountService } from '@/lib/localdb-services';
+import { recurringService, categoryService, accountService, getHouseholdId } from '@/lib/localdb-services';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
@@ -26,8 +26,7 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
   useEffect(() => {
     const loadData = async () => {
       try {
-         // simplified household fetch
-         const householdId = localStorage.getItem('householdId') || '1'; 
+         const householdId = await getHouseholdId();
          const cats = await categoryService.getAll(householdId);
          const accs = await accountService.getAllActive(householdId);
          setCategories(cats);

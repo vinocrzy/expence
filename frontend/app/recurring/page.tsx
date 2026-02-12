@@ -4,11 +4,11 @@ import { Plus, ArrowLeft, RefreshCw, AlertCircle, CheckCircle } from 'lucide-rea
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { format, differenceInDays } from 'date-fns';
-import { recurringService, transactionService } from '@/lib/localdb-services';
+import { recurringService, transactionService, accountService, getHouseholdId } from '@/lib/localdb-services';
 import { RecurringTransaction, Account } from '@/lib/db-types';
 import RecurringModal from '@/components/RecurringModal';
 import NativeHeader from '@/components/dashboard/NativeHeader';
-import { accountService } from '@/lib/localdb-services'; // Added accountService
+import Navbar from '@/components/Navbar';
 
 export default function RecurringPage() {
   const [items, setItems] = useState<RecurringTransaction[]>([]);
@@ -25,7 +25,7 @@ export default function RecurringPage() {
   // Load items & Accounts
   const loadData = async () => {
     try {
-        const householdId = localStorage.getItem('householdId') || '1';
+        const householdId = await getHouseholdId();
         const [recurringData, accountsData] = await Promise.all([
             recurringService.getAllActive(householdId),
             accountService.getAllActive(householdId)
@@ -85,6 +85,7 @@ export default function RecurringPage() {
 
   return (
     <div className="min-h-screen bg-black pb-24">
+        <Navbar />
         <NativeHeader 
             title="Subscriptions" 
             backUrl="/dashboard"
