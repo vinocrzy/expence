@@ -17,7 +17,7 @@ export default function Home() {
 
   if (loading || user) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a] relative overflow-hidden z-[50]">
             <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px]" />
             <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-pink-600/20 rounded-full blur-[120px]" />
             <div className="relative z-10 flex flex-col items-center">
