@@ -141,6 +141,12 @@ export default function Navbar() {
                     Insights
                 </Link>
                 <Link 
+                    href="/recurring" 
+                    className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/recurring' ? 'text-white' : 'text-gray-400'}`}
+                >
+                    Subscriptions
+                </Link>
+                <Link 
                     href="/reports" 
                     className={`text-sm font-medium transition-colors hover:text-white ${pathname === '/reports' ? 'text-white' : 'text-gray-400'}`}
                 >
@@ -315,6 +321,17 @@ export default function Navbar() {
                                     <FileDown className="h-5 w-5" />
                                 </div>
                                 <span className="text-base font-medium flex-1">Reports</span>
+                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
+                            </Link>
+                        </div>
+
+                        {/* Group 2: Recurring & Payments */}
+                        <div className="bg-gray-900 rounded-2xl overflow-hidden mb-4 border border-white/5">
+                             <Link href="/recurring" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 border-b border-white/5 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                                    <RefreshCw className="h-5 w-5" />
+                                </div>
+                                <span className="text-base font-medium flex-1">Subscriptions & EMIs</span>
                                 <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
                             </Link>
                         </div>
