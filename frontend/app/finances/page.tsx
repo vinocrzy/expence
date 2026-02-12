@@ -144,6 +144,7 @@ export default function FinancesPage() {
             variants={staggerContainer}
             initial="initial"
             animate="animate"
+            viewport={{ once: true }}
         >
             <div className="flex items-center justify-between mb-3 px-1">
                 <h2 className="text-lg font-bold flex items-center gap-2 text-white">
@@ -175,7 +176,7 @@ export default function FinancesPage() {
                     </div>
                 ) : (
                     bankAccounts.map((account: any) => (
-                        <motion.div variants={fadeInUp} key={account.id}>
+                        <motion.div variants={fadeInUp} initial="initial" animate="animate" key={account.id}>
                             <Link href={`/accounts/${account.id}`} className="block bg-[#1c1c1e] border border-white/5 p-4 rounded-3xl flex justify-between items-center hover:bg-white/5 transition-all group active:scale-[0.98]">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
@@ -229,7 +230,7 @@ export default function FinancesPage() {
                     </div>
                 ) : (
                     allCreditCards.map(card => (
-                        <motion.div variants={fadeInUp} key={card.id}>
+                        <motion.div variants={fadeInUp} initial="initial" animate="animate" key={card.id}>
                             <Link href={`/credit-cards/${card.id}`} className="block bg-[#1c1c1e] border border-white/5 p-4 rounded-3xl flex justify-between items-center hover:bg-white/5 transition-all group active:scale-[0.98]">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
@@ -284,7 +285,7 @@ export default function FinancesPage() {
                     </div>
                 ) : (
                     allLoans.map((loan: any, index: number) => (
-                        <motion.div variants={fadeInUp} key={loan.id}>
+                        <motion.div variants={fadeInUp} initial="initial" animate="animate" key={loan.id}>
                             <Link href={`/loans/${loan.id}`} className="block bg-[#1c1c1e] border border-white/5 p-4 rounded-3xl flex justify-between items-center hover:bg-white/5 transition-all group active:scale-[0.98]">
                                 <div className="flex items-center gap-4">
                                      <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-400">
