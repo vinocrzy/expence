@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { useAccounts, useTransactions, useCategories, useCreditCards } from '../../hooks/useLocalData';
-import { accountService, creditCardService, transactionService, getHouseholdId } from '../../lib/localdb-services';
+import { accountService, creditCardService, transactionService, recurringService, getHouseholdId } from '../../lib/localdb-services';
 import { 
   getCashFlowSummary,
   calculateTrends, 
@@ -51,6 +52,7 @@ export default function DashboardPage() {
   const [investmentTotal, setInvestmentTotal] = useState(0);
   const [debtTotal, setDebtTotal] = useState(0); // Loan Outstanding
   const [totalLoanOutstanding, setTotalLoanOutstanding] = useState(0);
+  const [upcomingTxs, setUpcomingTxs] = useState<any[]>([]);
 
   // Transaction Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -103,20 +105,17 @@ export default function DashboardPage() {
             const endOfTrend = new Date();
             endOfTrend.setHours(23, 59, 59, 999);
 
-            const [cf, trends, cats, allAccounts, activeCards, loans] = await Promise.all([
+            const [cf, trends, cats, allAccounts, activeCards, loans, upcoming] = await Promise.all([
                 getCashFlowSummary(householdId, startOfTrend, endOfTrend),
                 calculateTrends(householdId, startOfTrend, endOfTrend, 'daily'),
                 calculateCategoryBreakdown(householdId, startOfTrend, endOfTrend),
                 accountService.getAllActive(householdId),
                 creditCardService.getAllActive(householdId),
-                // We need loans for Net Worth if we want to be accurate, 
-                // though the previous code used analytics.calculateNetWorth which might have different logic.
-                // Let's stick to the new single source of truth: financial-math
-                // We need to fetch loans.
-                // Assuming loanService is available or we can fetch them.
-                // We need to import loanService.
-                import('../../lib/localdb-services').then(m => m.loanService.getAll(householdId))
+                import('../../lib/localdb-services').then(m => m.loanService.getAll(householdId)),
+                recurringService.getUpcoming(householdId, 14)
             ]);
+
+            setUpcomingTxs(upcoming);
 
             // Calculate Investments Total (using transaction service for now as proxy for value)
             const investments = await transactionService.getTotalInvestments(householdId, new Date(0), new Date('2100-01-01'));
@@ -266,6 +265,32 @@ export default function DashboardPage() {
             
             {/* Right Column: Insights */}
             <div className="space-y-4 md:space-y-6">
+                {/* Upcoming Payments Widget */}
+                {upcomingTxs.length > 0 && (
+                    <div className="glass-panel p-5 rounded-3xl border border-white/5 space-y-4 bg-[#1c1c1e]">
+                        <div className="flex justify-between items-center">
+                            <h3 className="font-bold text-white text-lg">Upcoming Payments</h3>
+                            <Link href="/recurring" className="text-xs text-blue-400 hover:text-blue-300">See All</Link>
+                        </div>
+                        <div className="space-y-3">
+                            {upcomingTxs.slice(0, 3).map((tx: any) => (
+                                <div key={tx.id} className="flex items-center justify-between p-3 bg-black/20 rounded-xl">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-lg text-white">
+                                            {tx.name[0]}
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-white text-sm">{tx.name}</p>
+                                            <p className="text-xs text-gray-400">Due {new Date(tx.nextDueDate).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                    <span className="font-bold text-white text-sm">₹{tx.amount}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <BudgetWidget />
                 <FinancialHealth 
                     savingsRate={cashFlow?.savingsRate || 0}

@@ -176,3 +176,25 @@ export interface SharedBudget {
     totalBudget: number;
     totalSpent: number;
 }
+
+export interface RecurringTransaction {
+  id: string;
+  name: string; // "LIC Policy", "Car Loan EMI"
+  amount: number;
+  type: 'EXPENSE' | 'INVESTMENT' | 'DEBT' | 'INCOME' | 'TRANSFER'; // Added INCOME/TRANSFER for flexibility
+  frequency: 'MONTHLY' | 'YEARLY' | 'QUARTERLY' | 'WEEKLY' | 'DAILY';
+  startDate: string;
+  nextDueDate: string;
+  categoryId?: string;
+  accountId?: string; // Source account to debit from
+  autoPay?: boolean; // If true, system might auto-create tx (future feature)
+  status?: 'ACTIVE' | 'PAUSED' | 'COMPLETED';
+  description?: string;
+  lastPaidDate?: string;
+  householdId: string;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  _rev?: string;
+  _id?: string;
+}

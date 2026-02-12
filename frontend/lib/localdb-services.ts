@@ -798,7 +798,7 @@ export const loanService = {
     const updatedOutstanding = (loan.outstandingPrincipal || 0) - amount;
     // Check if fully paid? Optionally update status.
     const newStatus = updatedOutstanding <= 0 ? 'CLOSED' : loan.status || 'ACTIVE';
-
+    
     const normalizedPaidEmis = (loan.paidEmis || 0) + 1;
 
     await this.update(id, {
@@ -806,8 +806,119 @@ export const loanService = {
         paidEmis: normalizedPaidEmis,
         status: newStatus
     });
+  },
+};
+
+// ============================================
+// RECURRING / SUBSCRIPTION OPERATIONS
+// ============================================
+import { recurringDB } from './pouchdb';
+import { RecurringTransaction } from './db-types';
+
+export const recurringService = {
+  async getAll(householdId: string): Promise<RecurringTransaction[]> {
+    const result = await recurringDB.find({
+        selector: { householdId: { $eq: householdId } }
+    });
+    return result.docs as unknown as RecurringTransaction[];
+  },
+
+  async getAllActive(householdId: string): Promise<RecurringTransaction[]> {
+      const result = await recurringDB.find({
+          selector: { 
+              householdId: { $eq: householdId },
+              status: { $eq: 'ACTIVE' }
+          }
+      });
+      return result.docs as unknown as RecurringTransaction[];
+  },
+
+  async getUpcoming(householdId: string, daysIdx: number = 30): Promise<RecurringTransaction[]> {
+      const result = await recurringDB.find({
+          selector: { 
+              householdId: { $eq: householdId },
+              status: { $eq: 'ACTIVE' },
+              nextDueDate: { $gt: new Date().toISOString() }, // Future dates
+              // ideal query would be range: now to now+30 days. PouchDB selectors are tricky with ranges sometimes.
+              // Let's fetch all active and filter in memory for complex date math if index isn't perfect
+          }
+      });
+      const allActive = result.docs as unknown as RecurringTransaction[];
+      
+      const now = new Date();
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() + daysIdx);
+
+      return allActive.filter(r => {
+          const d = new Date(r.nextDueDate);
+          return d >= now && d <= limitDate;
+      }).sort((a,b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime());
+  },
+
+  async create(data: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<RecurringTransaction> {
+      const householdId = await getHouseholdId();
+      const now = new Date().toISOString();
+      const id = generateId();
+      
+      const recurring: RecurringTransaction = {
+          ...data,
+          id,
+          householdId,
+          status: 'ACTIVE',
+          createdAt: now,
+          updatedAt: now
+      };
+      const docToSave = { ...recurring, _id: id };
+      const response = await recurringDB.put(docToSave);
+      return { ...recurring, _rev: response.rev };
+  },
+
+  async update(id: string, data: Partial<RecurringTransaction>): Promise<RecurringTransaction> {
+      const doc = await recurringDB.get(id) as any;
+      const updated = { ...doc, ...data, updatedAt: new Date().toISOString(), _id: id, _rev: doc._rev };
+      const response = await recurringDB.put(updated);
+      return { ...updated, _rev: response.rev };
+  },
+
+  async delete(id: string): Promise<void> {
+      try { await recurringDB.remove(await recurringDB.get(id)); } catch(e) {}
+  },
+
+  // Mark as Paid: Create actual transaction and update next due date
+  async processPayment(id: string, accountId: string, actualDate: string = new Date().toISOString()): Promise<void> {
+      const recurring = await recurringDB.get(id) as unknown as RecurringTransaction;
+      if (!recurring) throw new Error('Recurring item not found');
+
+      // 1. Create the actual transaction
+      await transactionService.create({
+          amount: recurring.amount, // User can override in UI if needed, but this is quick action
+          type: recurring.type,
+          description: `Recurring: ${recurring.name}`,
+          date: actualDate,
+          categoryId: recurring.categoryId,
+          accountId: accountId || recurring.accountId || '', // Use selected account or default
+          householdId: recurring.householdId // redundant for create but needed for type omit? create handles householdId normally
+          // wait, create omits householdId.
+      } as any); 
+
+      // 2. Update Next Due Date
+      const currentDue = new Date(recurring.nextDueDate);
+      let nextDue = new Date(currentDue);
+
+      switch(recurring.frequency) {
+          case 'MONTHLY': nextDue.setMonth(nextDue.getMonth() + 1); break;
+          case 'QUARTERLY': nextDue.setMonth(nextDue.getMonth() + 3); break;
+          case 'YEARLY': nextDue.setFullYear(nextDue.getFullYear() + 1); break;
+          case 'WEEKLY': nextDue.setDate(nextDue.getDate() + 7); break; 
+      }
+
+      await this.update(id, {
+          lastPaidDate: actualDate,
+          nextDueDate: nextDue.toISOString()
+      });
   }
 };
+
 
 // ============================================
 // BUDGET OPERATIONS
