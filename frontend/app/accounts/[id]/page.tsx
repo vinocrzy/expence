@@ -72,6 +72,14 @@ export default function AccountDetailsPage() {
         .filter(t => t.type === 'EXPENSE')
         .reduce((sum, t) => sum + t.amount, 0);
 
+    const investment = thisMonthTxs
+        .filter(t => t.type === 'INVESTMENT')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    const debt = thisMonthTxs
+        .filter(t => t.type === 'DEBT')
+        .reduce((sum, t) => sum + t.amount, 0);
+
     // Trend Data (Last 30 days or similar - simplified to last 6 months for chart)
     const trendMap = new Map<string, { income: number, expense: number }>();
     transactions.forEach(t => {
@@ -80,6 +88,7 @@ export default function AccountDetailsPage() {
         if (!trendMap.has(k)) trendMap.set(k, { income: 0, expense: 0 });
         if (t.type === 'INCOME') trendMap.get(k)!.income += t.amount;
         else if (t.type === 'EXPENSE') trendMap.get(k)!.expense += t.amount;
+        // Optimization: We could also track investment/debt trends here if the chart supported it
     });
     
     // Sort keys and take last 7-10 data points for cleaner chart
@@ -104,7 +113,7 @@ export default function AccountDetailsPage() {
         };
     }).sort((a,b) => b.value - a.value);
 
-    return { income, expense, trendData, categoryData };
+    return { income, expense, investment, debt, trendData, categoryData };
   }, [transactions, account, categories]);
 
   if (loading || !account) return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;
@@ -132,7 +141,7 @@ export default function AccountDetailsPage() {
         </div>
 
         {/* Hero Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* Balance Card */}
             <div className="bg-[#1c1c1e] p-6 rounded-3xl border border-white/5 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -177,6 +186,32 @@ export default function AccountDetailsPage() {
                 </div>
                 <div className="text-2xl font-bold font-mono text-red-400">
                     -{account.currency} {analytics?.expense.toLocaleString()}
+                </div>
+            </div>
+
+            {/* Investment Card */}
+            <div className="bg-[#1c1c1e] p-6 rounded-3xl border border-white/5 flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
+                        <TrendingUp className="w-5 h-5" />
+                    </div>
+                    <span className="text-gray-400 text-sm">Invested (This Month)</span>
+                </div>
+                <div className="text-2xl font-bold font-mono text-amber-400">
+                    -{account.currency} {analytics?.investment.toLocaleString()}
+                </div>
+            </div>
+
+            {/* Debt Card */}
+             <div className="bg-[#1c1c1e] p-6 rounded-3xl border border-white/5 flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500">
+                        <TrendingDown className="w-5 h-5" />
+                    </div>
+                    <span className="text-gray-400 text-sm">Debt Payments (This Month)</span>
+                </div>
+                <div className="text-2xl font-bold font-mono text-purple-400">
+                    -{account.currency} {analytics?.debt.toLocaleString()}
                 </div>
             </div>
         </div>

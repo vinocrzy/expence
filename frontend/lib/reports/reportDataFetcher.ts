@@ -435,39 +435,61 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
            });
       }
 
-      // Prepare Category Breakdown & Rows for the period (Flattening Splits)
+      // Prepare Breakdown & Rows
       const categoryBreakdown: Record<string, number> = {};
+      const investmentBreakdown: Record<string, number> = {};
+      const debtBreakdown: Record<string, number> = {};
       const flattenedRows: any[] = [];
 
       txInPeriod.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).forEach(t => {
-        // 1. Breakdown Logic (Expense only typically)
+        
+        // 1. Expense Breakdown
         if (t.type === 'EXPENSE') {
-             if (t.isSplit && t.splits && t.splits.length > 0) {
-                 t.splits.forEach(split => {
-                     const catName = getCategoryName(split.categoryId, undefined);
-                     
-                     // Check Category Type - Exclude DEBT/INVESTMENT from Expense Breakdown
-                     const cat = categoryObjMap.get(split.categoryId || '');
-                     const isExcluded = cat && (cat.type === 'DEBT' || cat.type === 'INVESTMENT');
-                     
-                     if (!isExcluded) {
-                        categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + split.amount;
-                     }
-                 });
-             } else {
-                  const catName = getCategoryName(t.categoryId, t.subCategoryId);
-                  
-                  // Check Category Type - Exclude DEBT/INVESTMENT from Expense Breakdown
-                  const cat = categoryObjMap.get(t.categoryId || '');
-                  const isExcluded = cat && (cat.type === 'DEBT' || cat.type === 'INVESTMENT');
+             const processExpense = (amount: number, categoryId?: string) => {
+                 const cat = categoryObjMap.get(categoryId || '');
+                 const isExcluded = cat && (cat.type === 'DEBT' || cat.type === 'INVESTMENT');
+                 if (!isExcluded) {
+                    const catName = getCategoryName(categoryId);
+                    categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + amount;
+                 }
+             };
 
-                  if (!isExcluded) {
-                      categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + t.amount;
-                  }
+             if (t.isSplit && t.splits) {
+                 t.splits.forEach(s => processExpense(s.amount, s.categoryId));
+             } else {
+                 processExpense(t.amount, t.categoryId);
              }
         }
 
-        // 2. Rows Logic
+        // 2. Investment Breakdown
+        if (t.type === 'INVESTMENT') {
+            const processInvestment = (amount: number, categoryId?: string) => {
+                const catName = getCategoryName(categoryId);
+                investmentBreakdown[catName] = (investmentBreakdown[catName] || 0) + amount;
+            };
+
+            if (t.isSplit && t.splits) {
+                 t.splits.forEach(s => processInvestment(s.amount, s.categoryId));
+            } else {
+                 processInvestment(t.amount, t.categoryId);
+            }
+        }
+
+        // 3. Debt Breakdown
+        if (t.type === 'DEBT') {
+             const processDebt = (amount: number, categoryId?: string) => {
+                const catName = getCategoryName(categoryId);
+                debtBreakdown[catName] = (debtBreakdown[catName] || 0) + amount;
+            };
+
+            if (t.isSplit && t.splits) {
+                 t.splits.forEach(s => processDebt(s.amount, s.categoryId));
+            } else {
+                 processDebt(t.amount, t.categoryId);
+            }
+        }
+
+        // 4. Rows Logic
         if (t.isSplit && t.splits && t.splits.length > 0) {
             t.splits.forEach(split => {
                 const catName = getCategoryName(split.categoryId, undefined);
@@ -507,6 +529,8 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
             'Net Change': totalIncomePeriod - (totalExpensePeriod + totalInvestmentPeriod + totalDebtPeriod)
         },
         categoryBreakdown,
+        investmentBreakdown,
+        debtBreakdown,
         consolidatedSummary
       };
     }

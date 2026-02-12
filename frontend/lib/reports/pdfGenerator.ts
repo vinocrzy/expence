@@ -153,38 +153,52 @@ export async function generatePDF(data: ReportData, type: ReportType): Promise<B
   }
 
   // --- Category Breakdown Table (Consolidated Only) ---
-  if (type === 'CONSOLIDATED' && data.categoryBreakdown && Object.keys(data.categoryBreakdown).length > 0) {
-       const allEntries = Object.entries(data.categoryBreakdown).sort((a,b) => b[1] - a[1]);
-       const totalAmount = allEntries.reduce((sum, item) => sum + item[1], 0);
+  if (type === 'CONSOLIDATED') {
+      
+      const renderBreakdownTable = (title: string, data: Record<string, number> | undefined) => {
+           if (!data || Object.keys(data).length === 0) return;
 
-       // Check if page break is needed
-       if (startY > doc.internal.pageSize.height - 60) {
-           doc.addPage();
-           startY = 20;
-       }
+           const allEntries = Object.entries(data).sort((a,b) => b[1] - a[1]);
+           const totalAmount = allEntries.reduce((sum, item) => sum + item[1], 0);
 
-       doc.setFontSize(14);
-       doc.setTextColor(0);
-       doc.text('Category Details', 14, startY);
-       startY += 5;
+           // Check if page break is needed
+           if (startY > doc.internal.pageSize.height - 60) {
+               doc.addPage();
+               startY = 20;
+           }
 
-       autoTable(doc, {
-            startY,
-            head: [['Category', 'Amount', '% of Total']],
-            body: allEntries.map(([name, val]) => [
-                name,
-                val.toLocaleString(undefined, { minimumFractionDigits: 2 }),
-                `${totalAmount > 0 ? ((val / totalAmount) * 100).toFixed(1) : 0}%`
-            ]),
-            styles: { fontSize: 10, cellPadding: 2 },
-             headStyles: { fillColor: [30, 41, 59] },
-             columnStyles: {
-                 1: { halign: 'right' },
-                 2: { halign: 'right' }
-             }
-       });
-        // @ts-ignore
-       startY = doc.lastAutoTable.finalY + 15;
+           doc.setFontSize(14);
+           doc.setTextColor(0);
+           doc.text(title, 14, startY);
+           startY += 5;
+
+           autoTable(doc, {
+                startY,
+                head: [['Category', 'Amount', '% of Total']],
+                body: allEntries.map(([name, val]) => [
+                    name,
+                    val.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+                    `${totalAmount > 0 ? ((val / totalAmount) * 100).toFixed(1) : 0}%`
+                ]),
+                styles: { fontSize: 10, cellPadding: 2 },
+                 headStyles: { fillColor: [30, 41, 59] },
+                 columnStyles: {
+                     1: { halign: 'right' },
+                     2: { halign: 'right' }
+                 }
+           });
+            // @ts-ignore
+           startY = doc.lastAutoTable.finalY + 15;
+      };
+
+      // 1. Expense Breakdown
+      renderBreakdownTable('Expense Breakdown', data.categoryBreakdown);
+
+      // 2. Investment Breakdown
+      renderBreakdownTable('Investment Breakdown', data.investmentBreakdown);
+
+      // 3. Debt Breakdown
+      renderBreakdownTable('Debt Breakdown', data.debtBreakdown);
   }
 
   // --- Summary Text Section ---

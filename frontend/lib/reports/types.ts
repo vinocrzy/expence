@@ -85,5 +85,7 @@ export interface ReportData {
   rows: (string | number)[][];
   summary?: Record<string, string | number>;
   categoryBreakdown?: Record<string, number>;
+  investmentBreakdown?: Record<string, number>;
+  debtBreakdown?: Record<string, number>;
   consolidatedSummary?: ConsolidatedAccountSummary[];
 }
