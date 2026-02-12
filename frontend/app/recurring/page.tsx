@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Plus, ArrowLeft, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { Plus, ArrowLeft, RefreshCw, AlertCircle, CheckCircle, MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { format, differenceInDays } from 'date-fns';
@@ -8,9 +8,12 @@ import { recurringService, transactionService, accountService, getHouseholdId } 
 import { RecurringTransaction, Account } from '@/lib/db-types';
 import RecurringModal from '@/components/RecurringModal';
 import NativeHeader from '@/components/dashboard/NativeHeader';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 
 export default function RecurringPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<RecurringTransaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,6 +49,19 @@ export default function RecurringPage() {
     loadData();
   }, []);
 
+  useEffect(() => {
+      const action = searchParams.get('action');
+      if (action === 'add') {
+          // Open Modal
+          setEditingItem(undefined);
+          setIsModalOpen(true);
+          
+          // Clear URL param to prevent reopening on generic refresh
+          // Using history.replaceState to verify strictly
+          window.history.replaceState(null, '', window.location.pathname);
+      }
+  }, [searchParams]);
+
   const initiatePayment = (item: RecurringTransaction) => {
       setItemToPay(item);
       setSelectedPayAccount(item.accountId || ''); // Default to linked account if exists
@@ -71,9 +87,9 @@ export default function RecurringPage() {
   };
 
   const getStatusColor = (days: number) => {
-      if (days < 0) return 'text-red-500 bg-red-500/10'; // Overdue
-      if (days <= 7) return 'text-amber-500 bg-amber-500/10'; // Due soon
-      return 'text-emerald-500 bg-emerald-500/10'; // Chill
+      if (days < 0) return 'text-red-400 bg-red-500/10'; // Overdue
+      if (days <= 3) return 'text-amber-400 bg-amber-500/10'; // Due soon (3 days)
+      return 'text-gray-400 bg-white/5'; // Neutral
   };
 
   const getStatusText = (days: number) => {
@@ -95,12 +111,6 @@ export default function RecurringPage() {
             {/* Header Action */}
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-white">Your Subscriptions</h1>
-                <button 
-                  onClick={() => { setEditingItem(undefined); setIsModalOpen(true); }}
-                  className="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-full transition-colors shadow-lg shadow-blue-500/20"
-                >
-                    <Plus className="w-6 h-6" />
-                </button>
             </div>
 
             {loading ? (
@@ -124,7 +134,7 @@ export default function RecurringPage() {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="bg-[#1c1c1e] p-5 rounded-2xl border border-white/5 hover:bg-white/5 transition-colors group"
                             >
-                                <div className="flex justify-between items-start mb-4">
+                                <div className="flex justify-between items-start mb-4 relative">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold bg-white/5 border border-white/5 text-white`}>
                                             {item.name.charAt(0)}
@@ -140,28 +150,35 @@ export default function RecurringPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-xl font-bold font-mono text-white">
-                                            ₹{item.amount.toLocaleString()}
+                                    
+                                    <div className="flex flex-col items-end gap-1">
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-xl font-bold font-mono text-white">
+                                                ₹{item.amount.toLocaleString()}
+                                            </div>
+                                            <button 
+                                                onClick={() => { setEditingItem(item); setIsModalOpen(true); }}
+                                                className="text-gray-500 hover:text-white p-1 -mr-2"
+                                            >
+                                                <MoreHorizontal className="w-5 h-5" />
+                                            </button>
                                         </div>
-                                        <button 
-                                            onClick={() => { setEditingItem(item); setIsModalOpen(true); }}
-                                            className="text-xs text-blue-400 hover:text-blue-300 mt-1"
-                                        >
-                                            Edit
-                                        </button>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl">
-                                    <div className={`text-sm font-medium flex items-center gap-2 ${getStatusColor(daysResult)}`}>
-                                        <AlertCircle className="w-4 h-4" />
-                                        {getStatusText(daysResult)} ({format(new Date(item.nextDueDate), 'MMM d')})
+                                    <div className={`text-xs font-bold flex items-center gap-2 px-2.5 py-1 rounded-lg ${getStatusColor(daysResult)}`}>
+                                        <AlertCircle className="w-3.5 h-3.5" />
+                                        {getStatusText(daysResult)}
                                     </div>
                                     
                                     <button
                                         onClick={() => initiatePayment(item)}
-                                        className="bg-white text-black px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors active:scale-95 flex items-center gap-2"
+                                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95 flex items-center gap-2 ${
+                                            daysResult <= 0 
+                                            ? "bg-white text-black hover:bg-gray-200 shadow-lg shadow-white/10" 
+                                            : "text-white border border-white/10 hover:bg-white/5"
+                                        }`}
                                     >
                                         <CheckCircle className="w-4 h-4" />
                                         Pay Now
