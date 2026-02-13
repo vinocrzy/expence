@@ -5,6 +5,8 @@ import { X, Split } from 'lucide-react';
 import { Category } from '../lib/db-types';
 import { categoryService, transactionService, budgetService, getHouseholdId } from '../lib/localdb-services';
 import SplitTransactionForm from './SplitTransactionForm';
+import SmartTransactionInput from './SmartTransactionInput';
+import { isGeminiConfigured } from '../app/actions/gemini-transaction';
 
 interface Account {
   id: string;
@@ -57,6 +59,54 @@ function TransactionModal({
   const [isSplitValid, setIsSplitValid] = useState(true);
   const [splitTotal, setSplitTotal] = useState(0);
 
+  // Smart Add
+  const [showSmartAdd, setShowSmartAdd] = useState(false);
+  const [smartAddAvailable, setSmartAddAvailable] = useState(false);
+
+  useEffect(() => {
+    isGeminiConfigured().then(setSmartAddAvailable);
+  }, []);
+
+  const handleSmartParsed = (data: any) => {
+    if (data.amount) setAmount(data.amount.toString());
+    if (data.date) setDate(data.date);
+    if (data.description) setDescription(data.description);
+    if (data.type) setType(data.type);
+
+    if (data.accountName) {
+        const acc = accounts.find(a => a.name.toLowerCase() === data.accountName.toLowerCase());
+        if (acc) setAccountId(acc.id);
+    }
+    
+    if (data.categoryName) {
+        // Try exact match first, then partial
+        const cat = categories.find(c => c.name.toLowerCase() === data.categoryName.toLowerCase()) ||
+                    categories.find(c => c.name.toLowerCase().includes(data.categoryName.toLowerCase()));
+        if (cat) {
+            setCategoryId(cat.id);
+            if (cat.type && cat.type !== data.type) setType(cat.type); // Trust category type over AI type if conflict? Or vice versa. AI usually right on context.
+        }
+    }
+
+    if (data.isSplit && data.splits) {
+        setIsSplit(true);
+        const mappedSplits = data.splits.map((s: any) => {
+            const splitCat = categories.find(c => c.name.toLowerCase() === (s.categoryName || '').toLowerCase());
+            return {
+                id: crypto.randomUUID(),
+                amount: s.amount,
+                categoryId: splitCat?.id || '',
+                note: s.note || ''
+            };
+        });
+        setSplits(mappedSplits);
+        setSplitTotal(data.amount);
+    }
+    
+    // Auto-hide smart add after successful parse to show populated form
+    setShowSmartAdd(false); 
+  };
+
   const handleDescriptionBlur = async () => {
     if (!description || categoryId) return; 
 
@@ -65,7 +115,10 @@ function TransactionModal({
         const res = await fetch('/api/suggest-category', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ description })
+            body: JSON.stringify({ 
+                description,
+                categories: categories.map(c => c.name) 
+            })
         });
         const data = await res.json();
         
@@ -165,7 +218,7 @@ function TransactionModal({
       accountId,
       categoryId: isSplit ? undefined : (categoryId || undefined),
       subCategoryId: isSplit ? undefined : (subCategoryId || undefined),
-      type,
+      type: type as any,
       description,
       budgetId: selectedEventId || undefined,
       isSplit,
@@ -223,6 +276,28 @@ function TransactionModal({
         
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
             <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+
+                {/* Smart Add Toggle */}
+                {!isEditMode && smartAddAvailable && (
+                    <div className="flex justify-end mb-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowSmartAdd(!showSmartAdd)}
+                            className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 hover:opacity-80 transition-opacity"
+                        >
+                            {showSmartAdd ? 'Hide Smart Add' : '✨ Use AI Smart Add'}
+                        </button>
+                    </div>
+                )}
+                
+                {showSmartAdd && (
+                    <SmartTransactionInput 
+                        onParsed={handleSmartParsed}
+                        categories={categories.map(c => c.name)}
+                        accounts={accounts.map(a => a.name)}
+                    />
+                )}
+
                 {/* ... Error ... */}
                 {error && (
                     <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">
