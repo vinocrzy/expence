@@ -28,6 +28,7 @@ import RecentActivity from '../../components/dashboard/RecentActivity';
 import TopCategories from '../../components/dashboard/TopCategories';
 import FinancialHealth from '../../components/dashboard/FinancialHealth';
 import BudgetWidget from '../../components/dashboard/BudgetWidget';
+import { InsightsWidget } from '../../components/dashboard/InsightsWidget';
 import TransactionModal from '../../components/TransactionModal';
 
 import LoadingScreen from '../../components/ui/LoadingScreen';
@@ -294,6 +295,8 @@ export default function DashboardPage() {
             
             {/* Right Column: Insights */}
             <div className="space-y-4 md:space-y-6">
+                <InsightsWidget />
+                
                 {/* Upcoming Payments Widget */}
                 {upcomingTxs.length > 0 && !isLoading && (
                     <div className="glass-panel p-5 rounded-3xl border border-white/5 space-y-4 bg-[#1c1c1e]">
