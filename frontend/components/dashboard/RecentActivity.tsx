@@ -73,6 +73,7 @@ export default function RecentActivity({ transactions, accountMap, categories, o
                           onDelete={() => {}} // Read only in dash
                           onEdit={onEdit} 
                           onTypeChange={onTypeChange}
+                          destinationAccount={transaction.type === 'TRANSFER' && transaction.transferAccountId ? accountMap[transaction.transferAccountId] : undefined}
                       />
                   );
               })}

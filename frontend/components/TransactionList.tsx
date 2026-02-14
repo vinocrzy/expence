@@ -42,6 +42,7 @@ export default function TransactionList({
     switch (type) {
       case 'INCOME': return <ArrowDownLeft className="h-5 w-5 text-green-400" />;
       case 'EXPENSE': return <ArrowUpRight className="h-5 w-5 text-red-400" />;
+      case 'TRANSFER': return <ArrowRightLeft className="h-5 w-5 text-blue-400" />;
       case 'INVESTMENT': return <ArrowUpRight className="h-5 w-5 text-amber-400" />; // Outflow typically
       case 'DEBT': return <ArrowUpRight className="h-5 w-5 text-purple-400" />; // Payment is outflow
       default: return <div className="h-5 w-5" />;
@@ -70,6 +71,7 @@ export default function TransactionList({
                         onEdit={onEdit}
                         onDelete={onDelete}
                         onTypeChange={onTypeChange}
+                        destinationAccount={t.type === 'TRANSFER' && t.transferAccountId ? accountMap[t.transferAccountId] : undefined}
                     />
                 </div>
 
@@ -112,7 +114,13 @@ export default function TransactionList({
                                                 <ChevronDown className={clsx("w-3 h-3 transition-transform", expandedSplits.has(t.id) && "rotate-180")} />
                                             </button>
                                         ) : (
-                                            categories.find(c => c.id === t.categoryId)?.name || 'Uncategorized'
+                                            t.type === 'TRANSFER' ? (
+                                                <span className="text-blue-400">
+                                                    Transfer to {t.transferAccountId ? accountMap[t.transferAccountId]?.name : 'Unknown Account'}
+                                                </span>
+                                            ) : (
+                                                categories.find(c => c.id === t.categoryId)?.name || 'Uncategorized'
+                                            )
                                         )}
                                     </span>
                                 </div>

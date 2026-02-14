@@ -32,6 +32,7 @@ export interface Transaction {
   _rev?: string;
   isSplit?: boolean;
   splits?: { id: string; amount: number; categoryId: string; note?: string }[];
+  transferAccountId?: string; // ID of the destination account for transfers
 }
 
 export interface Category {

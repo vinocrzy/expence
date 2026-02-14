@@ -345,6 +345,24 @@ export const transactionService = {
         console.error('Failed to update balance', err);
     }
 
+    // Handle Transfer Destination Account
+    if (data.type === 'TRANSFER' && data.transferAccountId) {
+        try {
+            const transferAccountDoc = await accountsDB.get(data.transferAccountId) as any;
+            const currentBalance = transferAccountDoc.balance || 0;
+            // Transfer adds to the destination account
+            const newBalance = currentBalance + data.amount;
+            
+            await accountsDB.put({
+                ...transferAccountDoc,
+                balance: newBalance,
+                updatedAt: now
+            });
+        } catch (err: any) {
+            console.error('Failed to update transfer account balance', err);
+        }
+    }
+
     const id = generateId();
     const transaction: Transaction = {
       ...data,
@@ -438,6 +456,48 @@ export const transactionService = {
         // ignore account update error?
     }
 
+    // Revert old transfer effect on destination account
+    if (oldTx.type === 'TRANSFER' && oldTx.transferAccountId) {
+        try {
+            const oldTransferAccountDoc = await accountsDB.get(oldTx.transferAccountId) as any;
+            if (oldTransferAccountDoc) {
+                const balance = oldTransferAccountDoc.balance || 0;
+                // Revert: Transfer added to dest, so revert means subtract
+                const newBalance = balance - oldTx.amount;
+                await accountsDB.put({
+                    ...oldTransferAccountDoc,
+                    balance: newBalance,
+                    updatedAt: now
+                });
+            }
+        } catch (err) {
+            console.error('Failed to revert old transfer account balance', err);
+        }
+    }
+
+    // Apply new transfer effect on destination account
+    const newType = data.type ?? oldTx.type;
+    const newAmount = data.amount ?? oldTx.amount;
+    const newTransferAccountId = data.transferAccountId ?? oldTx.transferAccountId;
+
+    if (newType === 'TRANSFER' && newTransferAccountId) {
+         try {
+            const transferAccountDoc = await accountsDB.get(newTransferAccountId) as any;
+            if (transferAccountDoc) {
+                const balance = transferAccountDoc.balance || 0;
+                // Apply: Transfer adds to dest
+                const newBalance = balance + newAmount;
+                await accountsDB.put({
+                    ...transferAccountDoc,
+                    balance: newBalance,
+                    updatedAt: now
+                });
+            }
+        } catch (err) {
+            console.error('Failed to apply new transfer account balance', err);
+        }
+    }
+
     const updatedDoc = { 
       ...oldTxDoc, 
       ...data, 
@@ -511,6 +571,25 @@ export const transactionService = {
         }
     } catch (err) {
         // ignore
+    }
+
+    // Revert transfer effect on destination account
+    if (tx.type === 'TRANSFER' && tx.transferAccountId) {
+        try {
+            const transferAccountDoc = await accountsDB.get(tx.transferAccountId) as any;
+            if (transferAccountDoc) {
+                const balance = transferAccountDoc.balance || 0;
+                // Revert: Transfer added to dest, so revert means subtract
+                const newBalance = balance - tx.amount;
+                await accountsDB.put({
+                    ...transferAccountDoc,
+                    balance: newBalance,
+                    updatedAt: new Date().toISOString()
+                });
+            }
+        } catch (err) {
+             console.error('Failed to revert transfer account balance on delete', err);
+        }
     }
 
     await transactionsDB.remove(txDoc);

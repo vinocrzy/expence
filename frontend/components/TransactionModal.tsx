@@ -41,6 +41,7 @@ function TransactionModal({
   const [description, setDescription] = useState('');
   
   const [subCategoryId, setSubCategoryId] = useState('');
+  const [transferAccountId, setTransferAccountId] = useState('');
   
   const [categories, setCategories] = useState<Category[]>([]);
   // const { addTransaction } = useTransactionMutations(); // removed
@@ -171,6 +172,7 @@ function TransactionModal({
             setAccountId(initialData.accountId);
             setCategoryId(initialData.categoryId || '');
             setSubCategoryId(initialData.subCategoryId || '');
+            setTransferAccountId(initialData.transferAccountId || '');
             setType(initialData.type);
             setDescription(initialData.description || '');
             setSelectedEventId(initialData.budgetId || '');
@@ -189,6 +191,7 @@ function TransactionModal({
             setAccountId('');
             setCategoryId('');
             setSubCategoryId('');
+            setTransferAccountId('');
             setType(initialType);
             setDescription('');
             setSelectedEventId('');
@@ -212,12 +215,26 @@ function TransactionModal({
         return;
     }
 
+    if (type === 'TRANSFER') {
+        if (!transferAccountId) {
+            setError('Please select a destination account');
+            setLoading(false);
+            return;
+        }
+        if (accountId === transferAccountId) {
+            setError('Source and destination accounts cannot be the same');
+            setLoading(false);
+            return;
+        }
+    }
+
     const transactionData = {
       amount: isSplit ? splitTotal : parseFloat(amount),
       date: new Date(date).toISOString(),
       accountId,
-      categoryId: isSplit ? undefined : (categoryId || undefined),
-      subCategoryId: isSplit ? undefined : (subCategoryId || undefined),
+      transferAccountId: type === 'TRANSFER' ? transferAccountId : undefined,
+      categoryId: (isSplit || type === 'TRANSFER') ? undefined : (categoryId || undefined),
+      subCategoryId: (isSplit || type === 'TRANSFER') ? undefined : (subCategoryId || undefined),
       type: type as any,
       description,
       budgetId: selectedEventId || undefined,
@@ -314,7 +331,7 @@ function TransactionModal({
                                 key={t}
                                 type="button"
                                 disabled={isEditMode}
-                                onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
+                                onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); setTransferAccountId(''); }}
                                 className={`py-3 text-sm font-bold rounded-xl transition-all shadow-sm ${
                                     type === t 
                                     ? (t === 'INCOME' ? 'bg-green-500/20 text-green-400 ring-1 ring-green-500/50' : 'bg-red-500/20 text-red-400 ring-1 ring-red-500/50')
@@ -333,7 +350,7 @@ function TransactionModal({
                                 key={t}
                                 type="button"
                                 disabled={isEditMode}
-                                onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
+                                onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); setTransferAccountId(''); }}
                                 className={`py-2 text-xs font-bold rounded-lg transition-all ${
                                     type === t 
                                     ? (t === 'INVESTMENT' ? 'bg-amber-500/20 text-amber-400' : t === 'DEBT' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400')
@@ -416,6 +433,8 @@ function TransactionModal({
                         </div>
                       </div>
 
+                    {/* Show Category/Subcategory only if NOT Transfer */ }
+                    {type !== 'TRANSFER' && (
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-300">Category</label>
                         <div className="flex flex-col sm:flex-row gap-2">
@@ -445,6 +464,7 @@ function TransactionModal({
                             )}
                         </div>
                       </div>
+                    )}
                     </>
                 )}
 
@@ -484,7 +504,9 @@ function TransactionModal({
               <div className="grid grid-cols-2 gap-4">
                  {/* ... Account & Date ... */}
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-300">Account</label>
+                    <label className="text-sm font-medium text-gray-300">
+                        {type === 'TRANSFER' ? 'From Account' : 'Account'}
+                    </label>
                     <select
                     value={accountId}
                     onChange={(e) => setAccountId(e.target.value)}
@@ -498,6 +520,24 @@ function TransactionModal({
                     ))}
                     </select>
                 </div>
+
+                {type === 'TRANSFER' && (
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">To Account</label>
+                        <select
+                        value={transferAccountId}
+                        onChange={(e) => setTransferAccountId(e.target.value)}
+                        className={`block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 ${isEditMode ? 'opacity-50 cursor-not-allowed bg-gray-800' : ''}`}
+                        required
+                        disabled={isEditMode}
+                        >
+                        <option value="" disabled>Select Destination</option>
+                        {accounts.filter(a => a.id !== accountId).map(acc => (
+                            <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>
+                        ))}
+                        </select>
+                    </div>
+                )}
                 
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-300">Date</label>

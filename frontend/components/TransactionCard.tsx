@@ -14,6 +14,7 @@ interface TransactionCardProps {
   categories: Category[]
   accountCurrency?: string
   onTypeChange?: (id: string, type: 'INVESTMENT' | 'DEBT') => void
+  destinationAccount?: any // Account to show for transfers
 }
 
 export function TransactionCard({
@@ -24,7 +25,8 @@ export function TransactionCard({
   onDelete,
   categories,
   accountCurrency,
-  onTypeChange
+  onTypeChange,
+  destinationAccount
 }: TransactionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -54,7 +56,9 @@ export function TransactionCard({
   }
 
   const isSplit = transaction.isSplit
-  const displayCategory = isSplit ? 'Split Transaction' : (category?.name || 'Uncategorized')
+  const displayCategory = transaction.type === 'TRANSFER' 
+    ? (destinationAccount ? `Transfer to ${destinationAccount.name}` : 'Transfer')
+    : (isSplit ? 'Split Transaction' : (category?.name || 'Uncategorized'));
   const currency = accountCurrency || account?.currency || '₹'
 
   return (
@@ -103,10 +107,10 @@ export function TransactionCard({
                     <span className="truncate">{account?.name || 'Unknown Account'}</span>
                     <span className="text-zinc-600">•</span>
                     <div className="flex items-center gap-1 truncate">
-                        {!isSplit && category?.color && (
+                        {!isSplit && category?.color && transaction.type !== 'TRANSFER' && (
                             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: category.color }} />
                         )}
-                        <span className={cn("truncate", isSplit && "text-indigo-400 font-medium")}>
+                        <span className={cn("truncate", isSplit && "text-indigo-400 font-medium", transaction.type === 'TRANSFER' && "text-blue-400")}>
                             {displayCategory}
                         </span>
                         {isSplit && <ChevronDown className={cn("h-3 w-3 text-indigo-400 transition-transform", isExpanded && "rotate-180")} />}
