@@ -75,7 +75,7 @@ export default function CreditCardDetailsPage({ params }: { params: Promise<{ id
               categoryId: '', 
               accountId: sourceAccountId, 
               date: date,
-              type: 'EXPENSE'
+                type: 'DEBT'
           });
           setPendingPaymentUpdate({ amount });
           setIsTransactionModalOpen(true);
