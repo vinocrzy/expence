@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../../components/Navbar';
+import NativeHeader from '../../../components/dashboard/NativeHeader';
 import PrepaymentModal from '../../../components/PrepaymentModal';
 import { loanService } from '../../../lib/localdb-services';
 import { 
@@ -11,16 +12,37 @@ import {
 import { 
     PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid 
 } from 'recharts';
+import PieChartDetailsList from '../../../components/dashboard/PieChartDetailsList';
+
+// Imports for payment
+import LoanPaymentModal from '../../../components/LoanPaymentModal';
+import TransactionModal from '../../../components/TransactionModal';
+import { useAccounts } from '../../../hooks/useLocalData';
+
+// Wrapper
+function TransactionModalWrapper(props: any) {
+    return <TransactionModal {...props} />;
+}
 
 export default function LoanDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
   const router = useRouter();
   
+  const { accounts } = useAccounts(); // For TransactionModal
+
   const [loan, setLoan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isPrepaymentOpen, setIsPrepaymentOpen] = useState(false);
   const [processingEmi, setProcessingEmi] = useState<number | null>(null);
+
+  // Payment Logic
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  
+  // Transaction Modal State
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [transactionInitialData, setTransactionInitialData] = useState<any>(null);
+  const [pendingPaymentUpdate, setPendingPaymentUpdate] = useState<{amount: number} | null>(null);
 
   useEffect(() => {
     fetchLoan();
@@ -67,26 +89,48 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
             totalAmount: emiAmount,
             principalComponent,
             interestComponent: interest,
-            status: i <= (loan.initialPaidEmis || 0) ? 'PAID' : 'PENDING'
+            status: i <= ((loan.initialPaidEmis || 0) + (loan.paidEmis || 0)) ? 'PAID' : 'PENDING'
         });
         outstanding -= principalComponent;
       }
       return emis;
   };
 
-  const handlePayEmi = async (emiNumber: number) => {
-    if (!confirm('Are you sure you want to pay this EMI? (Mock)')) return;
-    setProcessingEmi(emiNumber);
-    try {
-        // await api.post(`/loans/${id}/pay/${emiNumber}`, {});
-        // Update loan locally
-        await fetchLoan();
-    } catch (e) {
-        console.error(e);
-        alert('Failed to pay EMI');
-    } finally {
-        setProcessingEmi(null);
-    }
+  const handlePayEmi = (emiNumber?: number) => {
+      // If payment for specific EMI, we can use that data, but LoanPaymentModal is generic for now.
+      // We can improve LoanPaymentModal to accept pre-filled amount later if needed.
+      // For now, it defaults to loan.emiAmount which is what we want.
+      setPaymentModalOpen(true);
+  };
+  
+  const handlePayment = async (amount: number, recordTransaction: boolean, date: string) => {
+      setPaymentModalOpen(false);
+      
+      if (recordTransaction) {
+          // Open Transaction Modal
+          setTransactionInitialData({
+              amount: amount,
+              description: `EMI Payment for ${loan.name}`,
+              categoryId: '', 
+              accountId: loan.linkedAccountId || '',
+              date: date,
+              type: 'EXPENSE'
+          });
+          setPendingPaymentUpdate({ amount });
+          setIsTransactionModalOpen(true);
+      } else {
+          // Just update loan
+          await loanService.recordPayment(loan.id, amount);
+          await fetchLoan();
+      }
+  };
+  
+  const handleTransactionSuccess = async () => {
+      if (pendingPaymentUpdate) {
+          await loanService.recordPayment(loan.id, pendingPaymentUpdate.amount);
+          await fetchLoan();
+          setPendingPaymentUpdate(null);
+      }
   };
 
   const handlePrepayment = async (data: any) => {
@@ -135,11 +179,13 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
   const nextEmi = loan.emis.find((e: any) => e.status === 'PENDING');
   
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white pb-20">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-purple-500 selection:text-white pb-32 md:pb-8">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 md:pt-8 pb-8">
+        <NativeHeader title={loan.name} backUrl="/loans" />
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 hidden md:flex">
             <div>
                 <h1 className="text-3xl font-bold text-white flex items-center gap-3">
                     {loan.name}
@@ -167,26 +213,60 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                     <TrendingDown className="h-4 w-4 text-purple-400" />
                     Prepay
                 </button>
+                <button 
+                  onClick={() => handlePayEmi()}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl shadow-lg shadow-purple-500/25 transition-all font-bold flex items-center gap-2"
+                >
+                    <CheckCircle className="h-4 w-4" />
+                    Pay EMI
+                </button>
             </div>
         </div>
 
+        {/* Mobile Actions (Visible only on mobile) */}
+        <div className="grid grid-cols-3 gap-3 mb-6 md:hidden">
+             <button 
+                  onClick={() => handlePayEmi()}
+                  className="col-span-3 py-3 bg-purple-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2"
+            >
+                <CheckCircle className="h-5 w-5" /> Pay EMI
+            </button>
+            <button 
+                  onClick={() => setIsPrepaymentOpen(true)}
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-white rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+            >
+                <TrendingDown className="h-5 w-5 text-purple-400" /> Prepay
+            </button>
+             <button 
+                  onClick={handleDelete}
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-red-400 rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+            >
+                <Trash2 className="h-5 w-5" /> Delete
+            </button>
+             <button 
+                  className="py-3 bg-[#1c1c1e] border border-white/10 text-gray-400 rounded-2xl font-medium flex flex-col items-center justify-center gap-1 text-xs"
+            >
+                <RefreshCw className="h-5 w-5" /> Refresh
+            </button>
+        </div>
+
         {/* Top Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Outstanding Balance</div>
                 <div className="text-2xl font-bold text-white">₹ {Number(loan.outstandingPrincipal).toLocaleString()}</div>
                 <div className="text-xs text-gray-500 mt-2">
                     of ₹ {Number(loan.principal).toLocaleString()} Principal
                 </div>
             </div>
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+             <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Interest Rate</div>
                 <div className="text-2xl font-bold text-white mb-2">{loan.interestRate}%</div>
                 <div className="inline-block bg-purple-500/10 text-purple-400 text-xs px-2 py-1 rounded-md font-medium border border-purple-500/20">
                     {loan.interestType}
                 </div>
             </div>
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+             <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Next EMI</div>
                 {nextEmi ? (
                      <>
@@ -201,7 +281,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                     </div>
                 )}
             </div>
-             <div className="bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
+             <div className="bg-[#1c1c1e] border border-white/5 p-6 rounded-3xl shadow-lg">
                 <div className="text-gray-400 text-sm font-medium mb-1">Progress</div>
                 <div className="text-2xl font-bold text-white">
                     {Math.round(((Number(loan.principal) - Number(loan.outstandingPrincipal)) / Number(loan.principal)) * 100)}%
@@ -228,7 +308,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                                 cy="50%"
                                 innerRadius={60}
                                 outerRadius={80}
-                                paddingAngle={5}
+                                paddingAngle={4}
                                 dataKey="value"
                             >
                                 {pieData.map((entry, index) => (
@@ -236,7 +316,7 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                                 ))}
                             </Pie>
                             <Tooltip 
-                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff', borderRadius: '12px' }}
+                                contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px', fontSize: '12px' }}
                                 itemStyle={{ color: '#fff' }}
                                 formatter={(value: any, name: any) => [`₹ ${Math.round(Number(value || 0)).toLocaleString()}`, name]}
                             />
@@ -244,60 +324,97 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
                         </PieChart>
                     </ResponsiveContainer>
                 </div>
+                <PieChartDetailsList data={pieData} />
             </div>
             
             {/* Recent Prepayments */}
             <div className="lg:col-span-2 bg-gray-800 border border-gray-700/50 p-6 rounded-2xl shadow-lg">
                 <h3 className="text-lg font-bold text-white mb-4">Loan Timeline & Schedule</h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="text-xs text-gray-400 uppercase border-b border-gray-700">
-                                <th className="px-4 py-3">#</th>
-                                <th className="px-4 py-3">Due Date</th>
-                                <th className="px-4 py-3">Total</th>
-                                <th className="px-4 py-3 hidden sm:table-cell">Principal</th>
-                                <th className="px-4 py-3 hidden sm:table-cell">Interest</th>
-                                <th className="px-4 py-3">Status</th>
-                                <th className="px-4 py-3">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-700/50">
-                            {loan.emis.map((emi: any) => (
-                                <tr key={emi.id} className={`hover:bg-gray-700/20 transition-colors ${
-                                    emi.id === nextEmi?.id ? 'bg-purple-900/10' : ''
-                                }`}>
-                                    <td className="px-4 py-3 text-sm font-mono text-gray-500">{emi.emiNumber}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-300">{new Date(emi.dueDate).toLocaleDateString()}</td>
-                                    <td className="px-4 py-3 text-sm font-bold text-white">₹{Number(emi.totalAmount).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-400 hidden sm:table-cell">₹{Number(emi.principalComponent).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                    <td className="px-4 py-3 text-sm text-red-400 hidden sm:table-cell">₹{Number(emi.interestComponent).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                                    <td className="px-4 py-3">
-                                        {emi.status === 'PAID' ? (
-                                            <span className="inline-flex items-center gap-1 text-xs font-bold text-green-400 bg-green-900/20 px-2 py-1 rounded">
-                                                <CheckCircle className="h-3 w-3" /> Paid
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1 text-xs font-bold text-orange-400 bg-orange-900/20 px-2 py-1 rounded">
-                                                <AlertCircle className="h-3 w-3" /> Pending
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3">
+                <div className="space-y-3">
+                    {loan.emis.map((emi: any) => {
+                        const isNext = emi.id === nextEmi?.id;
+                        const isPaid = emi.status === 'PAID';
+                        
+                        return (
+                            <div 
+                                key={emi.id} 
+                                className={`p-4 rounded-2xl border transition-all ${
+                                    isNext 
+                                        ? 'bg-purple-900/10 border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.1)]' 
+                                        : 'bg-black/20 border-white/5 hover:bg-white/5'
+                                }`}
+                            >
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    {/* Left: Info */}
+                                    <div className="flex items-start gap-4">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm border ${
+                                            isPaid 
+                                                ? 'bg-green-500/10 border-green-500/20 text-green-400' 
+                                                : isNext
+                                                    ? 'bg-purple-500/10 border-purple-500/20 text-purple-400'
+                                                    : 'bg-gray-800 border-gray-700 text-gray-400'
+                                        }`}>
+                                            {emi.emiNumber}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="font-bold text-white text-sm">
+                                                    {new Date(emi.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </span>
+                                                {isPaid ? (
+                                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20">PAID</span>
+                                                ) : isNext ? (
+                                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">NEXT DUE</span>
+                                                ) : (
+                                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-700 text-gray-400 border border-gray-600">PENDING</span>
+                                                )}
+                                            </div>
+                                            <div className="text-xs text-gray-500 flex items-center gap-3">
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                                    Prin: ₹{Number(emi.principalComponent).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                     <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                                    Int: ₹{Number(emi.interestComponent).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Right: Amount & Action */}
+                                    <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pl-[3.5rem] sm:pl-0">
+                                        <div className="text-right">
+                                            <div className="font-mono font-bold text-white text-lg">
+                                                ₹{Number(emi.totalAmount).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                            </div>
+                                        </div>
+                                        
                                         {emi.status === 'PENDING' && (
                                             <button
                                                 onClick={() => handlePayEmi(emi.emiNumber)}
                                                 disabled={processingEmi === emi.emiNumber || (nextEmi && emi.emiNumber !== nextEmi.emiNumber)}
-                                                className="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                                                    processingEmi === emi.emiNumber 
+                                                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                                        : isNext
+                                                            ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/25'
+                                                            : 'bg-gray-800 hover:bg-gray-700 text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed'
+                                                }`}
                                             >
-                                                {processingEmi === emi.emiNumber ? 'Paying...' : 'Pay'}
+                                                {processingEmi === emi.emiNumber ? '...' : 'Pay'}
                                             </button>
                                         )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                        {emi.status === 'PAID' && (
+                                            <div className="w-8 h-8 flex items-center justify-center rounded-full bg-green-500/10 text-green-400">
+                                                <CheckCircle className="w-5 h-5" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
@@ -308,6 +425,23 @@ export default function LoanDetailsPage({ params }: { params: Promise<{ id: stri
             onSubmit={handlePrepayment}
             maxAmount={Number(loan.outstandingPrincipal)}
         />
+        
+        <LoanPaymentModal
+            isOpen={paymentModalOpen}
+            onClose={() => setPaymentModalOpen(false)}
+            loan={loan}
+            onPayment={handlePayment}
+        />
+        
+        {isTransactionModalOpen && (
+             <TransactionModalWrapper 
+                isOpen={isTransactionModalOpen}
+                onClose={() => setIsTransactionModalOpen(false)}
+                initialData={transactionInitialData}
+                onSuccess={handleTransactionSuccess}
+                accounts={accounts}
+             />
+        )}
       </main>
     </div>
   );

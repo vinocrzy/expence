@@ -6,6 +6,8 @@ export interface Account {
   currency: string;
   isArchived?: boolean;
   householdId: string;
+  userId?: string; // ID of the user who owns/created this account
+  createdByName?: string; // Name of the creator
   createdAt?: string;
   updatedAt?: string;
   _rev?: string; // PouchDB revision
@@ -15,28 +17,48 @@ export interface Account {
 export interface Transaction {
   id: string;
   amount: number;
-  type: string; // INCOME, EXPENSE, TRANSFER
+  type: 'INCOME' | 'EXPENSE' | 'TRANSFER' | 'INVESTMENT' | 'DEBT';
   description?: string;
   date: string;
   categoryId?: string;
+  subCategoryId?: string; // New: Sub-category ID
   accountId: string;
+  householdId: string;
+  userId?: string; // ID of the user who made the transaction
+  createdByName?: string; // Name of the user
+  userColor?: string; // Visual indicator for the user
+  createdAt?: string;
+  updatedAt?: string;
+  _rev?: string;
+  isSplit?: boolean;
+  splits?: { id: string; amount: number; categoryId: string; note?: string }[];
+  transferAccountId?: string; // ID of the destination account for transfers
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  type?: 'INCOME' | 'EXPENSE' | 'INVESTMENT' | 'DEBT';
+  icon?: string;
+  color?: string;
+  subCategories?: { id: string; name: string }[]; // New: Sub-categories
+  isActive?: boolean; // Default true
   householdId: string;
   createdAt?: string;
   updatedAt?: string;
   _rev?: string;
 }
 
-export interface Category {
+export interface CreditCardStatement {
   id: string;
-  name: string;
-  type?: string; // INCOME, EXPENSE
-  icon?: string;
-  color?: string;
-  isActive?: boolean; // Default true
-  householdId: string;
-  createdAt?: string;
-  updatedAt?: string;
-  _rev?: string;
+  statementDate: string;
+  cycleStart: string;
+  cycleEnd: string;
+  dueDate: string;
+  closingBalance: number;
+  minimumDue: number;
+  totalPayments: number;
+  status: 'PAID' | 'UNPAID' | 'OVERDUE' | 'PARTIAL';
 }
 
 export interface CreditCard {
@@ -49,6 +71,7 @@ export interface CreditCard {
   creditLimit?: number;
   currentOutstanding?: number;
   apr?: number;
+  statements?: CreditCardStatement[];
   isArchived?: boolean;
   householdId: string;
   createdAt?: string;
@@ -66,6 +89,7 @@ export interface Loan {
   tenureMonths: number;
   startDate: string;
   initialPaidEmis?: number;
+  paidEmis?: number; // Number of EMIs paid via app
   emiAmount?: number;
   outstandingPrincipal: number;
   status?: 'ACTIVE' | 'CLOSED';
@@ -85,10 +109,17 @@ export interface BudgetPlanItem {
   totalAmount?: number;
 }
 
+export interface BudgetCategoryLimit {
+  categoryId: string;
+  amount: number;
+}
+
 export interface Budget {
   id: string;
   name: string;
-  budgetMode?: string;
+  budgetMode?: 'EVENT' | 'RECURRING' | 'CATEGORY';
+  categoryId?: string; // Legacy/Single Mode
+  budgetLimitConfig?: BudgetCategoryLimit[]; // New Multi-Category Mode
   period?: string;
   startDate?: string;
   endDate?: string;
@@ -145,4 +176,26 @@ export interface SharedBudget {
     name: string;
     totalBudget: number;
     totalSpent: number;
+}
+
+export interface RecurringTransaction {
+  id: string;
+  name: string; // "LIC Policy", "Car Loan EMI"
+  amount: number;
+  type: 'EXPENSE' | 'INVESTMENT' | 'DEBT' | 'INCOME' | 'TRANSFER'; // Added INCOME/TRANSFER for flexibility
+  frequency: 'MONTHLY' | 'YEARLY' | 'QUARTERLY' | 'WEEKLY' | 'DAILY';
+  startDate: string;
+  nextDueDate: string;
+  categoryId?: string;
+  accountId?: string; // Source account to debit from
+  autoPay?: boolean; // If true, system might auto-create tx (future feature)
+  status?: 'ACTIVE' | 'PAUSED' | 'COMPLETED';
+  description?: string;
+  lastPaidDate?: string;
+  householdId: string;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  _rev?: string;
+  _id?: string;
 }

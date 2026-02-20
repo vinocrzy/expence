@@ -1,12 +1,15 @@
 export type ReportType = 
   | 'EXPENSE' 
   | 'INCOME' 
+  | 'INVESTMENT'
+  | 'DEBT'
   | 'ACCOUNT_SUMMARY' 
   | 'LOAN' 
   | 'CREDIT_CARD' 
   | 'BUDGET_VS_ACTUAL' 
   | 'TRIP_EVENT' 
-  | 'YEARLY_SUMMARY';
+  | 'YEARLY_SUMMARY'
+  | 'CONSOLIDATED';
 
 export type ReportFormat = 'EXCEL' | 'PDF';
 
@@ -65,6 +68,15 @@ export interface YearlySummaryData {
   savings: number;
 }
 
+export interface ConsolidatedAccountSummary {
+  accountId: string;
+  accountName: string;
+  openingBalance: number;
+  income: number;
+  expense: number;
+  closingBalance: number;
+}
+
 export interface ReportData {
   title: string;
   subtitle?: string;
@@ -73,4 +85,7 @@ export interface ReportData {
   rows: (string | number)[][];
   summary?: Record<string, string | number>;
   categoryBreakdown?: Record<string, number>;
+  investmentBreakdown?: Record<string, number>;
+  debtBreakdown?: Record<string, number>;
+  consolidatedSummary?: ConsolidatedAccountSummary[];
 }

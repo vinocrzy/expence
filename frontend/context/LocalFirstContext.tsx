@@ -25,6 +25,8 @@ export function useLocalFirst() {
 
 import { useHouseholdPublisher } from '@/hooks/useHouseholdPublisher';
 
+import LoadingScreen from '@/components/ui/LoadingScreen';
+
 export function LocalFirstProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
   const { getToken, user, loading } = useAuth(); // Custom AuthContext
@@ -98,14 +100,7 @@ export function LocalFirstProvider({ children }: { children: ReactNode }) {
   
   // Show loading while checking
   if (!isReady && user) { // Only show loading if we have a user and expect to init
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Initializing local database...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (

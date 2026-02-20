@@ -61,7 +61,7 @@ export const accountService = {
       }
     });
     
-    return result.docs as unknown as Account[];
+    return result.docs.filter((doc: any) => doc._id !== 'household_metadata') as unknown as Account[];
   },
 
   async getAllActive(householdId: string): Promise<Account[]> {
@@ -72,7 +72,7 @@ export const accountService = {
       }
     });
     
-    return result.docs as unknown as Account[];
+    return result.docs.filter((doc: any) => doc._id !== 'household_metadata') as unknown as Account[];
   },
 
   async getById(id: string): Promise<Account | undefined> {
@@ -81,12 +81,15 @@ export const accountService = {
 
   async create(data: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<Account> {
     const householdId = await getHouseholdId();
+    const user = getCurrentUser();
     const now = new Date().toISOString();
     const id = generateId();
     const account: Account = {
       ...data,
       id,
       householdId,
+      userId: user?.id,
+      createdByName: user?.name,
       createdAt: now,
       updatedAt: now,
     };
@@ -222,7 +225,8 @@ export const transactionService = {
         householdId: { $eq: householdId },
         date: { $gt: null }
       },
-      sort: [{ date: 'desc' }]
+      sort: [{ date: 'desc' }],
+      limit: 10000
     });
     return result.docs as unknown as Transaction[];
   },
@@ -243,7 +247,8 @@ export const transactionService = {
           $lte: endStr
         }
       },
-      sort: [{ date: 'desc' }]
+      sort: [{ date: 'desc' }],
+      limit: 10000
     });
     return result.docs as unknown as Transaction[];
   },
@@ -259,7 +264,8 @@ export const transactionService = {
         date: { $gt: null } // Trick to use date index if compound? 
                             // Actually PouchDB requires 'date' in selector to sort by 'date'.
       },
-      sort: [{ date: 'desc' }] // This requires an index on date.
+      sort: [{ date: 'desc' }], // This requires an index on date.
+      limit: 10000
     });
     // Fallback sort if needed, but let's try relying on PouchDB first.
     // Actually, PouchDB find implementation often requires all sort fields to be in selector.
@@ -274,7 +280,8 @@ export const transactionService = {
     const result = await transactionsDB.find({
       selector: {
         categoryId: { $eq: categoryId }
-      }
+      },
+      limit: 10000
     });
     return (result.docs as unknown as Transaction[]).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   },
@@ -285,6 +292,7 @@ export const transactionService = {
 
   async create(data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<Transaction> {
     const householdId = await getHouseholdId();
+    const user = getCurrentUser();
     const now = new Date().toISOString();
     
     // Update account balance
@@ -297,7 +305,7 @@ export const transactionService = {
             const currentBalance = accountDoc.balance || 0;
             const newBalance = data.type === 'INCOME' 
                 ? currentBalance + data.amount
-                : currentBalance - data.amount;
+                : currentBalance - data.amount; // EXPENSE, TRANSFER, DEBT, INVESTMENT all decrease balance
             
             await accountsDB.put({
                 ...accountDoc,
@@ -314,7 +322,7 @@ export const transactionService = {
                      const currentOutstanding = Number(ccDoc.currentOutstanding || 0);
                      console.log('Current Outstanding:', currentOutstanding);
 
-                     const newOutstanding = data.type === 'EXPENSE'
+                     const newOutstanding = (data.type === 'EXPENSE' || data.type === 'DEBT')
                         ? currentOutstanding + Number(data.amount)
                         : currentOutstanding - Number(data.amount);
                      
@@ -337,11 +345,32 @@ export const transactionService = {
         console.error('Failed to update balance', err);
     }
 
+    // Handle Transfer Destination Account
+    if (data.type === 'TRANSFER' && data.transferAccountId) {
+        try {
+            const transferAccountDoc = await accountsDB.get(data.transferAccountId) as any;
+            const currentBalance = transferAccountDoc.balance || 0;
+            // Transfer adds to the destination account
+            const newBalance = currentBalance + data.amount;
+            
+            await accountsDB.put({
+                ...transferAccountDoc,
+                balance: newBalance,
+                updatedAt: now
+            });
+        } catch (err: any) {
+            console.error('Failed to update transfer account balance', err);
+        }
+    }
+
     const id = generateId();
     const transaction: Transaction = {
       ...data,
       id,
       householdId,
+      userId: user?.id,
+      createdByName: user?.name,
+      userColor: user?.color,
       createdAt: now,
       updatedAt: now
     };
@@ -349,6 +378,16 @@ export const transactionService = {
     const docToSave = { ...transaction, _id: id };
     const response = await transactionsDB.put(docToSave);
     return { ...transaction, _rev: response.rev };
+  },
+
+  async saveSplitTransaction(data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<Transaction> {
+    if (data.isSplit && data.splits && data.splits.length > 0) {
+        const totalSplits = data.splits.reduce((sum, split) => sum + split.amount, 0);
+        if (Math.abs(totalSplits - data.amount) > 0.01) {
+            throw new Error(`Split amount mismatch. Total: ${data.amount}, Splits: ${totalSplits}`);
+        }
+    }
+    return this.create(data);
   },
 
   async update(id: string, data: Partial<Transaction>): Promise<Transaction> {
@@ -400,7 +439,7 @@ export const transactionService = {
                          const newAmount = data.amount ?? oldTx.amount;
                          const newType = data.type ?? oldTx.type;
                          
-                         outstanding = newType === 'EXPENSE'
+                         outstanding = newType === 'EXPENSE' || newType === 'DEBT'
                             ? outstanding + newAmount
                             : outstanding - newAmount;
 
@@ -417,6 +456,48 @@ export const transactionService = {
         // ignore account update error?
     }
 
+    // Revert old transfer effect on destination account
+    if (oldTx.type === 'TRANSFER' && oldTx.transferAccountId) {
+        try {
+            const oldTransferAccountDoc = await accountsDB.get(oldTx.transferAccountId) as any;
+            if (oldTransferAccountDoc) {
+                const balance = oldTransferAccountDoc.balance || 0;
+                // Revert: Transfer added to dest, so revert means subtract
+                const newBalance = balance - oldTx.amount;
+                await accountsDB.put({
+                    ...oldTransferAccountDoc,
+                    balance: newBalance,
+                    updatedAt: now
+                });
+            }
+        } catch (err) {
+            console.error('Failed to revert old transfer account balance', err);
+        }
+    }
+
+    // Apply new transfer effect on destination account
+    const newType = data.type ?? oldTx.type;
+    const newAmount = data.amount ?? oldTx.amount;
+    const newTransferAccountId = data.transferAccountId ?? oldTx.transferAccountId;
+
+    if (newType === 'TRANSFER' && newTransferAccountId) {
+         try {
+            const transferAccountDoc = await accountsDB.get(newTransferAccountId) as any;
+            if (transferAccountDoc) {
+                const balance = transferAccountDoc.balance || 0;
+                // Apply: Transfer adds to dest
+                const newBalance = balance + newAmount;
+                await accountsDB.put({
+                    ...transferAccountDoc,
+                    balance: newBalance,
+                    updatedAt: now
+                });
+            }
+        } catch (err) {
+            console.error('Failed to apply new transfer account balance', err);
+        }
+    }
+
     const updatedDoc = { 
       ...oldTxDoc, 
       ...data, 
@@ -427,6 +508,26 @@ export const transactionService = {
     };
     const response = await transactionsDB.put(updatedDoc);
     return { ...updatedDoc, _rev: response.rev } as Transaction;
+  },
+
+  async bulkUpdate(ids: string[], data: Partial<Transaction>): Promise<void> {
+    const now = new Date().toISOString();
+    const docs = await Promise.all(ids.map(id => transactionsDB.get(id)));
+    
+    // Check if we need to update account balances (only if amount/type changed - unlikely for bulk edit category)
+    // For now assuming bulk edit is mostly for categories/descriptions/dates which don't affect balance.
+    // If we allow bulk moving accounts, we need complex logic.
+    // Let's restrict bulk update to non-financial fields for now safely.
+    
+    const updatedDocs = docs.map((doc: any) => ({
+        ...doc,
+        ...data,
+        updatedAt: now,
+        _id: doc._id,
+        _rev: doc._rev
+    }));
+
+    await transactionsDB.bulkDocs(updatedDocs);
   },
 
   async delete(id: string): Promise<void> {
@@ -472,6 +573,25 @@ export const transactionService = {
         // ignore
     }
 
+    // Revert transfer effect on destination account
+    if (tx.type === 'TRANSFER' && tx.transferAccountId) {
+        try {
+            const transferAccountDoc = await accountsDB.get(tx.transferAccountId) as any;
+            if (transferAccountDoc) {
+                const balance = transferAccountDoc.balance || 0;
+                // Revert: Transfer added to dest, so revert means subtract
+                const newBalance = balance - tx.amount;
+                await accountsDB.put({
+                    ...transferAccountDoc,
+                    balance: newBalance,
+                    updatedAt: new Date().toISOString()
+                });
+            }
+        } catch (err) {
+             console.error('Failed to revert transfer account balance on delete', err);
+        }
+    }
+
     await transactionsDB.remove(txDoc);
   },
 
@@ -486,6 +606,13 @@ export const transactionService = {
     const transactions = await this.getByDateRange(householdId, startDate, endDate);
     return transactions
       .filter(t => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + t.amount, 0);
+  },
+
+  async getTotalInvestments(householdId: string, startDate: Date, endDate: Date): Promise<number> {
+    const transactions = await this.getByDateRange(householdId, startDate, endDate);
+    return transactions
+      .filter(t => t.type === 'INVESTMENT')
       .reduce((sum, t) => sum + t.amount, 0);
   },
 };
@@ -550,12 +677,108 @@ export const creditCardService = {
     return this.update(id, { isArchived: true });
   },
 
+  async generateStatement(creditCardId: string): Promise<void> {
+    const card = await this.getById(creditCardId);
+    if (!card) throw new Error('Card not found');
+
+    const billingDay = card.billingCycle || 1;
+    const dueDay = card.paymentDueDay || 5;
+
+    const now = new Date();
+    // Default to generating for the LAST finished cycle
+    // If today is 5th, and billing day is 1st, we generate for cycle ending 1st.
+    // Cycle runs from Previous Month (billingDay) to This Month (billingDay - 1).
+    
+    // Simplification: We generate statement for the immediate past cycle.
+    let cycleEndDetails = new Date();
+    cycleEndDetails.setDate(billingDay - 1); // End of cycle date
+    if (now.getDate() < billingDay) {
+        cycleEndDetails.setMonth(cycleEndDetails.getMonth() - 1);
+    }
+    // ensure clear time
+    cycleEndDetails.setHours(23, 59, 59, 999);
+
+    let cycleStartDetails = new Date(cycleEndDetails);
+    cycleStartDetails.setMonth(cycleStartDetails.getMonth() - 1);
+    cycleStartDetails.setDate(billingDay);
+    cycleStartDetails.setHours(0, 0, 0, 0);
+
+    // Filter transactions
+    const txs = await transactionService.getByAccount(creditCardId);
+    
+    // Calculate stats in this range
+    const cycleTxs = txs.filter(t => {
+        const d = new Date(t.date);
+        return d >= cycleStartDetails && d <= cycleEndDetails;
+    });
+
+    const expenses = cycleTxs
+        .filter(t => t.type === 'EXPENSE')
+        .reduce((sum, t) => sum + t.amount, 0);
+    
+    const payments = cycleTxs
+        .filter(t => t.type === 'INCOME')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    // Closing balance = Previous Balance? For now, let's assume sum of cycle expenses for simplicity or if we track running balance properly.
+    // If we want running balance of that day:
+    // Ideally we should look at previous statement closing balance + new expenses - new payments.
+    // For first statement, it's just expenses - payments.
+    
+    // Check if statement already exists
+    const existing = (card.statements || []).find(s => 
+        new Date(s.cycleEnd).toDateString() === cycleEndDetails.toDateString()
+    );
+    if (existing) {
+        // Update existing? Or skip.
+        console.log('Statement already exists for this cycle.');
+        return;
+    }
+
+    const previousStatement = (card.statements || [])[0]; // Assuming sorted desc
+    const prevBalance = previousStatement ? previousStatement.closingBalance : 0;
+    
+    const closingBalance = prevBalance + expenses - payments;
+    const minimumDue = Math.round(closingBalance * 0.05); // 5% min due
+
+    // Due Date: usually X days after cycle end
+    const dueDate = new Date(cycleEndDetails);
+    dueDate.setDate(dueDate.getDate() + 20); // 20 day grace period
+
+    const newStatement: any = { // Using any cast to avoid import loop for type if defined elsewhere or strict check
+        id: uuidv4(),
+        statementDate: new Date().toISOString(),
+        cycleStart: cycleStartDetails.toISOString(),
+        cycleEnd: cycleEndDetails.toISOString(),
+        dueDate: dueDate.toISOString(),
+        closingBalance: Math.max(0, closingBalance),
+        minimumDue: Math.max(0, minimumDue),
+        totalPayments: 0, // Payments made AFTER statement generation towards this bill
+        status: closingBalance <= 0 ? 'PAID' : 'UNPAID'
+    };
+
+    const updatedStatements = [newStatement, ...(card.statements || [])];
+    
+    await this.update(creditCardId, { statements: updatedStatements });
+  },
+
   async calculateOutstanding(creditCardId: string): Promise<number> {
     return 0; // Placeholder
   },
 
   async updateOutstanding(creditCardId: string): Promise<void> {
     // Placeholder
+  },
+
+  async recordPayment(id: string, amount: number): Promise<void> {
+    const card = await this.getById(id);
+    if (!card) throw new Error('Card not found');
+
+    const updatedOutstanding = (card.currentOutstanding || 0) - amount;
+
+    await this.update(id, {
+        currentOutstanding: Math.max(0, updatedOutstanding)
+    });
   },
 };
 
@@ -645,8 +868,136 @@ export const loanService = {
     const emi = principal * monthlyRate * Math.pow(1 + monthlyRate, tenureMonths) / 
                 (Math.pow(1 + monthlyRate, tenureMonths) - 1);
     return Math.round(emi * 100) / 100;
+  },
+
+  async recordPayment(id: string, amount: number): Promise<void> {
+    const loan = await this.getById(id);
+    if (!loan) throw new Error('Loan not found');
+
+    const updatedOutstanding = (loan.outstandingPrincipal || 0) - amount;
+    // Check if fully paid? Optionally update status.
+    const newStatus = updatedOutstanding <= 0 ? 'CLOSED' : loan.status || 'ACTIVE';
+    
+    const normalizedPaidEmis = (loan.paidEmis || 0) + 1;
+
+    await this.update(id, {
+        outstandingPrincipal: Math.max(0, updatedOutstanding),
+        paidEmis: normalizedPaidEmis,
+        status: newStatus
+    });
+  },
+};
+
+// ============================================
+// RECURRING / SUBSCRIPTION OPERATIONS
+// ============================================
+import { recurringDB } from './pouchdb';
+import { RecurringTransaction } from './db-types';
+
+export const recurringService = {
+  async getAll(householdId: string): Promise<RecurringTransaction[]> {
+    const result = await recurringDB.find({
+        selector: { householdId: { $eq: householdId } }
+    });
+    return result.docs as unknown as RecurringTransaction[];
+  },
+
+  async getAllActive(householdId: string): Promise<RecurringTransaction[]> {
+      const result = await recurringDB.find({
+          selector: { 
+              householdId: { $eq: householdId },
+              status: { $eq: 'ACTIVE' }
+          }
+      });
+      return result.docs as unknown as RecurringTransaction[];
+  },
+
+  async getUpcoming(householdId: string, daysIdx: number = 30): Promise<RecurringTransaction[]> {
+      const result = await recurringDB.find({
+          selector: { 
+              householdId: { $eq: householdId },
+              status: { $eq: 'ACTIVE' },
+              nextDueDate: { $gt: new Date().toISOString() }, // Future dates
+              // ideal query would be range: now to now+30 days. PouchDB selectors are tricky with ranges sometimes.
+              // Let's fetch all active and filter in memory for complex date math if index isn't perfect
+          }
+      });
+      const allActive = result.docs as unknown as RecurringTransaction[];
+      
+      const now = new Date();
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() + daysIdx);
+
+      return allActive.filter(r => {
+          const d = new Date(r.nextDueDate);
+          return d >= now && d <= limitDate;
+      }).sort((a,b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime());
+  },
+
+  async create(data: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt' | 'householdId'>): Promise<RecurringTransaction> {
+      const householdId = await getHouseholdId();
+      const now = new Date().toISOString();
+      const id = generateId();
+      
+      const recurring: RecurringTransaction = {
+          ...data,
+          id,
+          householdId,
+          status: 'ACTIVE',
+          createdAt: now,
+          updatedAt: now
+      };
+      const docToSave = { ...recurring, _id: id };
+      const response = await recurringDB.put(docToSave);
+      return { ...recurring, _rev: response.rev };
+  },
+
+  async update(id: string, data: Partial<RecurringTransaction>): Promise<RecurringTransaction> {
+      const doc = await recurringDB.get(id) as any;
+      const updated = { ...doc, ...data, updatedAt: new Date().toISOString(), _id: id, _rev: doc._rev };
+      const response = await recurringDB.put(updated);
+      return { ...updated, _rev: response.rev };
+  },
+
+  async delete(id: string): Promise<void> {
+      try { await recurringDB.remove(await recurringDB.get(id)); } catch(e) {}
+  },
+
+  // Mark as Paid: Create actual transaction and update next due date
+  async processPayment(id: string, accountId: string, actualDate: string = new Date().toISOString()): Promise<void> {
+      const recurring = await recurringDB.get(id) as unknown as RecurringTransaction;
+      if (!recurring) throw new Error('Recurring item not found');
+
+      // 1. Create the actual transaction
+      await transactionService.create({
+          amount: recurring.amount, // User can override in UI if needed, but this is quick action
+          type: recurring.type,
+          description: `Recurring: ${recurring.name}`,
+          date: actualDate,
+          categoryId: recurring.categoryId,
+          accountId: accountId || recurring.accountId || '', // Use selected account or default
+          householdId: recurring.householdId // redundant for create but needed for type omit? create handles householdId normally
+          // wait, create omits householdId.
+      } as any); 
+
+      // 2. Update Next Due Date
+      const currentDue = new Date(recurring.nextDueDate);
+      let nextDue = new Date(currentDue);
+
+      switch(recurring.frequency) {
+          case 'MONTHLY': nextDue.setMonth(nextDue.getMonth() + 1); break;
+          case 'QUARTERLY': nextDue.setMonth(nextDue.getMonth() + 3); break;
+          case 'YEARLY': nextDue.setFullYear(nextDue.getFullYear() + 1); break;
+          case 'WEEKLY': nextDue.setDate(nextDue.getDate() + 7); break; 
+      }
+
+      await this.update(id, {
+          lastPaidDate: actualDate,
+          nextDueDate: nextDue.toISOString()
+      });
   }
 };
+
 
 // ============================================
 // BUDGET OPERATIONS
@@ -760,9 +1111,14 @@ export const budgetPlanItemService = {
 // Mutable state to store the current household ID
 // This must be set by the application (e.g. via AuthContext/LocalFirstContext) before using services
 let currentHouseholdId: string | null = null;
+let currentUser: { id: string, name: string, color?: string } | null = null;
 
 export const setHouseholdId = (id: string | null) => {
     currentHouseholdId = id;
+};
+
+export const setCurrentUser = (user: { id: string, name: string, color?: string } | null) => {
+    currentUser = user;
 };
 
 export const getHouseholdId = async (): Promise<string> => {
@@ -775,6 +1131,8 @@ export const getHouseholdId = async (): Promise<string> => {
     }
     return currentHouseholdId;
 };
+
+export const getCurrentUser = () => currentUser;
 
 // ============================================
 // HOUSEHOLD OPERATIONS

@@ -35,6 +35,7 @@ export const categoriesDB = createDB('categories');
 export const creditcardsDB = createDB('creditcards');
 export const loansDB = createDB('loans');
 export const budgetsDB = createDB('budgets');
+export const recurringDB = createDB('recurring'); // New Recurring DB
 export const sharedDB = createDB('shared'); // New Shared DB
 
 // Map for easier access if needed
@@ -45,6 +46,7 @@ export const collections = {
   creditcards: creditcardsDB,
   loans: loansDB,
   budgets: budgetsDB,
+  recurring: recurringDB,
   shared: sharedDB,
 };
 
@@ -107,6 +109,17 @@ export const initDB = async () => {
         index: { fields: ['budgetMode'] }
     });
      await budgetsDB.createIndex({
+        index: { fields: ['status'] }
+    });
+
+    // Recurring Transactions
+    await recurringDB.createIndex({
+        index: { fields: ['householdId'] }
+    });
+    await recurringDB.createIndex({
+        index: { fields: ['nextDueDate'] } // Crucial for "Upcoming" queries
+    });
+    await recurringDB.createIndex({
         index: { fields: ['status'] }
     });
 

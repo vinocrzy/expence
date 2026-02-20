@@ -1,23 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
-import { User, Mail, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import NativeHeader from '../../components/dashboard/NativeHeader';
+import { User, Mail, Wallet, Calendar, Check, ChevronRight, Save, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-import { useUser } from '@clerk/nextjs';
+import { useUser, useClerk } from '@clerk/nextjs';
+import { useToast } from '../../context/ToastContext';
 
 export default function Profile() {
   const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
+  const { showToast } = useToast();
   
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [budgetMode, setBudgetMode] = useState('CALENDAR');
   const [salaryDay, setSalaryDay] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isLoaded && !user) {
@@ -28,155 +28,172 @@ export default function Profile() {
   useEffect(() => {
     if (user) {
       setName(user.fullName || user.firstName || '');
-      setEmail(user.primaryEmailAddress?.emailAddress || '');
+      // Load other settings from localDB / household service if implementing full persistence
     }
-    // We should fetch household settings here if needed via householdService
-    // api.get('/household') ... 
   }, [user]);
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdate = async () => {
     setIsSaving(true);
-    setMessage(null);
-
     try {
       if (user) {
           await user.update({
-              firstName: name, // simplified for Clerk (firstName/lastName split usually, but name works in some contexts or we split it)
-              // actually Clerk update({ firstName, lastName }). 
-              // We'll simplistic split.
+              firstName: name, 
           });
-          // Note: Clerk user.update might not support email update directly like this without verification flow.
-          // Skipping email update for now or assuming it's managed via Clerk UI.
       }
-      
-      // Update local settings (mocked via household service or app settings)
-      // await householdService.updateSettings({ ... });
-      
-      setMessage({ type: 'success', text: 'Profile updated successfully' });
+      showToast('Profile updated successfully', 'success');
     } catch (e: any) {
       console.error(e);
-      setMessage({ type: 'error', text: `Failed: ${e.message}` });
+      showToast(e.message || 'Failed to update profile', 'error');
     } finally {
       setIsSaving(false);
     }
   };
 
   if (!isLoaded || !user) {
-    return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
+    return <div className="min-h-screen bg-black flex items-center justify-center text-white"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div></div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
+    <div className="min-h-screen bg-black text-white font-sans pb-32 md:pb-8">
       <Navbar />
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold text-white mb-8">Profile Settings</h1>
-
-        <div className="bg-gray-800/50 backdrop-blur-md p-8 rounded-2xl border border-gray-700/50">
-          <form onSubmit={handleUpdate} className="space-y-6">
-            
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">Full Name</label>
-                <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <User className="h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
+      <main className="max-w-3xl mx-auto px-4 pt-0 md:pt-8 pb-8">        <NativeHeader title="Profile" />
+        
+        {/* iOS Style Header with Avatar */}
+        <div className="flex flex-col items-center mb-8">
+            <div className="relative group cursor-pointer mb-4">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px]">
+                    <div className="w-full h-full rounded-full overflow-hidden bg-black">
+                        <img 
+                            src={user.imageUrl} 
+                            alt="Profile" 
+                            className="w-full h-full object-cover"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all font-medium"
-                        required
-                    />
+                </div>
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-8 h-8 text-white" />
                 </div>
             </div>
+            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                {user.fullName || 'User'}
+            </h1>
+            <p className="text-gray-500 text-sm">{user.primaryEmailAddress?.emailAddress}</p>
+        </div>
 
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">Email Address</label>
-                <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Mail className="h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
-                    </div>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all font-medium"
-                        required
-                    />
-                </div>
-            </div>
-
-            <div className="pt-4 border-t border-gray-700/50">
-                <p className="text-sm text-gray-500 mb-2">Household ID</p>
-                <code className="block w-full p-3 bg-gray-900/50 rounded-lg text-sm text-purple-300 font-mono break-all select-all">
-                    {(user?.publicMetadata as any)?.householdId || user?.id || 'No active household'}
-                </code>
-            </div>
-
-            {/* Budget Settings */}
-            <div className="pt-8 border-t border-gray-700/50">
-                <h2 className="text-xl font-bold text-white mb-6">Budget Settings</h2>
-                <div className="space-y-6">
-                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Budget Mode</label>
-                        <select 
-                            value={budgetMode}
-                            onChange={(e) => setBudgetMode(e.target.value)}
-                            className="block w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-                        >
-                            <option value="CALENDAR">Calendar Month (Default)</option>
-                            <option value="SALARY">Salary Cycle</option>
-                            <option value="CASHFLOW">Cashflow Window</option>
-                        </select>
-                        <p className="text-xs text-gray-500 ml-1">
-                            {budgetMode === 'CALENDAR' && 'Budgets run from 1st to last day of each month.'}
-                            {budgetMode === 'SALARY' && 'Budgets run from your payday to the day before next payday.'}
-                            {budgetMode === 'CASHFLOW' && 'Budgets track available cash until next expected income.'}
-                        </p>
-                    </div>
-
-                    {budgetMode === 'SALARY' && (
-                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300 ml-1">Salary Day of Month</label>
-                            <input
-                                type="number"
-                                min="1"
-                                max="31"
-                                value={salaryDay}
-                                onChange={(e) => setSalaryDay(parseInt(e.target.value))}
-                                className="block w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
-                            />
+        {/* Group 1: Personal Info */}
+        <div className="space-y-6">
+            <div>
+                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-4">Personal Info</h2>
+                <div className="bg-[#1c1c1e] rounded-2xl overflow-hidden divide-y divide-gray-800">
+                     
+                     {/* Name Input Row */}
+                     <div className="flex items-center justify-between p-4 group">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                                <User className="w-5 h-5" />
+                            </div>
+                            <span className="font-medium text-white">Name</span>
                         </div>
-                    )}
+                        <input 
+                            type="text" 
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="bg-transparent text-right text-gray-300 focus:text-white focus:outline-none placeholder-gray-600"
+                            placeholder="Your Name"
+                        />
+                     </div>
+
+                     {/* Household ID (Read Only) */}
+                     <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center">
+                                <Wallet className="w-5 h-5" />
+                            </div>
+                            <span className="font-medium text-white">Household ID</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <code className="text-xs text-gray-500 font-mono">
+                                {(user?.publicMetadata as any)?.householdId || user?.id?.substring(0, 12) + '...'}
+                            </code>
+                        </div>
+                     </div>
                 </div>
             </div>
 
-            {message && (
-                <div className={`p-4 rounded-xl flex items-center gap-3 ${message.type === 'success' ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
-                    {message.type === 'success' ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-                    {message.text}
-                </div>
-            )}
+            {/* Group 2: Budget Preference */}
+            <div>
+                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-4">Budgeting</h2>
+                <div className="bg-[#1c1c1e] rounded-2xl overflow-hidden divide-y divide-gray-800">
+                     
+                     <div className="p-4">
+                        <div className="flex items-center justify-between mb-4">
+                             <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-green-500/10 text-green-500 flex items-center justify-center">
+                                    <Calendar className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <span className="font-medium text-white block">Budget Cycle</span>
+                                    <span className="text-xs text-gray-500">When does your month start?</span>
+                                </div>
+                             </div>
+                        </div>
 
-            <div className="flex justify-end pt-4">
-                <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-purple-500 font-bold transition-all shadow-lg shadow-purple-500/25 disabled:opacity-70 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
-                >
-                    {isSaving ? 'Saving...' : (
-                        <>
-                            <Save className="h-5 w-5" />
-                            Save Changes
-                        </>
-                    )}
+                        <div className="grid grid-cols-3 gap-2">
+                             {['CALENDAR', 'SALARY'].map(mode => (
+                                 <button
+                                     key={mode}
+                                     onClick={() => setBudgetMode(mode)}
+                                     className={`py-2 rounded-lg text-xs font-bold transition-all border ${
+                                         budgetMode === mode
+                                         ? 'bg-white text-black border-white'
+                                         : 'bg-gray-800 text-gray-400 border-gray-700'
+                                     }`}
+                                 >
+                                     {mode === 'CALENDAR' ? 'Calendar' : 'Payday'}
+                                 </button>
+                             ))}
+                        </div>
+
+                        {budgetMode === 'SALARY' && (
+                            <div className="mt-4 pt-4 border-t border-gray-800 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+                                <span className="text-sm text-gray-300">Salary Date</span>
+                                <div className="flex items-center gap-2">
+                                    <input 
+                                        type="number" 
+                                        min="1" max="31"
+                                        value={salaryDay}
+                                        onChange={(e) => setSalaryDay(Number(e.target.value))}
+                                        className="w-12 bg-gray-900 border border-gray-700 rounded-lg py-1 px-2 text-center text-white text-sm"
+                                    />
+                                    <span className="text-xs text-gray-500">of month</span>
+                                </div>
+                            </div>
+                        )}
+                     </div>
+
+                </div>
+            </div>
+
+            <button
+                onClick={handleUpdate}
+                disabled={isSaving}
+                className="w-full py-3.5 rounded-xl bg-white text-black font-bold text-lg hover:bg-gray-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-white/5"
+            >
+                {isSaving ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-black"></div>
+                ) : (
+                    <>Save Changes</>
+                )}
+            </button>
+
+            <div className="text-center pt-8">
+                <button onClick={() => signOut()} className="text-red-500 text-sm font-medium hover:underline">
+                    Sign Out
                 </button>
             </div>
-
-          </form>
         </div>
+
       </main>
     </div>
   );

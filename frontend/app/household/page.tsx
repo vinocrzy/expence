@@ -2,19 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
+import NativeHeader from '../../components/dashboard/NativeHeader';
 import { householdService, sharedDataService } from '../../lib/localdb-services';
-import { Users, Copy, Check, UserPlus, LogOut, CloudUpload, RefreshCw } from 'lucide-react';
+import { Users, Copy, Check, UserPlus, LogOut, CloudUpload, RefreshCw, Home, Shield } from 'lucide-react';
 import { useAuth, useUser } from '@clerk/nextjs';
+import { useToast } from '../../context/ToastContext';
 
 export default function HouseholdPage() {
   const { user } = useUser();
+  const { showToast } = useToast();
+  
   const [household, setHousehold] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [error, setError] = useState('');
   const [role, setRole] = useState<'OWNER' | 'GUEST'>('OWNER');
 
   useEffect(() => {
@@ -34,7 +37,6 @@ export default function HouseholdPage() {
     try {
       setLoading(true);
       if (role === 'GUEST') {
-          // As guest, we don't have full household info, just the ID we joined
           const joinedId = localStorage.getItem('joined_household_id');
           setHousehold({
               name: 'Shared Household',
@@ -43,10 +45,8 @@ export default function HouseholdPage() {
               id: joinedId || 'Unknown'
           });
       } else {
-          // As owner, we fetch or create
           let data = await householdService.getCurrent();
           if (!data && user) {
-             // Auto-create for owner
              const ownerData = {
                  id: user.id,
                  name: user.fullName || 'User',
@@ -58,16 +58,9 @@ export default function HouseholdPage() {
       }
     } catch (error) {
       console.error('Failed to fetch household', error);
+      showToast('Failed to load household data', 'error');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const copyCode = () => {
-    if (household?.inviteCode) {
-        navigator.clipboard.writeText(household.inviteCode);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -76,10 +69,10 @@ export default function HouseholdPage() {
       try {
           setPublishing(true);
           await sharedDataService.publishSnapshot(household.id);
-          alert('Shared data updated successfully!');
+          showToast('Shared data updated successfully!', 'success');
       } catch (e) {
           console.error(e);
-          alert('Failed to publish data.');
+          showToast('Failed to publish data', 'error');
       } finally {
           setPublishing(false);
       }
@@ -90,29 +83,26 @@ export default function HouseholdPage() {
     if (!joinCode) return;
     
     setJoining(true);
-    setError('');
     
     try {
         const targetId = joinCode.trim();
-        
         localStorage.setItem('household_role', 'GUEST');
         localStorage.setItem('joined_household_id', targetId);
         
-        // We also need to configure Sync to use this ID.
-        // We restart the app or alert user.
-        alert(`Joined! You are now a Guest viewing household: ${targetId}. The page will reload to apply changes.`);
-        window.location.reload();
+        showToast('Joined! Reloading...', 'success');
+        setTimeout(() => window.location.reload(), 1500);
 
     } catch (err: any) {
         console.error(err);
-        setError('Failed to join household');
+        showToast('Failed to join household', 'error');
     } finally {
         setJoining(false);
     }
   };
 
   const leaveHousehold = () => {
-      if (confirm('Are you sure you want to leave this household? You will return to your own data.')) {
+      // Custom confirmation dialog could be better, but keeping simple for now
+      if (confirm('Are you sure you want to leave this household?')) {
           localStorage.removeItem('household_role');
           localStorage.removeItem('joined_household_id');
           window.location.reload();
@@ -120,105 +110,116 @@ export default function HouseholdPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
+    <div className="min-h-screen bg-black text-white font-sans pb-24">
       <Navbar />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Household Settings</h1>
-        <p className="text-gray-400 mb-8">Manage your shared finance space</p>
+      <main className="max-w-3xl mx-auto px-4 pt-0 md:pt-8 pb-8">        <NativeHeader title="Household" />
+        
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8 hidden md:flex">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <Home className="w-8 h-8 text-white" />
+            </div>
+            <div>
+                <h1 className="text-3xl font-bold text-white">Household</h1>
+                <p className="text-gray-400">Manage shared access & guest views</p>
+            </div>
+        </div>
 
         {loading ? (
-             <div className="text-center text-gray-400 py-12">Loading...</div>
+             <div className="space-y-4">
+                 <div className="h-32 bg-gray-900 rounded-3xl animate-pulse" />
+                 <div className="h-24 bg-gray-900 rounded-3xl animate-pulse delay-75" />
+             </div>
         ) : (
-            <div className="space-y-8">
-                {/* Current Household Info */}
-                <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50">
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400">
-                            <Users className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-white">{household?.name || 'My Household'}</h2>
-                            {role === 'OWNER' && (
-                                <p className="text-sm text-gray-400">Created on {household?.createdAt ? new Date(household.createdAt).toLocaleDateString() : 'Unknown'}</p>
-                            )}
-                            {role === 'GUEST' && (
-                                <span className="inline-flex mt-1 items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    Guest Mode
+            <div className="space-y-6">
+                
+                {/* STATUS CARD */}
+                <div className="relative group overflow-hidden rounded-3xl bg-[#1c1c1e] border border-white/5 p-6">
+                     <div className="flex justify-between items-start mb-6">
+                         <div>
+                             <h2 className="text-xl font-bold text-white">{household?.name || 'Household'}</h2>
+                             <div className="flex items-center gap-2 mt-2">
+                                <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${role === 'OWNER' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                    {role}
                                 </span>
-                            )}
-                        </div>
-                    </div>
+                                {role === 'OWNER' && (
+                                    <span className="text-xs text-gray-500">
+                                        ID: {household?.id?.substring(0, 8)}...
+                                    </span>
+                                )}
+                             </div>
+                         </div>
+                         {role === 'OWNER' && (
+                             <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(household?.id || '');
+                                    setCopied(true);
+                                    showToast('ID copied to clipboard', 'success');
+                                    setTimeout(() => setCopied(false), 2000);
+                                }}
+                                className="p-3 bg-gray-800 rounded-xl text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+                             >
+                                 {copied ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
+                             </button>
+                         )}
+                     </div>
 
-                    {role === 'OWNER' && (
-                    <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700/50 flex flex-col md:flex-row items-center justify-between gap-4">
-                        <div>
-                            <div className="text-sm font-medium text-gray-400 mb-1">Household ID (Share this)</div>
-                            <div className="text-lg font-mono font-bold text-white tracking-wider break-all">
-                                {household?.id || 'No ID'}
-                            </div>
-                        </div>
-                        <button 
-                            onClick={() => {
-                                navigator.clipboard.writeText(household?.id || '');
-                                setCopied(true);
-                                setTimeout(() => setCopied(false), 2000);
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors border border-gray-600"
-                        >
-                            {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
-                            {copied ? 'Copied!' : 'Copy ID'}
-                        </button>
-                    </div>
-                    )}
-                    
-                    {role === 'GUEST' && (
-                        <div className="bg-blue-900/20 rounded-xl p-4 border border-blue-700/30">
-                            <p className="text-blue-200 text-sm mb-4">
-                                You have joined a shared household ({household?.id}).
-                            </p>
-                            
-                            <div className="flex flex-wrap gap-3">
-                                <a 
+                     {role === 'GUEST' && (
+                         <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl mb-4">
+                             <p className="text-sm text-blue-300 mb-3">You are viewing a shared household.</p>
+                             <div className="flex gap-3">
+                                 <a 
                                     href="/shared-dashboard"
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors shadow-lg shadow-blue-900/20"
-                                >
-                                    <Users className="h-4 w-4" />
-                                    Open Shared Dashboard
-                                </a>
+                                    className="px-4 py-2 bg-blue-600 rounded-lg text-white text-sm font-bold shadow-lg shadow-blue-500/20"
+                                 >
+                                     Open Dashboard
+                                 </a>
+                                 <button onClick={leaveHousehold} className="px-4 py-2 bg-red-500/10 text-red-400 rounded-lg text-sm font-bold border border-red-500/20">
+                                     Leave
+                                 </button>
+                             </div>
+                         </div>
+                     )}
 
-                                <button 
-                                    onClick={leaveHousehold}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors border border-red-500/50"
-                                >
-                                    <LogOut className="h-4 w-4" />
-                                    Leave Household
-                                </button>
+                     {role === 'OWNER' && (
+                        <div className="space-y-3">
+                            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Members</h3>
+                            <div className="space-y-2">
+                                {household?.members?.map((member: any) => (
+                                    <div key={member.userId} className="flex items-center justify-between p-3 bg-black/40 rounded-xl border border-white/5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-gray-700 to-gray-600 flex items-center justify-center text-xs font-bold">
+                                                {member.name?.[0]}
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-bold text-white">{member.name}</div>
+                                                <div className="text-xs text-gray-500">{member.role}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )) || <div className="text-gray-500 text-sm p-2">No other members</div>}
                             </div>
                         </div>
-                    )}
+                     )}
                 </div>
 
-                {/* Publish Config - Only for Owner */}
+                {/* PUBLISH ACTION - Only Owner */}
                 {role === 'OWNER' && (
-                    <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50">
+                    <div className="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="p-3 bg-green-500/10 rounded-xl text-green-400">
                                 <CloudUpload className="h-6 w-6" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-white">Share Data</h2>
-                                <p className="text-sm text-gray-400">Publish a monthly snapshot for guests</p>
+                                <h2 className="text-lg font-bold text-white">Share Data</h2>
+                                <p className="text-sm text-gray-400">Publish snapshot for guests</p>
                             </div>
                         </div>
-                        <p className="text-gray-400 mb-6 max-w-2xl text-sm">
-                            Guests cannot see your live data. You must manually publish a snapshot of the current month's transactions and balances.
-                            This ensures you have full control over what is shared.
-                        </p>
                         <button 
                             onClick={handlePublish}
                             disabled={publishing}
-                            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold transition-colors disabled:opacity-50 shadow-lg shadow-green-900/20"
+                            className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition-all disabled:opacity-50 shadow-lg shadow-green-500/20 flex items-center justify-center gap-2"
                         >
                             {publishing ? <RefreshCw className="h-5 w-5 animate-spin" /> : <CloudUpload className="h-5 w-5" />}
                             {publishing ? 'Publishing...' : 'Update Shared Snapshot'}
@@ -226,65 +227,41 @@ export default function HouseholdPage() {
                     </div>
                 )}
 
-                {/* Members List - Only for Owner */}
+                {/* JOIN ACTION - Only Owner */}
                 {role === 'OWNER' && (
-                <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50">
-                    <h3 className="text-lg font-bold text-white mb-4">Members</h3>
-                    <div className="space-y-4">
-                        {household?.members?.map((member: any) => (
-                            <div key={member.userId} className="flex items-center gap-4 p-3 hover:bg-gray-700/30 rounded-xl transition-colors">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                                    {member.name?.[0]?.toUpperCase() || 'U'}
-                                </div>
-                                <div>
-                                    <div className="font-bold text-white">{member.name} {member.role === 'OWNER' && '(You)'}</div>
-                                    <div className="text-sm text-gray-400">{member.email}</div>
-                                </div>
-                                <div className="ml-auto text-xs text-gray-500">{member.role}</div>
+                    <div className="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400">
+                                <UserPlus className="h-6 w-6" />
                             </div>
-                        )) || <div className="text-gray-500">No members found</div>}
+                            <div>
+                                <h2 className="text-lg font-bold text-white">Join Household</h2>
+                                <p className="text-sm text-gray-400">Switch to viewing another household</p>
+                            </div>
+                        </div>
+                        
+                        <form onSubmit={handleJoin} className="flex gap-3">
+                             <input 
+                                type="text" 
+                                value={joinCode}
+                                onChange={(e) => setJoinCode(e.target.value)}
+                                placeholder="Paste Household ID"
+                                className="flex-1 bg-black/40 border border-gray-700 rounded-xl px-4 text-white focus:border-indigo-500 focus:outline-none"
+                             />
+                             <button 
+                                type="submit"
+                                disabled={joining || !joinCode}
+                                className="px-6 py-3 bg-indigo-600 rounded-xl text-white font-bold whitespace-nowrap"
+                             >
+                                 Join
+                             </button>
+                        </form>
                     </div>
-                </div>
                 )}
 
-                {/* Join Another Household */}
-                {role === 'OWNER' && (
-                <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700/50">
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400">
-                            <UserPlus className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-white">Join External Household</h2>
-                            <p className="text-sm text-gray-400">Enter a Household ID to switch to Guest View</p>
-                        </div>
-                    </div>
-
-                    <form onSubmit={handleJoin} className="flex flex-col md:flex-row gap-4">
-                        <input
-                            type="text"
-                            value={joinCode}
-                            onChange={(e) => setJoinCode(e.target.value)}
-                            placeholder="Enter Household ID"
-                            className="flex-1 px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-mono"
-                        />
-                        <button
-                            type="submit"
-                            disabled={joining || !joinCode}
-                            className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold disabled:opacity-50 transition-colors"
-                        >
-                            {joining ? 'Joining...' : 'Join as Guest'}
-                        </button>
-                    </form>
-                    {error && (
-                        <p className="mt-2 text-red-400 text-sm">{error}</p>
-                    )}
-                </div>
-                )}
             </div>
         )}
       </main>
     </div>
   );
 }
-

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, FileDown, FileSpreadsheet, FileText, Calendar } from 'lucide-react';
+import { X, FileDown, FileSpreadsheet, FileText, Calendar, Check, ChevronDown, Filter, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { Category, Account } from '@/lib/db-types';
 
 type ReportType = 
+  | 'CONSOLIDATED'
   | 'EXPENSE' 
   | 'INCOME' 
   | 'ACCOUNT_SUMMARY' 
@@ -33,24 +34,25 @@ interface ReportBuilderModalProps {
 }
 
 const reportTypes = [
-  { value: 'EXPENSE', label: 'Expense Report', description: 'All expense transactions grouped by category' },
-  { value: 'INCOME', label: 'Income Report', description: 'All income transactions grouped by source' },
-  { value: 'ACCOUNT_SUMMARY', label: 'Account Summary', description: 'Balance and activity per account' },
-  { value: 'LOAN', label: 'Loan Report', description: 'EMI schedule and payment history' },
-  { value: 'CREDIT_CARD', label: 'Credit Card Report', description: 'Statement history and outstanding amounts' },
-  { value: 'BUDGET_VS_ACTUAL', label: 'Budget vs Actual', description: 'Compare budgeted vs actual spending' },
-  { value: 'TRIP_EVENT', label: 'Trip/Event Report', description: 'Tag-based expense grouping' },
-  { value: 'YEARLY_SUMMARY', label: 'Yearly Summary', description: 'Month-by-month income and expense trends' },
+  { value: 'CONSOLIDATED', label: 'Consolidated', description: 'Full analysis', icon: FileSpreadsheet },
+  { value: 'EXPENSE', label: 'Expenses', description: 'Category breakdown', icon: FileText },
+  { value: 'INCOME', label: 'Income', description: 'Source analysis', icon: FileSpreadsheet },
+  { value: 'INVESTMENT', label: 'Investments', description: 'Portfolio tracking', icon: TrendingUp },
+  { value: 'DEBT', label: 'Debt Log', description: 'Transaction history', icon: FileText },
+  { value: 'ACCOUNT_SUMMARY', label: 'Accounts', description: 'Balance & flows', icon: FileText },
+  { value: 'YEARLY_SUMMARY', label: 'Yearly', description: 'Annual trends', icon: Calendar },
+  { value: 'LOAN', label: 'Loans', description: 'EMI details', icon: FileText },
+  { value: 'CREDIT_CARD', label: 'Credit Cards', description: 'Statements', icon: FileText },
+  { value: 'BUDGET_VS_ACTUAL', label: 'Budget', description: 'Plan vs Actual', icon: FileSpreadsheet },
+  { value: 'TRIP_EVENT', label: 'Trips/Events', description: 'Tag grouping', icon: Calendar },
 ];
 
 const datePresets = [
   { label: 'This Month', value: 'this_month' },
   { label: 'Last Month', value: 'last_month' },
   { label: 'Last 3 Months', value: 'last_3_months' },
-  { label: 'Last 6 Months', value: 'last_6_months' },
   { label: 'This Year', value: 'this_year' },
-  { label: 'Last Year', value: 'last_year' },
-  { label: 'Custom Range', value: 'custom' },
+  { label: 'Custom', value: 'custom' },
 ];
 
 export default function ReportBuilderModal({ isOpen, onClose, onExport }: ReportBuilderModalProps) {
@@ -231,237 +233,232 @@ export default function ReportBuilderModal({ isOpen, onClose, onExport }: Report
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 transition-opacity"
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {/* Modal Container */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-3xl max-h-[90vh] bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-2xl border border-gray-700 z-50 overflow-hidden flex flex-col"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
-              <div>
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <FileDown className="w-6 h-6 text-cyan-400" />
-                  Create Report
-                </h2>
-                <p className="text-sm text-gray-400 mt-1">Export your financial data</p>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {error && (
-                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400 text-sm">
-                  {error}
+            {/* Modal Content */}
+            <div className="w-full max-w-2xl bg-[#1c1c1e] rounded-t-[2rem] sm:rounded-[2rem] border-t sm:border border-white/10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.8)] overflow-hidden pointer-events-auto sm:mb-8 max-h-[90vh] flex flex-col">
+              
+              {/* Header */}
+              <div className="px-6 pt-6 pb-4 flex items-center justify-between shrink-0">
+                <div>
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                        Create Report
+                    </h2>
+                    <p className="text-sm text-gray-400">Export your data</p>
                 </div>
-              )}
-
-              {/* Report Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">
-                  Report Type
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {reportTypes.map((type) => (
-                    <button
-                      key={type.value}
-                      onClick={() => setReportType(type.value as ReportType)}
-                      className={`p-4 rounded-lg border-2 text-left transition-all ${
-                        reportType === type.value
-                          ? 'border-cyan-500 bg-cyan-500/10'
-                          : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
-                      }`}
-                    >
-                      <div className="font-medium text-white text-sm">{type.label}</div>
-                      <div className="text-xs text-gray-400 mt-1">{type.description}</div>
-                    </button>
-                  ))}
-                </div>
+                <button
+                    onClick={onClose}
+                    className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+                >
+                    <X className="w-5 h-5" />
+                </button>
               </div>
 
-              {/* Date Range */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">
-                  Date Range
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
-                  {datePresets.map((preset) => (
-                    <button
-                      key={preset.value}
-                      onClick={() => setDatePreset(preset.value)}
-                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                        datePreset === preset.value
-                          ? 'bg-cyan-500 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-
-                {datePreset === 'custom' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs text-gray-400 mb-2">Start Date</label>
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                      />
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto px-6 space-y-8 pb-6 custom-scrollbar">
+                
+                {error && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-red-400 text-sm flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+                        {error}
                     </div>
-                    <div>
-                      <label className="block text-xs text-gray-400 mb-2">End Date</label>
-                      <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                      />
-                    </div>
-                  </div>
                 )}
+
+                {/* Section: Report Type */}
+                <div className="space-y-3">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Report Type</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {reportTypes.map((type) => {
+                            const isSelected = reportType === type.value;
+                            const Icon = type.icon;
+                            return (
+                                <button
+                                    key={type.value}
+                                    onClick={() => setReportType(type.value as ReportType)}
+                                    className={`relative p-3 rounded-2xl border transition-all duration-200 text-left group overflow-hidden ${
+                                        isSelected 
+                                            ? 'bg-blue-600 border-blue-500 shadow-lg shadow-blue-900/20' 
+                                            : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                    }`}
+                                >
+                                    <Icon className={`w-5 h-5 mb-2 ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} />
+                                    <div className={`text-xs font-bold mb-0.5 ${isSelected ? 'text-white' : 'text-gray-300'}`}>{type.label}</div>
+                                    <div className={`text-[10px] leading-tight ${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>{type.description}</div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Section: Date Range */}
+                <div className="space-y-3">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Period</label>
+                    
+                    {/* Pills */}
+                    <div className="flex flex-wrap gap-2">
+                        {datePresets.map((preset) => (
+                            <button
+                                key={preset.value}
+                                onClick={() => setDatePreset(preset.value)}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
+                                    datePreset === preset.value
+                                        ? 'bg-white text-black border-white'
+                                        : 'bg-transparent text-gray-400 border-gray-700 hover:border-gray-500'
+                                }`}
+                            >
+                                {preset.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Custom Date Inputs */}
+                    <AnimatePresence>
+                        {datePreset === 'custom' && (
+                            <motion.div 
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="grid grid-cols-2 gap-4 overflow-hidden"
+                            >
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-gray-500 pl-1">Start Date</label>
+                                    <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="w-full bg-[#2c2c2e] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-gray-500 pl-1">End Date</label>
+                                    <input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="w-full bg-[#2c2c2e] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* Section: Format */}
+                <div className="space-y-3">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Format</label>
+                    <div className="flex p-1 bg-white/5 rounded-xl border border-white/5">
+                        <button
+                            onClick={() => setFormat('EXCEL')}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                                format === 'EXCEL' ? 'bg-[#2c2c2e] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'
+                            }`}
+                        >
+                            <FileSpreadsheet className="w-4 h-4" /> Excel
+                        </button>
+                        <button
+                            onClick={() => setFormat('PDF')}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                                format === 'PDF' ? 'bg-[#2c2c2e] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'
+                            }`}
+                        >
+                            <FileText className="w-4 h-4" /> PDF
+                        </button>
+                    </div>
+                </div>
+
+                {/* Optional Filters */}
+                <div className="space-y-4 pt-2 border-t border-white/5">
+                    <div 
+                        className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer hover:text-white transition-colors"
+                        onClick={() => { /* Ensure this is clearly optional */ }}
+                    >
+                        <Filter className="w-4 h-4" /> 
+                         <span className="font-medium">Optional Filters</span>
+                    </div>
+
+                    {/* Accounts */}
+                    <div>
+                         <div className="text-xs text-gray-500 mb-2 pl-1">Accounts</div>
+                         <div className="flex flex-wrap gap-2">
+                            {accounts.map(account => {
+                                const isSelected = selectedAccounts.includes(account.id);
+                                return (
+                                    <button
+                                        key={account.id}
+                                        onClick={() => toggleAccount(account.id)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                                            isSelected 
+                                                ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' 
+                                                : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
+                                        }`}
+                                    >
+                                        {isSelected && <Check className="w-3 h-3" />}
+                                        {account.name}
+                                    </button>
+                                );
+                            })}
+                         </div>
+                    </div>
+
+                    {/* Categories */}
+                    <div>
+                         <div className="text-xs text-gray-500 mb-2 pl-1">Categories</div>
+                         <div className="flex flex-wrap gap-2">
+                            {categories.map(category => {
+                                const isSelected = selectedCategories.includes(category.id);
+                                return (
+                                    <button
+                                        key={category.id}
+                                        onClick={() => toggleCategory(category.id)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                                            isSelected 
+                                                ? 'text-white border-white/20'
+                                                : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
+                                        }`}
+                                        style={{ backgroundColor: isSelected ? category.color : undefined }}
+                                    >
+                                        {isSelected && <Check className="w-3 h-3" />}
+                                        {category.name}
+                                    </button>
+                                );
+                            })}
+                         </div>
+                    </div>
+                </div>
+
               </div>
 
-              {/* Format Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">
-                  Export Format
-                </label>
-                <div className="grid grid-cols-2 gap-4">
+              {/* Footer */}
+              <div className="p-6 pt-4 border-t border-white/10 bg-[#1c1c1e] z-10 shrink-0">
                   <button
-                    onClick={() => setFormat('EXCEL')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      format === 'EXCEL'
-                        ? 'border-green-500 bg-green-500/10'
-                        : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
-                    }`}
+                    onClick={handleExport}
+                    disabled={isLoading}
+                    className="w-full py-4 bg-white text-black rounded-2xl font-bold text-lg hover:bg-gray-200 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-white/5"
                   >
-                    <FileSpreadsheet className={`w-8 h-8 mx-auto mb-2 ${format === 'EXCEL' ? 'text-green-400' : 'text-gray-400'}`} />
-                    <div className="text-sm font-medium text-white text-center">Excel (.xlsx)</div>
-                    <div className="text-xs text-gray-400 text-center mt-1">Editable spreadsheet</div>
+                    {isLoading ? (
+                        <>
+                            <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+                            Processing...
+                        </>
+                    ) : (
+                        <>
+                            <FileDown className="w-5 h-5" />
+                            Generate Report
+                        </>
+                    )}
                   </button>
-
-                  <button
-                    onClick={() => setFormat('PDF')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      format === 'PDF'
-                        ? 'border-red-500 bg-red-500/10'
-                        : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
-                    }`}
-                  >
-                    <FileText className={`w-8 h-8 mx-auto mb-2 ${format === 'PDF' ? 'text-red-400' : 'text-gray-400'}`} />
-                    <div className="text-sm font-medium text-white text-center">PDF</div>
-                    <div className="text-xs text-gray-400 text-center mt-1">Printable document</div>
-                  </button>
-                </div>
               </div>
 
-              {/* Filters - Accounts */}
-              {accounts.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
-                    Accounts (Optional)
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {accounts.map(account => (
-                      <button
-                        key={account.id}
-                        onClick={() => toggleAccount(account.id)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                          selectedAccounts.includes(account.id)
-                            ? 'bg-cyan-500 text-white'
-                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                      >
-                        {account.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Filters - Categories */}
-              {categories.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
-                    Categories (Optional)
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {categories.map(category => (
-                      <button
-                        key={category.id}
-                        onClick={() => toggleCategory(category.id)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                          selectedCategories.includes(category.id)
-                            ? 'bg-cyan-500 text-white'
-                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                        style={selectedCategories.includes(category.id) && category.color ? {
-                          backgroundColor: category.color,
-                          color: 'white'
-                        } : undefined}
-                      >
-                        {category.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Filters - Tags (for trip/event reports) */}
-              {reportType === 'TRIP_EVENT' && availableTags.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
-                    Tags
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {availableTags.map(tag => (
-                      <button
-                        key={tag}
-                        onClick={() => toggleTag(tag)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                          selectedTags.includes(tag)
-                            ? 'bg-purple-500 text-white'
-                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                      >
-                        #{tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between p-6 border-t border-gray-700">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleExport}
-                disabled={isLoading || !startDate || !endDate}
-                className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-cyan-500/30 transition-all flex items-center gap-2"
-              >
-                <FileDown className="w-4 h-4" />
-                {isLoading ? 'Generating...' : 'Export Report'}
-              </button>
             </div>
           </motion.div>
         </>

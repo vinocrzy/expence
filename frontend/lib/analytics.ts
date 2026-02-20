@@ -14,6 +14,8 @@ export interface MonthlyStats {
   month: string;
   income: number;
   expense: number;
+  investment: number;
+  debt: number;
   net: number;
 }
 
@@ -30,6 +32,8 @@ export interface TrendData {
   date: string;
   income: number;
   expense: number;
+  investment: number;
+  debt: number;
 }
 
 /**
@@ -46,22 +50,26 @@ export async function calculateMonthlyStats(
     endDate
   );
 
-  // Group by month
-  const monthlyMap = new Map<string, { income: number; expense: number }>();
+  const monthlyMap = new Map<string, { income: number; expense: number; investment: number; debt: number }>();
 
   transactions.forEach((t) => {
     const date = new Date(t.date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     
     if (!monthlyMap.has(monthKey)) {
-      monthlyMap.set(monthKey, { income: 0, expense: 0 });
+      monthlyMap.set(monthKey, { income: 0, expense: 0, investment: 0, debt: 0 });
     }
 
     const stats = monthlyMap.get(monthKey)!;
     if (t.type === 'INCOME') {
       stats.income += t.amount;
-    } else {
+    } else if (t.type === 'EXPENSE') {
       stats.expense += t.amount;
+    } else if (t.type === 'INVESTMENT') {
+      stats.investment += t.amount;
+    } else if (t.type === 'DEBT') {
+        // Debt payments usually count as "outflow" but are distinct from expense
+        stats.debt += t.amount;
     }
   });
 
@@ -70,7 +78,10 @@ export async function calculateMonthlyStats(
     month,
     income: stats.income,
     expense: stats.expense,
-    net: stats.income - stats.expense,
+    investment: stats.investment,
+    debt: stats.debt,
+    net: stats.income - stats.expense, // Net Cash Flow usually just Income - Expense? Or should it include Investment outflow?
+    // For now, let's keep Net = Income - Expense. Investment is "Asset reallocation".
   })).sort((a, b) => a.month.localeCompare(b.month));
 }
 
@@ -97,13 +108,39 @@ export async function calculateCategoryBreakdown(
   const categoryMap = new Map<string, { amount: number; count: number }>();
 
   filtered.forEach((t) => {
-    const categoryId = t.categoryId || 'uncategorized';
-    if (!categoryMap.has(categoryId)) {
-      categoryMap.set(categoryId, { amount: 0, count: 0 });
+    if (t.isSplit && t.splits) {
+        t.splits.forEach(split => {
+            const categoryId = split.categoryId || 'uncategorized';
+            
+            // Exclude Investment/Debt from Expense Breakdown
+            if (type === 'EXPENSE') {
+                const category = categoryLookup.get(categoryId);
+                if (category && (category.type === 'INVESTMENT' || category.type === 'DEBT')) return;
+            }
+
+            if (!categoryMap.has(categoryId)) {
+                categoryMap.set(categoryId, { amount: 0, count: 0 });
+            }
+            const cat = categoryMap.get(categoryId)!;
+            cat.amount += split.amount;
+            cat.count += 1;
+        });
+    } else {
+        const categoryId = t.categoryId || 'uncategorized';
+
+        // Exclude Investment/Debt from Expense Breakdown
+        if (type === 'EXPENSE') {
+            const category = categoryLookup.get(categoryId);
+            if (category && (category.type === 'INVESTMENT' || category.type === 'DEBT')) return;
+        }
+
+        if (!categoryMap.has(categoryId)) {
+            categoryMap.set(categoryId, { amount: 0, count: 0 });
+        }
+        const cat = categoryMap.get(categoryId)!;
+        cat.amount += t.amount;
+        cat.count += 1;
     }
-    const cat = categoryMap.get(categoryId)!;
-    cat.amount += t.amount;
-    cat.count += 1;
   });
 
   // Convert to array
@@ -114,6 +151,88 @@ export async function calculateCategoryBreakdown(
         categoryId,
         categoryName: category?.name || (categoryId === 'uncategorized' ? 'Uncategorized' : 'Unknown'),
         color: category?.color,
+        amount: data.amount,
+        percentage: total > 0 ? (data.amount / total) * 100 : 0,
+        transactionCount: data.count,
+      };
+    })
+    .sort((a, b) => b.amount - a.amount);
+}
+
+/**
+ * Calculate sub-category breakdown for a specific category
+ */
+export async function calculateSubCategoryBreakdown(
+  householdId: string,
+  startDate: Date,
+  endDate: Date,
+  categoryId: string
+): Promise<CategoryBreakdown[]> {
+  const [transactions, category] = await Promise.all([
+    transactionService.getByDateRange(householdId, startDate, endDate),
+    categoryService.getById(categoryId)
+  ]);
+
+  if (!category) return [];
+
+  // Filter transactions that are either directly in this category OR have a split in this category
+  const filtered = transactions.filter((t) => {
+      if (t.type !== 'EXPENSE') return false;
+      if (t.categoryId === categoryId) return true;
+      if (t.isSplit && t.splits) {
+          return t.splits.some(s => s.categoryId === categoryId);
+      }
+      return false;
+  });
+
+  const total = filtered.reduce((sum, t) => {
+      if (t.isSplit && t.splits) {
+          // Only count the portions belonging to this category
+          return sum + t.splits
+            .filter(s => s.categoryId === categoryId)
+            .reduce((sSum, s) => sSum + s.amount, 0);
+      }
+      return sum + t.amount;
+  }, 0);
+
+  // Group by sub-category
+  const subCategoryMap = new Map<string, { amount: number; count: number }>();
+
+  filtered.forEach((t) => {
+    if (t.isSplit && t.splits) {
+        t.splits.forEach(s => {
+            if (s.categoryId === categoryId) {
+                // Split interface currently doesn't support subCategoryId, so we default to 'unspecified'
+                const subId = (s as any).subCategoryId || 'unspecified'; 
+                
+                if (!subCategoryMap.has(subId)) {
+                    subCategoryMap.set(subId, { amount: 0, count: 0 });
+                }
+                const sub = subCategoryMap.get(subId)!;
+                sub.amount += s.amount;
+                sub.count += 1;
+            }
+        });
+    } else {
+        const subId = t.subCategoryId || 'unspecified';
+        if (!subCategoryMap.has(subId)) {
+            subCategoryMap.set(subId, { amount: 0, count: 0 });
+        }
+        const sub = subCategoryMap.get(subId)!;
+        sub.amount += t.amount;
+        sub.count += 1;
+    }
+  });
+
+  // Convert to array
+  return Array.from(subCategoryMap.entries())
+    .map(([subId, data]) => {
+      const subName = category.subCategories?.find(sc => sc.id === subId)?.name || (subId === 'unspecified' ? 'Unspecified' : 'Unknown');
+      
+      return {
+        categoryId: subId, // Using subId as ID for consistency in UI
+        categoryName: subName,
+        color: category.color, // Inherit parent color
         amount: data.amount,
         percentage: total > 0 ? (data.amount / total) * 100 : 0,
         transactionCount: data.count,
@@ -138,7 +257,7 @@ export async function calculateTrends(
   );
 
   // Group by date
-  const trendMap = new Map<string, { income: number; expense: number }>();
+  const trendMap = new Map<string, { income: number; expense: number; investment: number; debt: number }>();
 
   transactions.forEach((t) => {
     let dateKey: string;
@@ -156,14 +275,18 @@ export async function calculateTrends(
     }
 
     if (!trendMap.has(dateKey)) {
-      trendMap.set(dateKey, { income: 0, expense: 0 });
+      trendMap.set(dateKey, { income: 0, expense: 0, investment: 0, debt: 0 });
     }
 
     const trend = trendMap.get(dateKey)!;
     if (t.type === 'INCOME') {
       trend.income += t.amount;
-    } else {
+    } else if (t.type === 'EXPENSE') {
       trend.expense += t.amount;
+    } else if (t.type === 'INVESTMENT') {
+      trend.investment += t.amount;
+    } else if (t.type === 'DEBT') {
+      trend.debt += t.amount;
     }
   });
 
@@ -173,6 +296,8 @@ export async function calculateTrends(
       date,
       income: data.income,
       expense: data.expense,
+      investment: data.investment,
+      debt: data.debt,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -209,7 +334,30 @@ export async function getTopSpendingCategories(
  * Calculate net worth (sum of all account balances)
  */
 export async function calculateNetWorth(householdId: string): Promise<number> {
-  return accountService.calculateTotalBalance(householdId);
+  const accountBalance = await accountService.calculateTotalBalance(householdId);
+  
+  // Get all-time investments
+  // Note: specific date range 'all time' - using a wide range
+  const start = new Date(0); 
+  const end = new Date();
+  end.setFullYear(end.getFullYear() + 100); // Future proof
+
+  const investments = await transactionService.getTotalInvestments(householdId, start, end);
+
+  return accountBalance + investments;
+}
+
+export async function calculateTotalInvestments(
+  householdId: string,
+  startDate?: Date,
+  endDate?: Date
+): Promise<number> {
+    const start = startDate || new Date(0);
+    const end = endDate || new Date(); 
+    end.setHours(23,59,59,999);
+    if (!endDate) end.setFullYear(end.getFullYear() + 100);
+
+    return transactionService.getTotalInvestments(householdId, start, end);
 }
 
 /**

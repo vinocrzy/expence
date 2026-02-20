@@ -84,7 +84,7 @@ function QuickActionSheet({ isOpen, onClose, accounts }: QuickActionSheetProps) 
                         
                         <h3 className="text-lg font-bold text-white mb-6 text-center">Quick Actions</h3>
                         
-                        <div className="grid grid-cols-4 gap-4 mb-4">
+                        <div className="grid grid-cols-3 gap-4 mb-4">
                             <ActionButton 
                                 icon={ArrowUpRight} 
                                 label="Expense" 
@@ -114,6 +114,15 @@ function QuickActionSheet({ isOpen, onClose, accounts }: QuickActionSheetProps) 
                                 label="Pay Card" 
                                 color="purple" 
                                 onClick={() => handleAction('CREDIT_CARD')} 
+                            />
+                             <ActionButton 
+                                icon={RefreshCw} 
+                                label="Subscribe" 
+                                color="cyan" 
+                                onClick={() => {
+                                    router.push('/recurring?action=add');
+                                    onClose();
+                                }} 
                             />
                         </div>
                         
@@ -149,6 +158,7 @@ function ActionButton({ icon: Icon, label, color, onClick }: any) {
         blue: "bg-blue-500/15 text-blue-500 group-hover:bg-blue-500 group-hover:text-white",
         orange: "bg-orange-500/15 text-orange-500 group-hover:bg-orange-500 group-hover:text-white",
         purple: "bg-purple-500/15 text-purple-500 group-hover:bg-purple-500 group-hover:text-white",
+        cyan: "bg-cyan-500/15 text-cyan-500 group-hover:bg-cyan-500 group-hover:text-white",
     };
 
     return (
