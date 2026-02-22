@@ -615,6 +615,24 @@ export const transactionService = {
       .filter(t => t.type === 'INVESTMENT')
       .reduce((sum, t) => sum + t.amount, 0);
   },
+
+  // Get all unique tags across all transactions
+  async getAllTags(householdId: string): Promise<string[]> {
+    const transactions = await this.getAll(householdId);
+    const tagSet = new Set<string>();
+    transactions.forEach(t => {
+      if (t.tags && Array.isArray(t.tags)) {
+        t.tags.forEach(tag => tagSet.add(tag));
+      }
+    });
+    return Array.from(tagSet).sort();
+  },
+
+  // Get all transactions matching a specific tag
+  async getByTag(householdId: string, tag: string): Promise<Transaction[]> {
+    const transactions = await this.getAll(householdId);
+    return transactions.filter(t => t.tags && t.tags.includes(tag));
+  },
 };
 
 // ============================================

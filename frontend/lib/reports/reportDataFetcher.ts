@@ -60,8 +60,11 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
         const matchesCategory = filters.categoryIds?.length
           ? filters.categoryIds.includes(t.categoryId || '')
           : true;
+        const matchesTags = filters.tags?.length
+          ? t.tags && t.tags.some(tag => filters.tags!.includes(tag))
+          : true;
         
-        return matchesType && matchesAccount && matchesCategory;
+        return matchesType && matchesAccount && matchesCategory && matchesTags;
       });
       
       const totalAmount = filtered.reduce((sum, t) => sum + t.amount, 0);
@@ -301,7 +304,13 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
       const today = new Date();
       const allTxFromStart = await transactionService.getByDateRange(householdId, startDate, today);
       
-      const txInPeriod = allTxFromStart.filter(t => new Date(t.date) <= endDate);
+      const txInPeriod = allTxFromStart.filter(t => {
+        const inPeriod = new Date(t.date) <= endDate;
+        const matchesTags = filters.tags?.length
+          ? t.tags && t.tags.some(tag => filters.tags!.includes(tag))
+          : true;
+        return inPeriod && matchesTags;
+      });
       const txAfterPeriod = allTxFromStart.filter(t => new Date(t.date) > endDate);
 
       const activeAccounts = await accountService.getAllActive(householdId);

@@ -33,6 +33,7 @@ export interface Transaction {
   isSplit?: boolean;
   splits?: { id: string; amount: number; categoryId: string; note?: string }[];
   transferAccountId?: string; // ID of the destination account for transfers
+  tags?: string[]; // Free-form tags for occasion/event tracking (e.g. "Valentine's Day", "Goa Trip")
 }
 
 export interface Category {
