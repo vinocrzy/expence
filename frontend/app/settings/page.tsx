@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState } from 'react';
 import { downloadBackup, readBackupFile, importBackup } from '@/lib/backup';
 import { Loader2, Download, Upload, AlertTriangle, CheckCircle, Database, ChevronRight, User, Folder, Shield, Cloud, RefreshCw } from 'lucide-react';

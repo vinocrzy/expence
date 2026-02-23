@@ -217,3 +217,5 @@ export function TransactionCard({
     </div>
   )
 }
+
+export default TransactionCard

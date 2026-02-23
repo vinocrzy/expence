@@ -115,12 +115,54 @@ export interface BudgetCategoryLimit {
   amount: number;
 }
 
+// ── Envelope Strategy ─────────────────────────────────────────────────────────
+
+/** Per-envelope allocation + rollover config (parallel to BudgetCategoryLimit) */
+export interface EnvelopeConfig {
+  categoryId: string;
+  /** Allocated spend limit for this envelope in the current period */
+  allocated: number;
+  /** Whether leftover funds roll over into the next period */
+  rolloverEnabled?: boolean;
+  /** Accumulated rollover amount carried in from the previous period */
+  rolloverAmount?: number;
+}
+
+/** A fund movement between two envelopes within the same budget */
+export interface EnvelopeTransfer {
+  id: string;
+  fromCategoryId: string;
+  toCategoryId: string;
+  amount: number;
+  date: string; // ISO
+  note?: string;
+}
+
+/** Runtime state of a single envelope (not persisted – computed on render) */
+export interface EnvelopeState {
+  categoryId: string;
+  categoryName: string;
+  categoryColor: string;
+  categoryIcon?: string;
+  allocated: number;
+  spent: number;
+  /** Net transfer in (+) / out (−) for this period */
+  netTransfer: number;
+  rollover: number;
+  /** allocated + rollover + netTransfer − spent */
+  available: number;
+  rolloverEnabled: boolean;
+  isOverBudget: boolean;
+}
+
+// ── Budget ────────────────────────────────────────────────────────────────────
+
 export interface Budget {
   id: string;
   name: string;
   budgetMode?: 'EVENT' | 'RECURRING' | 'CATEGORY';
   categoryId?: string; // Legacy/Single Mode
-  budgetLimitConfig?: BudgetCategoryLimit[]; // New Multi-Category Mode
+  budgetLimitConfig?: BudgetCategoryLimit[]; // Standard Multi-Category Mode
   period?: string;
   startDate?: string;
   endDate?: string;
@@ -133,6 +175,14 @@ export interface Budget {
   updatedAt?: string;
   planItems?: BudgetPlanItem[];
   _rev?: string;
+
+  // ── Envelope addon fields (only present when budgetStrategy === 'ENVELOPE') ──
+  /** 'STANDARD' (default / legacy) or 'ENVELOPE' */
+  budgetStrategy?: 'STANDARD' | 'ENVELOPE';
+  /** Per-envelope allocation + rollover settings */
+  envelopeConfig?: EnvelopeConfig[];
+  /** Fund transfers between envelopes – stored on the budget doc for offline safety */
+  envelopeTransfers?: EnvelopeTransfer[];
 }
 
 export interface Household {

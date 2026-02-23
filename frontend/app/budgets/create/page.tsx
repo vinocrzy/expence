@@ -5,8 +5,8 @@ import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
 import { useCategories, useBudgets } from '@/hooks/useLocalData';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, Save, Calendar } from 'lucide-react';
-import { BudgetCategoryLimit, Budget, Category } from '@/lib/db-types';
+import { ArrowLeft, Plus, Trash2, Save, Calendar, Layers, RotateCcw } from 'lucide-react';
+import { BudgetCategoryLimit, Budget, Category, EnvelopeConfig } from '@/lib/db-types';
 
 export default function CreateBudgetPage() {
     const router = useRouter();
@@ -24,6 +24,11 @@ export default function CreateBudgetPage() {
         { categoryId: '', amount: 0 }
     ]);
 
+    // Envelope Strategy
+    const [envelopeEnabled, setEnvelopeEnabled] = useState(false);
+    // keyed by index, value = rolloverEnabled flag
+    const [rolloverMap, setRolloverMap] = useState<Record<number, boolean>>({});
+
     const totalBudget = categoryLimits.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
     const handleAddRow = () => {
@@ -34,12 +39,24 @@ export default function CreateBudgetPage() {
         const newLimits = [...categoryLimits];
         newLimits.splice(index, 1);
         setCategoryLimits(newLimits);
+        // remove rollover entry and re-index
+        const newMap: Record<number, boolean> = {};
+        Object.entries(rolloverMap).forEach(([k, v]) => {
+            const ki = Number(k);
+            if (ki < index) newMap[ki] = v;
+            else if (ki > index) newMap[ki - 1] = v;
+        });
+        setRolloverMap(newMap);
     };
 
     const handleUpdateRow = (index: number, field: keyof BudgetCategoryLimit, value: any) => {
         const newLimits = [...categoryLimits];
         newLimits[index] = { ...newLimits[index], [field]: value };
         setCategoryLimits(newLimits);
+    };
+
+    const toggleRollover = (index: number) => {
+        setRolloverMap(prev => ({ ...prev, [index]: !prev[index] }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -51,6 +68,16 @@ export default function CreateBudgetPage() {
         const validLimits = categoryLimits.filter(l => l.categoryId && l.amount > 0);
         if (validLimits.length === 0) return alert('Please set valid amounts for categories');
 
+        // Build envelopeConfig if strategy is enabled
+        const envelopeConfig: EnvelopeConfig[] | undefined = envelopeEnabled
+            ? validLimits.map((l, i) => ({
+                categoryId: l.categoryId,
+                allocated: l.amount,
+                rolloverEnabled: rolloverMap[categoryLimits.findIndex(cl => cl.categoryId === l.categoryId)] ?? false,
+                rolloverAmount: 0,
+              }))
+            : undefined;
+
         try {
             await addBudget({
                 name,
@@ -61,7 +88,8 @@ export default function CreateBudgetPage() {
                 budgetLimitConfig: validLimits,
                 totalBudget,
                 totalSpent: 0,
-                // Legacy support (optional, can leave empty or set main category if needed)
+                budgetStrategy: envelopeEnabled ? 'ENVELOPE' : 'STANDARD',
+                envelopeConfig,
             });
             router.push('/budgets');
         } catch (error) {
@@ -210,6 +238,69 @@ export default function CreateBudgetPage() {
                         >
                             <Plus className="h-5 w-5" /> Add Category
                         </button>
+                    </div>
+
+                    {/* ── Envelope Strategy Card ─────────────────────────────────── */}
+                    <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 bg-purple-500/10 rounded-xl flex items-center justify-center">
+                                    <Layers className="h-5 w-5 text-purple-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white">Envelope Strategy</h3>
+                                    <p className="text-xs text-gray-500 mt-0.5">Track each category as a separate spending envelope with optional rollover</p>
+                                </div>
+                            </div>
+                            {/* Toggle */}
+                            <button
+                                type="button"
+                                onClick={() => setEnvelopeEnabled(v => !v)}
+                                className={`relative w-12 h-6 rounded-full transition-colors ${
+                                    envelopeEnabled ? 'bg-purple-600' : 'bg-gray-700'
+                                }`}
+                            >
+                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                                    envelopeEnabled ? 'translate-x-6' : 'translate-x-0'
+                                }`} />
+                            </button>
+                        </div>
+
+                        {envelopeEnabled && (
+                            <div className="mt-5 space-y-3">
+                                <p className="text-xs text-purple-300 bg-purple-500/10 border border-purple-500/20 rounded-xl px-3 py-2">
+                                    Enable rollover on individual envelopes to carry unused funds into the next period.
+                                </p>
+                                {categoryLimits.map((limit, index) => {
+                                    const cat = categories.find((c: any) => c.id === limit.categoryId);
+                                    if (!limit.categoryId) return null;
+                                    const hasRollover = rolloverMap[index] ?? false;
+                                    return (
+                                        <div key={index} className="flex items-center justify-between bg-gray-900/60 rounded-xl px-4 py-3">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm">{cat?.icon}</span>
+                                                <span className="text-sm font-medium text-gray-300">{cat?.name ?? 'Category ' + (index + 1)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <RotateCcw className={`h-3.5 w-3.5 ${hasRollover ? 'text-purple-400' : 'text-gray-600'}`} />
+                                                <span className="text-xs text-gray-500">Rollover</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleRollover(index)}
+                                                    className={`relative w-10 h-5 rounded-full transition-colors ${
+                                                        hasRollover ? 'bg-purple-600' : 'bg-gray-700'
+                                                    }`}
+                                                >
+                                                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                                                        hasRollover ? 'translate-x-5' : 'translate-x-0'
+                                                    }`} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
             {/* Submit Bar */}
