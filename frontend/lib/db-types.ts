@@ -238,6 +238,7 @@ export interface RecurringTransaction {
   startDate: string;
   nextDueDate: string;
   categoryId?: string;
+  subCategoryId?: string; // Sub-category ID
   accountId?: string; // Source account to debit from
   autoPay?: boolean; // If true, system might auto-create tx (future feature)
   status?: 'ACTIVE' | 'PAUSED' | 'COMPLETED';

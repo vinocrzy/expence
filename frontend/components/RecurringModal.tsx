@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Calendar, DollarSign, RefreshCw, Tag, CreditCard } from 'lucide-react';
 import { RecurringTransaction, Category, Account } from '@/lib/db-types';
 import { recurringService, categoryService, accountService, getHouseholdId } from '@/lib/localdb-services';
@@ -18,6 +18,7 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
   const [frequency, setFrequency] = useState<'MONTHLY' | 'YEARLY' | 'QUARTERLY'>('MONTHLY');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState('');
+  const [subCategoryId, setSubCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
   
   const [categories, setCategories] = useState<Category[]>([]);
@@ -46,6 +47,7 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
       setFrequency(editingItem.frequency as any);
       setStartDate(editingItem.startDate ? new Date(editingItem.startDate).toISOString().split('T')[0] : '');
       setCategoryId(editingItem.categoryId || '');
+      setSubCategoryId(editingItem.subCategoryId || '');
       setAccountId(editingItem.accountId || '');
     } else {
       setName('');
@@ -54,6 +56,7 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
       setFrequency('MONTHLY');
       setStartDate(new Date().toISOString().split('T')[0]);
       setCategoryId('');
+      setSubCategoryId('');
       setAccountId('');
     }
   }, [editingItem, isOpen]);
@@ -69,6 +72,7 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
         startDate: new Date(startDate).toISOString(),
         nextDueDate: new Date(startDate).toISOString(), // Initial next due is start date? Or calculated? Assuming immediate start.
         categoryId,
+        subCategoryId: subCategoryId || undefined,
         accountId,
         autoPay: false
       };
@@ -87,6 +91,12 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
   };
 
   const filteredCategories = categories.filter(c => c.type === type);
+
+  const activeSubCategories = useMemo(() => {
+    if (!categoryId) return [];
+    const cat = categories.find(c => c.id === categoryId);
+    return cat?.subCategories || [];
+  }, [categories, categoryId]);
 
   if (!isOpen) return null;
 
@@ -116,7 +126,7 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setType(t)}
+                  onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
                   className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                     type === t 
                       ? t === 'EXPENSE' ? 'bg-red-500 text-white' : t === 'INVESTMENT' ? 'bg-emerald-500 text-white' : 'bg-purple-500 text-white'
@@ -204,7 +214,7 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
                         </div>
                         <select
                             value={categoryId}
-                            onChange={e => setCategoryId(e.target.value)}
+                            onChange={e => { setCategoryId(e.target.value); setSubCategoryId(''); }}
                             className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-3 text-white appearance-none focus:outline-none focus:border-blue-500/50 transition-colors"
                             required
                         >
@@ -213,6 +223,18 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
                                 <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                             ))}
                         </select>
+                        {activeSubCategories.length > 0 && (
+                          <select
+                            value={subCategoryId}
+                            onChange={e => setSubCategoryId(e.target.value)}
+                            className="w-full mt-2 bg-black/20 border border-white/5 rounded-xl pl-4 pr-4 py-3 text-white appearance-none focus:outline-none focus:border-blue-500/50 transition-colors"
+                          >
+                            <option value="">Sub-category (optional)</option>
+                            {activeSubCategories.map(sub => (
+                              <option key={sub.id} value={sub.id}>{sub.name}</option>
+                            ))}
+                          </select>
+                        )}
                     </div>
                  </div>
                  <div>
