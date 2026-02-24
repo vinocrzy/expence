@@ -41,7 +41,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$SESSION_PARAM" \
             -w "\n%{http_code}" \
-            ${{ secrets.APP_URL }}/api/portfolio/market-sync)
+            https://pocket.vinocrazy.com/api/portfolio/market-sync)
           
           # Extract status code and body
           HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
