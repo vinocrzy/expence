@@ -5,8 +5,8 @@ import Navbar from '@/components/Navbar';
 import { useRouter, useParams } from 'next/navigation';
 import { useCategories } from '@/hooks/useLocalData';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, Save, Calendar, Loader2 } from 'lucide-react';
-import { BudgetCategoryLimit } from '@/lib/db-types';
+import { ArrowLeft, Plus, Trash2, Save, Calendar, Loader2, Layers, RotateCcw } from 'lucide-react';
+import { BudgetCategoryLimit, EnvelopeConfig } from '@/lib/db-types';
 import { budgetService, getHouseholdId } from '@/lib/localdb-services';
 
 export default function EditBudgetPage() {
@@ -20,6 +20,10 @@ export default function EditBudgetPage() {
     const [endDate, setEndDate] = useState('');
     const [categoryRows, setCategoryRows] = useState<{ tempId: string, categoryId: string, amount: string }[]>([]);
     
+    // Envelope Strategy
+    const [envelopeEnabled, setEnvelopeEnabled] = useState(false);
+    const [rolloverMap, setRolloverMap] = useState<Record<string, boolean>>({});
+
     // Derived total
     const totalBudget = categoryRows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
     
@@ -45,6 +49,18 @@ export default function EditBudgetPage() {
                         amount: c.amount.toString()
                     })));
                 }
+
+                // Load envelope config if present
+                if (b.budgetStrategy === 'ENVELOPE') {
+                    setEnvelopeEnabled(true);
+                    if (b.envelopeConfig) {
+                        const map: Record<string, boolean> = {};
+                        b.envelopeConfig.forEach(ec => {
+                            map[ec.categoryId] = ec.rolloverEnabled ?? false;
+                        });
+                        setRolloverMap(map);
+                    }
+                }
             } catch (e) {
                 console.error(e);
                 router.push('/budgets');
@@ -69,6 +85,10 @@ export default function EditBudgetPage() {
         setCategoryRows(categoryRows.filter((_, i) => i !== index));
     };
 
+    const toggleRollover = (categoryId: string) => {
+        setRolloverMap(prev => ({ ...prev, [categoryId]: !prev[categoryId] }));
+    };
+
     const handleSave = async () => {
         if (!name.trim()) return alert('Please enter a budget name');
         if (categoryRows.length === 0) return alert('Please add at least one category');
@@ -82,14 +102,27 @@ export default function EditBudgetPage() {
                  amount: Number(row.amount)
             }));
 
+            // Build envelope config
+            const envelopeConfig: EnvelopeConfig[] | undefined = envelopeEnabled
+                ? config.map(c => ({
+                    categoryId: c.categoryId,
+                    allocated: c.amount,
+                    rolloverEnabled: rolloverMap[c.categoryId] ?? false,
+                    // Preserve existing rolloverAmount if any (don't reset on save)
+                    rolloverAmount: undefined,
+                  }))
+                : undefined;
+
             await budgetService.update(id as string, {
                 name,
-                totalBudget, // Recalculated total
+                totalBudget,
                 status: 'ACTIVE',
-                budgetMode: budgetMode as 'RECURRING' | 'EVENT' | 'CATEGORY', // Cast to allowed types
+                budgetMode: budgetMode as 'RECURRING' | 'EVENT' | 'CATEGORY',
                 startDate: budgetMode === 'EVENT' && startDate ? new Date(startDate).toISOString() : undefined,
                 endDate: budgetMode === 'EVENT' && endDate ? new Date(endDate).toISOString() : undefined,
-                budgetLimitConfig: config
+                budgetLimitConfig: config,
+                budgetStrategy: envelopeEnabled ? 'ENVELOPE' : 'STANDARD',
+                envelopeConfig,
             });
 
             router.push(`/budgets/${id}`);
@@ -240,6 +273,68 @@ export default function EditBudgetPage() {
                         >
                             <Plus className="h-5 w-5" /> Add Category
                         </button>
+                    </div>
+
+                    {/* ── Envelope Strategy Card ─────────────────────────────────── */}
+                    <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700/50">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 bg-purple-500/10 rounded-xl flex items-center justify-center">
+                                    <Layers className="h-5 w-5 text-purple-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white">Envelope Strategy</h3>
+                                    <p className="text-xs text-gray-500 mt-0.5">Track each category as a separate spending envelope with optional rollover</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setEnvelopeEnabled(v => !v)}
+                                className={`relative w-12 h-6 rounded-full transition-colors ${
+                                    envelopeEnabled ? 'bg-purple-600' : 'bg-gray-700'
+                                }`}
+                            >
+                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                                    envelopeEnabled ? 'translate-x-6' : 'translate-x-0'
+                                }`} />
+                            </button>
+                        </div>
+
+                        {envelopeEnabled && (
+                            <div className="mt-5 space-y-3">
+                                <p className="text-xs text-purple-300 bg-purple-500/10 border border-purple-500/20 rounded-xl px-3 py-2">
+                                    Enable rollover on individual envelopes to carry unused funds into the next period.
+                                </p>
+                                {categoryRows.map((row) => {
+                                    if (!row.categoryId) return null;
+                                    const cat = categories.find((c: any) => c.id === row.categoryId);
+                                    const hasRollover = rolloverMap[row.categoryId] ?? false;
+                                    return (
+                                        <div key={row.tempId} className="flex items-center justify-between bg-gray-900/60 rounded-xl px-4 py-3">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm">{(cat as any)?.icon}</span>
+                                                <span className="text-sm font-medium text-gray-300">{cat?.name ?? row.categoryId}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <RotateCcw className={`h-3.5 w-3.5 ${hasRollover ? 'text-purple-400' : 'text-gray-600'}`} />
+                                                <span className="text-xs text-gray-500">Rollover</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleRollover(row.categoryId)}
+                                                    className={`relative w-10 h-5 rounded-full transition-colors ${
+                                                        hasRollover ? 'bg-purple-600' : 'bg-gray-700'
+                                                    }`}
+                                                >
+                                                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                                                        hasRollover ? 'translate-x-5' : 'translate-x-0'
+                                                    }`} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
                     {/* Submit */}

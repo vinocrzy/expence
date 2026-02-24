@@ -18,7 +18,15 @@ COPY . .
 # Disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN npm run build -- --webpack
+# Accept build-time env vars from docker-compose
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG CLERK_SECRET_KEY
+ARG NEXT_PUBLIC_COUCHDB_URL
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV CLERK_SECRET_KEY=$CLERK_SECRET_KEY
+ENV NEXT_PUBLIC_COUCHDB_URL=$NEXT_PUBLIC_COUCHDB_URL
+
+RUN npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner

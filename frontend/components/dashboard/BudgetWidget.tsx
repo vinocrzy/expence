@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { PieChart, TrendingUp, AlertCircle, ChevronRight, Plus, Target } from 'lucide-react';
 import { Budget } from '@/lib/db-types';
 import { useBudgets, useTransactions } from '@/hooks/useLocalData';
+import { calculateBudgetSpent, getBudgetPeriodWindow } from '@/lib/budget-engine';
 
 export default function BudgetWidget() {
   const router = useRouter();
@@ -24,28 +25,8 @@ export default function BudgetWidget() {
     
     if (activeBudget) {
         setBudget(activeBudget);
-        
-        // Calculate Spend for Current Month
-        const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        end.setHours(23, 59, 59, 999);
-
-        const relativeExpenses = transactions.filter(t => {
-            const tDate = new Date(t.date);
-            return t.type === 'EXPENSE' && tDate >= start && tDate <= end;
-        });
-
-        // Filter by budget categories if specific config exists
-        let relevantAmount = 0;
-        if (activeBudget.budgetLimitConfig && activeBudget.budgetLimitConfig.length > 0) {
-            const categoryIds = activeBudget.budgetLimitConfig.map(c => c.categoryId);
-            relevantAmount = relativeExpenses
-                .filter(t => categoryIds.includes(t.categoryId || ''))
-                .reduce((sum, t) => sum + t.amount, 0);
-        } else {
-            relevantAmount = relativeExpenses.reduce((sum, t) => sum + t.amount, 0);
-        }
+        const { start, end } = getBudgetPeriodWindow(activeBudget);
+        const relevantAmount = calculateBudgetSpent(activeBudget, transactions, start, end);
         setSpent(relevantAmount);
     } else {
         setBudget(null);

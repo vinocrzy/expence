@@ -1,0 +1,4947 @@
+{
+  "symbols": [
+    {
+      "symbol": "ABGSEC",
+      "name": "ABGSEC",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ABSLBANETF",
+      "name": "ABSLBANETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ABSLLIQUID",
+      "name": "ABSLLIQUID",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ABSLMSCIN",
+      "name": "ABSLMSCIN",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ABSLNN50ET",
+      "name": "ABSLNN50ET",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ABSLPSE",
+      "name": "ABSLPSE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ALPHA",
+      "name": "ALPHA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ALPHAETF",
+      "name": "ALPHAETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ALPL30IETF",
+      "name": "ALPL30IETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AONEGOLD",
+      "name": "AONEGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AONELIQUID",
+      "name": "AONELIQUID",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AONENIFTY",
+      "name": "AONENIFTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AONETMMQ50",
+      "name": "AONETMMQ50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AONETOTAL",
+      "name": "AONETOTAL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AUTOBEES",
+      "name": "AUTOBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AUTOIETF",
+      "name": "AUTOIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AXISBNKETF",
+      "name": "AXISBNKETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AXISBPSETF",
+      "name": "AXISBPSETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AXISCETF",
+      "name": "AXISCETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AXISGOLD",
+      "name": "AXISGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AXISHCETF",
+      "name": "AXISHCETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AXISILVER",
+      "name": "AXISILVER",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AXISNIFTY",
+      "name": "AXISNIFTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AXISTECETF",
+      "name": "AXISTECETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AXISVALUE",
+      "name": "AXISVALUE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "AXSENSEX",
+      "name": "AXSENSEX",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BANKADD",
+      "name": "BANKADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BANKBEES",
+      "name": "BANKBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BANKBETA",
+      "name": "BANKBETA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BANKBETF",
+      "name": "BANKBETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BANKETF",
+      "name": "BANKETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BANKIETF",
+      "name": "BANKIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BANKNIFTY1",
+      "name": "BANKNIFTY1",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BANKPSU",
+      "name": "BANKPSU",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BBETF0432",
+      "name": "BBETF0432",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BBNPNBETF",
+      "name": "BBNPNBETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BBNPPGOLD",
+      "name": "BBNPPGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BFSI",
+      "name": "BFSI",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BSE500IETF",
+      "name": "BSE500IETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BSLGOLDETF",
+      "name": "BSLGOLDETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BSLNIFTY",
+      "name": "BSLNIFTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "BSLSENETFG",
+      "name": "BSLSENETFG",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "CASHIETF",
+      "name": "CASHIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "CHEMICAL",
+      "name": "CHEMICAL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "CHOICEGOLD",
+      "name": "CHOICEGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "COMMOIETF",
+      "name": "COMMOIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "CONS",
+      "name": "CONS",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "CONSUMBEES",
+      "name": "CONSUMBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "CONSUMER",
+      "name": "CONSUMER",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "CONSUMIETF",
+      "name": "CONSUMIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "CPSEETF",
+      "name": "CPSEETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "DEFENCE",
+      "name": "DEFENCE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "DIVIDEND",
+      "name": "DIVIDEND",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "DIVOPPBEES",
+      "name": "DIVOPPBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "EBANKNIFTY",
+      "name": "EBANKNIFTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "EBBETF0430",
+      "name": "EBBETF0430",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "EBBETF0431",
+      "name": "EBBETF0431",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "EBBETF0433",
+      "name": "EBBETF0433",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ECAPINSURE",
+      "name": "ECAPINSURE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "EGOLD",
+      "name": "EGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ELIQUID",
+      "name": "ELIQUID",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ELM250",
+      "name": "ELM250",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "EMULTIMQ",
+      "name": "EMULTIMQ",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ENERGY",
+      "name": "ENERGY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ENIFTY",
+      "name": "ENIFTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "EQUAL200",
+      "name": "EQUAL200",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "EQUAL50",
+      "name": "EQUAL50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "EQUAL50ADD",
+      "name": "EQUAL50ADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ESENSEX",
+      "name": "ESENSEX",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ESG",
+      "name": "ESG",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ESILVER",
+      "name": "ESILVER",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "EVIETF",
+      "name": "EVIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "EVINDIA",
+      "name": "EVINDIA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "FINIETF",
+      "name": "FINIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "FLEXIADD",
+      "name": "FLEXIADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "FMCGIETF",
+      "name": "FMCGIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GILT10BETA",
+      "name": "GILT10BETA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GILT5BETA",
+      "name": "GILT5BETA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GILT5YBEES",
+      "name": "GILT5YBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GOLD1",
+      "name": "GOLD1",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GOLD360",
+      "name": "GOLD360",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GOLDADD",
+      "name": "GOLDADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GOLDBEES",
+      "name": "GOLDBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GOLDBETA",
+      "name": "GOLDBETA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GOLDBND",
+      "name": "GOLDBND",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GOLDCASE",
+      "name": "GOLDCASE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GOLDETF",
+      "name": "GOLDETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GOLDIETF",
+      "name": "GOLDIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWCAPM",
+      "name": "GROWWCAPM",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWCHEM",
+      "name": "GROWWCHEM",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWDEFNC",
+      "name": "GROWWDEFNC",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWEV",
+      "name": "GROWWEV",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWGOLD",
+      "name": "GROWWGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWLIQID",
+      "name": "GROWWLIQID",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWLOVOL",
+      "name": "GROWWLOVOL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWMC150",
+      "name": "GROWWMC150",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWMETAL",
+      "name": "GROWWMETAL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWMOM50",
+      "name": "GROWWMOM50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWN200",
+      "name": "GROWWN200",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWNET",
+      "name": "GROWWNET",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWNIFTY",
+      "name": "GROWWNIFTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWNXT50",
+      "name": "GROWWNXT50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWPOWER",
+      "name": "GROWWPOWER",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWPSE",
+      "name": "GROWWPSE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWRAIL",
+      "name": "GROWWRAIL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWRLTY",
+      "name": "GROWWRLTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWSC250",
+      "name": "GROWWSC250",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GROWWSLVR",
+      "name": "GROWWSLVR",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GSEC10ABSL",
+      "name": "GSEC10ABSL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GSEC10IETF",
+      "name": "GSEC10IETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GSEC10YEAR",
+      "name": "GSEC10YEAR",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "GSEC5IETF",
+      "name": "GSEC5IETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCBSE500",
+      "name": "HDFCBSE500",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCGOLD",
+      "name": "HDFCGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCGROWTH",
+      "name": "HDFCGROWTH",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCLIQUID",
+      "name": "HDFCLIQUID",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCLOWVOL",
+      "name": "HDFCLOWVOL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCMID150",
+      "name": "HDFCMID150",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCMOMENT",
+      "name": "HDFCMOMENT",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCNEXT50",
+      "name": "HDFCNEXT50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCNIF100",
+      "name": "HDFCNIF100",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCNIF50",
+      "name": "HDFC Nifty 50 ETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCNIFBAN",
+      "name": "HDFCNIFBAN",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCNIFIT",
+      "name": "HDFCNIFIT",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCNIFTY",
+      "name": "HDFCNIFTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCPSUBK",
+      "name": "HDFCPSUBK",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCPVTBAN",
+      "name": "HDFCPVTBAN",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCQUAL",
+      "name": "HDFCQUAL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCSENSEX",
+      "name": "HDFCSENSEX",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCSILVER",
+      "name": "HDFCSILVER",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCSML250",
+      "name": "HDFCSML250",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HDFCVALUE",
+      "name": "HDFCVALUE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HEALTHADD",
+      "name": "HEALTHADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HEALTHCARE",
+      "name": "HEALTHCARE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HEALTHIETF",
+      "name": "HEALTHIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HEALTHY",
+      "name": "HEALTHY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "HNGSNGBEES",
+      "name": "HNGSNGBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ICICIB22",
+      "name": "ICICIB22",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "IDFNIFTYET",
+      "name": "IDFNIFTYET",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "INFRA",
+      "name": "INFRA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "INFRABEES",
+      "name": "INFRABEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "INFRAIETF",
+      "name": "INFRAIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "INTERNET",
+      "name": "INTERNET",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "IT",
+      "name": "IT",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ITADD",
+      "name": "ITADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ITBEES",
+      "name": "ITBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ITBETA",
+      "name": "ITBETA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ITETF",
+      "name": "ITETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "ITIETF",
+      "name": "ITIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "IVZINGOLD",
+      "name": "IVZINGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "IVZINNIFTY",
+      "name": "IVZINNIFTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "JUNIORBEES",
+      "name": "JUNIORBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "KOTAKNIFTY",
+      "name": "Kotak Nifty ETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LICMFGOLD",
+      "name": "LICMFGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LICNETFGSC",
+      "name": "LICNETFGSC",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LICNETFN50",
+      "name": "LICNETFN50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LICNETFSEN",
+      "name": "LICNETFSEN",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LICNFNHGP",
+      "name": "LICNFNHGP",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LICNMID100",
+      "name": "LICNMID100",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQGRWBEES",
+      "name": "LIQGRWBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQUID",
+      "name": "LIQUID",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQUID1",
+      "name": "LIQUID1",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQUIDADD",
+      "name": "LIQUIDADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQUIDBEES",
+      "name": "LIQUIDBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQUIDBETF",
+      "name": "LIQUIDBETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQUIDCASE",
+      "name": "LIQUIDCASE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQUIDETF",
+      "name": "LIQUIDETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQUIDIETF",
+      "name": "LIQUIDIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQUIDPLUS",
+      "name": "LIQUIDPLUS",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQUIDSBI",
+      "name": "LIQUIDSBI",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LIQUIDSHRI",
+      "name": "LIQUIDSHRI",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LOWVOL",
+      "name": "LOWVOL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LOWVOL1",
+      "name": "LOWVOL1",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LOWVOLIETF",
+      "name": "LOWVOLIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LTGILTBEES",
+      "name": "LTGILTBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "LTGILTCASE",
+      "name": "LTGILTCASE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MAFANG",
+      "name": "MAFANG",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MAHKTECH",
+      "name": "MAHKTECH",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MAKEINDIA",
+      "name": "MAKEINDIA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MANUFGBEES",
+      "name": "MANUFGBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MASPTOP50",
+      "name": "MASPTOP50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "METAL",
+      "name": "METAL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "METALIETF",
+      "name": "METALIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MID150",
+      "name": "MID150",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MID150BEES",
+      "name": "MID150BEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MID150CASE",
+      "name": "MID150CASE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MIDCAP",
+      "name": "MIDCAP",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MIDCAPADD",
+      "name": "MIDCAPADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MIDCAPBETA",
+      "name": "MIDCAPBETA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MIDCAPETF",
+      "name": "MIDCAPETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MIDCAPIETF",
+      "name": "MIDCAPIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MIDQ50ADD",
+      "name": "MIDQ50ADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MIDSELIETF",
+      "name": "MIDSELIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MIDSMALL",
+      "name": "MIDSMALL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MNC",
+      "name": "MNC",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOALPHA50",
+      "name": "MOALPHA50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOCAPITAL",
+      "name": "MOCAPITAL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MODEFENCE",
+      "name": "MODEFENCE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOENERGY",
+      "name": "MOENERGY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOGOLD",
+      "name": "MOGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOGSEC",
+      "name": "MOGSEC",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOHEALTH",
+      "name": "MOHEALTH",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOINFRA",
+      "name": "MOINFRA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOIPO",
+      "name": "MOIPO",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOLOWVOL",
+      "name": "MOLOWVOL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOM100",
+      "name": "MOM100",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOM30",
+      "name": "Motilal Oswal Nifty Midcap 150 ETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOM30IETF",
+      "name": "MOM30IETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOM50",
+      "name": "MOM50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOMENTUM",
+      "name": "MOMENTUM",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOMENTUM30",
+      "name": "MOMENTUM30",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOMENTUM50",
+      "name": "MOMENTUM50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOMGF",
+      "name": "MOMGF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOMIDMTM",
+      "name": "MOMIDMTM",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOMNC",
+      "name": "MOMNC",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOMOMENTUM",
+      "name": "MOMOMENTUM",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MON100",
+      "name": "MON100",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MON50EQUAL",
+      "name": "MON50EQUAL",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MONEXT50",
+      "name": "MONEXT50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MONIFTY100",
+      "name": "MONIFTY100",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MONIFTY500",
+      "name": "MONIFTY500",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MONQ50",
+      "name": "MONQ50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOPSE",
+      "name": "MOPSE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOQUALITY",
+      "name": "MOQUALITY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOREALTY",
+      "name": "MOREALTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOSERVICE",
+      "name": "MOSERVICE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOSILVER",
+      "name": "MOSILVER",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOSMALL250",
+      "name": "MOSMALL250",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOTOUR",
+      "name": "MOTOUR",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MOVALUE",
+      "name": "MOVALUE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MSCIADD",
+      "name": "MSCIADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MSCIINDIA",
+      "name": "MSCIINDIA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "MULTICAP",
+      "name": "MULTICAP",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NETF",
+      "name": "NETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NETFBNK",
+      "name": "Nippon India ETF Bank BeES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NEXT30ADD",
+      "name": "NEXT30ADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NEXT50",
+      "name": "NEXT50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NEXT50ADD",
+      "name": "NEXT50ADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NEXT50BETA",
+      "name": "NEXT50BETA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NEXT50ETF",
+      "name": "NEXT50ETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NEXT50IETF",
+      "name": "NEXT50IETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIF100BEES",
+      "name": "NIF100BEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIF100IETF",
+      "name": "NIF100IETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIFTY1",
+      "name": "NIFTY1",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIFTY100EW",
+      "name": "NIFTY100EW",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIFTYADD",
+      "name": "NIFTYADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIFTYBEES",
+      "name": "NIFTYBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIFTYBETA",
+      "name": "NIFTYBETA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIFTYBETF",
+      "name": "NIFTYBETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIFTYCASE",
+      "name": "NIFTYCASE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIFTYETF",
+      "name": "NIFTYETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIFTYIETF",
+      "name": "NIFTYIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NIFTYQLITY",
+      "name": "NIFTYQLITY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NPBET",
+      "name": "NPBET",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NV20",
+      "name": "NV20",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NV20BEES",
+      "name": "NV20BEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "NV20IETF",
+      "name": "NV20IETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "OILIETF",
+      "name": "OILIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "PHARMABEES",
+      "name": "PHARMABEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "PSUBANK",
+      "name": "PSUBANK",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "PSUBANKADD",
+      "name": "PSUBANKADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "PSUBNKBEES",
+      "name": "PSUBNKBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "PSUBNKIETF",
+      "name": "PSUBNKIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "PVTBANIETF",
+      "name": "PVTBANIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "PVTBANKADD",
+      "name": "PVTBANKADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "QGOLDHALF",
+      "name": "QGOLDHALF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "QNIFTY",
+      "name": "QNIFTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "QUAL30IETF",
+      "name": "QUAL30IETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "QUALITY30",
+      "name": "QUALITY30",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SBIBPB",
+      "name": "SBIBPB",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SBIETFCON",
+      "name": "SBIETFCON",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SBIETFIT",
+      "name": "SBIETFIT",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SBIETFPB",
+      "name": "SBIETFPB",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SBIETFQLTY",
+      "name": "SBIETFQLTY",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SBILIQETF",
+      "name": "SBILIQETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SBINEQWETF",
+      "name": "SBINEQWETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SBISILVER",
+      "name": "SBISILVER",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SDL26BEES",
+      "name": "SDL26BEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SELECTIPO",
+      "name": "SELECTIPO",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SENSEXADD",
+      "name": "SENSEXADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SENSEXBETA",
+      "name": "SENSEXBETA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SENSEXETF",
+      "name": "SENSEXETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SENSEXIETF",
+      "name": "SENSEXIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SETF10GILT",
+      "name": "SETF10GILT",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SETFGOLD",
+      "name": "SETFGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SETFNIF50",
+      "name": "SETFNIF50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SETFNIFBK",
+      "name": "SETFNIFBK",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SETFNN50",
+      "name": "SETFNN50",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SHARIABEES",
+      "name": "SHARIABEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SILVER",
+      "name": "SILVER",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SILVER1",
+      "name": "SILVER1",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SILVER360",
+      "name": "SILVER360",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SILVERADD",
+      "name": "SILVERADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SILVERAG",
+      "name": "SILVERAG",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SILVERBEES",
+      "name": "SILVERBEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SILVERBETA",
+      "name": "SILVERBETA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SILVERBND",
+      "name": "SILVERBND",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SILVERCASE",
+      "name": "SILVERCASE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SILVERIETF",
+      "name": "SILVERIETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SMALL250",
+      "name": "SMALL250",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SMALLADD",
+      "name": "SMALLADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SMALLCAP",
+      "name": "SMALLCAP",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SML100CASE",
+      "name": "SML100CASE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SNXT30BEES",
+      "name": "SNXT30BEES",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "SNXT50BETA",
+      "name": "SNXT50BETA",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "TATAGOLD",
+      "name": "TATAGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "TATSILV",
+      "name": "TATSILV",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "TECH",
+      "name": "TECH",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "TNIDETF",
+      "name": "TNIDETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "TOP100CASE",
+      "name": "TOP100CASE",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "TOP10ADD",
+      "name": "TOP10ADD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "TOP15IETF",
+      "name": "TOP15IETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "TOP20",
+      "name": "TOP20",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "TWCGOLDETF",
+      "name": "TWCGOLDETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "UNIONGOLD",
+      "name": "UNIONGOLD",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "VAL30IETF",
+      "name": "VAL30IETF",
+      "exchange": "NSE",
+      "type": "ETF"
+    },
+    {
+      "symbol": "360ONE",
+      "name": "360 ONE WAM LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "3MINDIA",
+      "name": "3M India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AADHARHFC",
+      "name": "Aadhar Housing Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AARTIIND",
+      "name": "Aarti Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AAVAS",
+      "name": "Aavas Financiers Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ABB",
+      "name": "ABB India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ABBOTINDIA",
+      "name": "Abbott India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ABCAPITAL",
+      "name": "Aditya Birla Capital Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ABFRL",
+      "name": "Aditya Birla Fashion and Retail Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ABLBL",
+      "name": "Aditya Birla Lifestyle Brands Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ABREL",
+      "name": "Aditya Birla Real Estate Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ABSLAMC",
+      "name": "Aditya Birla Sun Life AMC Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ACC",
+      "name": "ACC Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ACE",
+      "name": "Action Construction Equipment Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ACMESOLAR",
+      "name": "Acme Solar Holdings Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ADANIENSOL",
+      "name": "Adani Energy Solutions Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ADANIENT",
+      "name": "Adani Enterprises Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ADANIGREEN",
+      "name": "Adani Green Energy Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ADANIPORTS",
+      "name": "Adani Ports and Special Economic Zone Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ADANIPOWER",
+      "name": "Adani Power Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AEGISLOG",
+      "name": "Aegis Logistics Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AEGISVOPAK",
+      "name": "Aegis Vopak Terminals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AFCONS",
+      "name": "Afcons Infrastructure Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AFFLE",
+      "name": "Affle 3i Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AGARWALEYE",
+      "name": "Dr. Agarwal's Health Care Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AIAENG",
+      "name": "AIA Engineering Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AIIL",
+      "name": "Authum Investment & Infrastructure Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AJANTPHARM",
+      "name": "Ajanta Pharma Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AKUMS",
+      "name": "Akums Drugs and Pharmaceuticals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AKZOINDIA",
+      "name": "Akzo Nobel India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ALKEM",
+      "name": "Alkem Laboratories Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ALKYLAMINE",
+      "name": "Alkyl Amines Chemicals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ALOKINDS",
+      "name": "Alok Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AMBER",
+      "name": "Amber Enterprises India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AMBUJACEM",
+      "name": "Ambuja Cements Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ANANDRATHI",
+      "name": "Anand Rathi Wealth Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ANANTRAJ",
+      "name": "Anant Raj Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ANGELONE",
+      "name": "Angel One Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "APARINDS",
+      "name": "Apar Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "APLAPOLLO",
+      "name": "APL Apollo Tubes Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "APLLTD",
+      "name": "Alembic Pharmaceuticals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "APOLLOHOSP",
+      "name": "Apollo Hospitals Enterprise Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "APOLLOTYRE",
+      "name": "Apollo Tyres Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "APTUS",
+      "name": "Aptus Value Housing Finance India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ARE&M",
+      "name": "Amara Raja Energy & Mobility Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ASAHIINDIA",
+      "name": "Asahi India Glass Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ASHOKLEY",
+      "name": "Ashok Leyland Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ASIANPAINT",
+      "name": "Asian Paints Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ASTERDM",
+      "name": "Aster DM Healthcare Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ASTRAL",
+      "name": "Astral Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ASTRAZEN",
+      "name": "AstraZeneca Pharma India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ATGL",
+      "name": "Adani Total Gas Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ATHERENERG",
+      "name": "Ather Energy Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ATUL",
+      "name": "Atul Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AUBANK",
+      "name": "AU Small Finance Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AUROPHARMA",
+      "name": "Aurobindo Pharma Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AWL",
+      "name": "AWL Agri Business Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "AXISBANK",
+      "name": "Axis Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BAJAJ-AUTO",
+      "name": "Bajaj Auto Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BAJAJFINSV",
+      "name": "Bajaj Finserv Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BAJAJHFL",
+      "name": "Bajaj Housing Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BAJAJHLDNG",
+      "name": "Bajaj Holdings & Investment Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "name": "Bajaj Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BALKRISIND",
+      "name": "Balkrishna Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BALRAMCHIN",
+      "name": "Balrampur Chini Mills Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BANDHANBNK",
+      "name": "Bandhan Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BANKBARODA",
+      "name": "Bank of Baroda",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BANKINDIA",
+      "name": "Bank of India",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BASF",
+      "name": "BASF India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BATAINDIA",
+      "name": "Bata India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BAYERCROP",
+      "name": "Bayer Cropscience Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BBTC",
+      "name": "The Bombay Burmah Trading Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BDL",
+      "name": "Bharat Dynamics Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BEL",
+      "name": "Bharat Electronics Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BEML",
+      "name": "BEML Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BERGEPAINT",
+      "name": "Berger Paints (I) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BHARATFORG",
+      "name": "Bharat Forge Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BHARTIARTL",
+      "name": "Bharti Airtel Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BHARTIHEXA",
+      "name": "Bharti Hexacom Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BHEL",
+      "name": "Bharat Heavy Electricals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BIKAJI",
+      "name": "Bikaji Foods International Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BIOCON",
+      "name": "Biocon Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BLS",
+      "name": "BLS International Services Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BLUEDART",
+      "name": "Blue Dart Express Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BLUEJET",
+      "name": "Blue Jet Healthcare Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BLUESTARCO",
+      "name": "Blue Star Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BOSCHLTD",
+      "name": "Bosch Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BPCL",
+      "name": "Bharat Petroleum Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BRIGADE",
+      "name": "Brigade Enterprises Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BRITANNIA",
+      "name": "Britannia Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BSE",
+      "name": "BSE Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "BSOFT",
+      "name": "BIRLASOFT LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CAMPUS",
+      "name": "Campus Activewear Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CAMS",
+      "name": "Computer Age Management Services Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CANBK",
+      "name": "Canara Bank",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CANFINHOME",
+      "name": "Can Fin Homes Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CAPLIPOINT",
+      "name": "Caplin Point Laboratories Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CARBORUNIV",
+      "name": "Carborundum Universal Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CASTROLIND",
+      "name": "Castrol India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CCL",
+      "name": "CCL Products (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CDSL",
+      "name": "Central Depository Services (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CEATLTD",
+      "name": "CEAT Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CENTRALBK",
+      "name": "Central Bank of India",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CENTURYPLY",
+      "name": "Century Plyboards (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CERA",
+      "name": "Cera Sanitaryware Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CESC",
+      "name": "CESC Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CGCL",
+      "name": "Capri Global Capital Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CGPOWER",
+      "name": "CG Power and Industrial Solutions Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CHALET",
+      "name": "Chalet Hotels Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CHAMBLFERT",
+      "name": "Chambal Fertilizers & Chemicals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CHENNPETRO",
+      "name": "Chennai Petroleum Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CHOICEIN",
+      "name": "Choice International Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CHOLAFIN",
+      "name": "Cholamandalam Investment and Finance Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CHOLAHLDNG",
+      "name": "Cholamandalam Financial Holdings Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CIPLA",
+      "name": "Cipla Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CLEAN",
+      "name": "Clean Science and Technology Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "COALINDIA",
+      "name": "Coal India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "COCHINSHIP",
+      "name": "Cochin Shipyard Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "COFORGE",
+      "name": "Coforge Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "COHANCE",
+      "name": "Cohance Lifesciences Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "COLPAL",
+      "name": "Colgate Palmolive (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CONCOR",
+      "name": "Container Corporation of India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CONCORDBIO",
+      "name": "Concord Biotech Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "COROMANDEL",
+      "name": "Coromandel International Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CRAFTSMAN",
+      "name": "Craftsman Automation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CREDITACC",
+      "name": "CREDITACCESS GRAMEEN LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CRISIL",
+      "name": "CRISIL Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CROMPTON",
+      "name": "Crompton Greaves Consumer Electricals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CUB",
+      "name": "City Union Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CUMMINSIND",
+      "name": "Cummins India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "CYIENT",
+      "name": "Cyient Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DABUR",
+      "name": "Dabur India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DALBHARAT",
+      "name": "Dalmia Bharat Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DATAPATTNS",
+      "name": "Data Patterns (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DBREALTY",
+      "name": "Valor Estate Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DCMSHRIRAM",
+      "name": "DCM Shriram Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DEEPAKFERT",
+      "name": "Deepak Fertilizers and Petrochemicals Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DEEPAKNTR",
+      "name": "Deepak Nitrite Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DELHIVERY",
+      "name": "Delhivery Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DEVYANI",
+      "name": "Devyani International Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DIVISLAB",
+      "name": "Divi's Laboratories Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DIXON",
+      "name": "Dixon Technologies (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DLF",
+      "name": "DLF Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DMART",
+      "name": "Avenue Supermarts Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DOMS",
+      "name": "DOMS Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "DRREDDY",
+      "name": "Dr. Reddy's Laboratories Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ECLERX",
+      "name": "eClerx Services Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "EICHERMOT",
+      "name": "Eicher Motors Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "EIDPARRY",
+      "name": "EID Parry India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "EIHOTEL",
+      "name": "EIH Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ELECON",
+      "name": "Elecon Engineering Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ELGIEQUIP",
+      "name": "Elgi Equipments Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "EMAMILTD",
+      "name": "Emami Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "EMCURE",
+      "name": "Emcure Pharmaceuticals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ENDURANCE",
+      "name": "Endurance Technologies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ENGINERSIN",
+      "name": "Engineers India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ENRIN",
+      "name": "Siemens Energy India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ERIS",
+      "name": "Eris Lifesciences Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ESCORTS",
+      "name": "Escorts Kubota Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ETERNAL",
+      "name": "ETERNAL LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "EXIDEIND",
+      "name": "Exide Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "FACT",
+      "name": "Fertilizers and Chemicals Travancore Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "FEDERALBNK",
+      "name": "The Federal Bank  Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "FINCABLES",
+      "name": "Finolex Cables Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "FINPIPE",
+      "name": "Finolex Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "FIRSTCRY",
+      "name": "Brainbees Solutions Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "FIVESTAR",
+      "name": "Five-Star Business Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "FLUOROCHEM",
+      "name": "Gujarat Fluorochemicals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "FORCEMOT",
+      "name": "FORCE MOTORS LTD",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "FORTIS",
+      "name": "Fortis Healthcare Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "FSL",
+      "name": "Firstsource Solutions Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GAIL",
+      "name": "GAIL (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GESHIP",
+      "name": "The Great Eastern Shipping Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GICRE",
+      "name": "General Insurance Corporation of India",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GILLETTE",
+      "name": "Gillette India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GLAND",
+      "name": "Gland Pharma Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GLAXO",
+      "name": "GlaxoSmithKline Pharmaceuticals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GLENMARK",
+      "name": "Glenmark Pharmaceuticals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GMDCLTD",
+      "name": "Gujarat Mineral Development Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GMRAIRPORT",
+      "name": "GMR AIRPORTS LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GMRINFRA",
+      "name": "GMR Infrastructure Ltd",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "name": "Godfrey Phillips India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GODIGIT",
+      "name": "Go Digit General Insurance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GODREJAGRO",
+      "name": "Godrej Agrovet Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GODREJCP",
+      "name": "Godrej Consumer Products Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GODREJIND",
+      "name": "Godrej Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GODREJPROP",
+      "name": "Godrej Properties Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GPIL",
+      "name": "Godawari Power And Ispat limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GRANULES",
+      "name": "Granules India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GRAPHITE",
+      "name": "Graphite India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GRASIM",
+      "name": "Grasim Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GRAVITA",
+      "name": "Gravita India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GRSE",
+      "name": "Garden Reach Shipbuilders & Engineers Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GSPL",
+      "name": "Gujarat State Petronet Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GUJGASLTD",
+      "name": "Gujarat Gas Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "GVT&D",
+      "name": "GE Vernova T&D India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HAL",
+      "name": "Hindustan Aeronautics Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HAPPSTMNDS",
+      "name": "Happiest Minds Technologies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HAVELLS",
+      "name": "Havells India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HBLENGINE",
+      "name": "HBL Engineering Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HCLTECH",
+      "name": "HCL Technologies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HDFCAMC",
+      "name": "HDFC Asset Management Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HDFCBANK",
+      "name": "HDFC Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HDFCLIFE",
+      "name": "HDFC Life Insurance Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HEG",
+      "name": "HEG Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HEROMOTOCO",
+      "name": "Hero MotoCorp Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HEXT",
+      "name": "Hexaware Technologies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HFCL",
+      "name": "HFCL Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HINDALCO",
+      "name": "Hindalco Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HINDCOPPER",
+      "name": "Hindustan Copper Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HINDPETRO",
+      "name": "Hindustan Petroleum Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HINDUNILVR",
+      "name": "Hindustan Unilever Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HINDZINC",
+      "name": "Hindustan Zinc Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HOMEFIRST",
+      "name": "Home First Finance Company India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HONASA",
+      "name": "Honasa Consumer Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HONAUT",
+      "name": "Honeywell Automation India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HSCL",
+      "name": "Himadri Speciality Chemical Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HUDCO",
+      "name": "Housing & Urban Development Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "HYUNDAI",
+      "name": "Hyundai Motor India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ICICIBANK",
+      "name": "ICICI Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ICICIGI",
+      "name": "ICICI Lombard General Insurance Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ICICIPRULI",
+      "name": "ICICI Prudential Life Insurance Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IDBI",
+      "name": "IDBI Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IDEA",
+      "name": "Vodafone Idea Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IDFCFIRSTB",
+      "name": "IDFC First Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IEX",
+      "name": "Indian Energy Exchange Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IFCI",
+      "name": "IFCI Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IGIL",
+      "name": "International Gemmological Institute (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IGL",
+      "name": "Indraprastha Gas Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IIFL",
+      "name": "IIFL Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IKS",
+      "name": "Inventurus Knowledge Solutions Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INDGN",
+      "name": "Indegene Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INDHOTEL",
+      "name": "The Indian Hotels Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INDIACEM",
+      "name": "The India Cements Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INDIAMART",
+      "name": "Indiamart Intermesh Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INDIANB",
+      "name": "Indian Bank",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INDIGO",
+      "name": "InterGlobe Aviation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INDUSINDBK",
+      "name": "IndusInd Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INDUSTOWER",
+      "name": "Indus Towers Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INFY",
+      "name": "Infosys Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INOXINDIA",
+      "name": "INOX India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INOXWIND",
+      "name": "Inox Wind Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "INTELLECT",
+      "name": "Intellect Design Arena Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IOB",
+      "name": "Indian Overseas Bank",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IOC",
+      "name": "Indian Oil Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IPCALAB",
+      "name": "IPCA Laboratories Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IRB",
+      "name": "IRB Infrastructure Developers Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IRCON",
+      "name": "Ircon International Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IRCTC",
+      "name": "Indian Railway Catering And Tourism Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IREDA",
+      "name": "Indian Renewable Energy Development Agency Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "IRFC",
+      "name": "Indian Railway Finance Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ITC",
+      "name": "ITC Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ITCHOTELS",
+      "name": "ITC Hotels Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ITI",
+      "name": "ITI Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "J&KBANK",
+      "name": "The Jammu & Kashmir Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JBCHEPHARM",
+      "name": "JB Chemicals & Pharmaceuticals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JBMA",
+      "name": "JBM Auto Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JINDALSAW",
+      "name": "Jindal Saw Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JINDALSTEL",
+      "name": "JINDAL STEEL LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JIOFIN",
+      "name": "Jio Financial Services Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JKCEMENT",
+      "name": "JK Cement Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JKTYRE",
+      "name": "JK Tyre & Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JMFINANCIL",
+      "name": "JM Financial Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JPPOWER",
+      "name": "Jaiprakash Power Ventures Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JSL",
+      "name": "Jindal Stainless Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JSWCEMENT",
+      "name": "JSW Cement Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JSWENERGY",
+      "name": "JSW Energy Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JSWINFRA",
+      "name": "JSW Infrastructure Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JSWSTEEL",
+      "name": "JSW Steel Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JUBLFOOD",
+      "name": "Jubilant Foodworks Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JUBLINGREA",
+      "name": "Jubilant Ingrevia Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JUBLPHARMA",
+      "name": "Jubilant Pharmova Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JWL",
+      "name": "Jupiter Wagons Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JYOTHYLAB",
+      "name": "Jyothy Labs Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "JYOTICNC",
+      "name": "Jyoti CNC Automation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KAJARIACER",
+      "name": "Kajaria Ceramics Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KALYANKJIL",
+      "name": "Kalyan Jewellers India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KARURVYSYA",
+      "name": "Karur Vysya Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KAYNES",
+      "name": "Kaynes Technology India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KEC",
+      "name": "KEC International Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KEI",
+      "name": "KEI Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KFINTECH",
+      "name": "Kfin Technologies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KIMS",
+      "name": "Krishna Institute of Medical Sciences Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KIRLOSBROS",
+      "name": "Kirloskar Brothers Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KIRLOSENG",
+      "name": "Kirloskar Oil Engines Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "name": "Kotak Mahindra Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KPIL",
+      "name": "Kalpataru Projects International Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KPITTECH",
+      "name": "KPIT Technologies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KPRMILL",
+      "name": "K.P.R. Mill Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "KSB",
+      "name": "Ksb Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LALPATHLAB",
+      "name": "Dr. Lal Path Labs Ltd.",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LATENTVIEW",
+      "name": "Latent View Analytics Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LAURUSLABS",
+      "name": "Laurus Labs Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LEMONTREE",
+      "name": "Lemon Tree Hotels Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LICHSGFIN",
+      "name": "LIC Housing Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LICI",
+      "name": "Life Insurance Corporation Of India",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LINDEINDIA",
+      "name": "Linde India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LLOYDSME",
+      "name": "Lloyds Metals And Energy Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LODHA",
+      "name": "Lodha Developers Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LT",
+      "name": "Larsen & Toubro Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LTF",
+      "name": "L&T Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LTFOODS",
+      "name": "LT Foods Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LTI",
+      "name": "LTIMindtree Ltd",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LTIM",
+      "name": "LTIMindtree Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LTTS",
+      "name": "L&T Technology Services Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "LUPIN",
+      "name": "Lupin Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "M&M",
+      "name": "Mahindra & Mahindra Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "M&MFIN",
+      "name": "Mahindra & Mahindra Financial Services Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MAHABANK",
+      "name": "Bank of Maharashtra",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MAHSCOOTER",
+      "name": "Maharashtra Scooters Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MAHSEAMLES",
+      "name": "Maharashtra Seamless Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MANAPPURAM",
+      "name": "Manappuram Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MANKIND",
+      "name": "Mankind Pharma Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MANYAVAR",
+      "name": "Vedant Fashions Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MAPMYINDIA",
+      "name": "C.E. Info Systems Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MARICO",
+      "name": "Marico Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MARUTI",
+      "name": "Maruti Suzuki India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MAXHEALTH",
+      "name": "Max Healthcare Institute Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MAZDOCK",
+      "name": "Mazagon Dock Shipbuilders Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MCDOWELL-N",
+      "name": "United Spirits Ltd",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MCX",
+      "name": "Multi Commodity Exchange of India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MEDANTA",
+      "name": "Global Health Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "METROPOLIS",
+      "name": "Metropolis Healthcare Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MFSL",
+      "name": "Max Financial Services Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MGL",
+      "name": "Mahanagar Gas Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MINDACORP",
+      "name": "Minda Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MMTC",
+      "name": "MMTC Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MOTHERSON",
+      "name": "Samvardhana Motherson International Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MOTILALOFS",
+      "name": "Motilal Oswal Financial Services Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MPHASIS",
+      "name": "MphasiS Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MRF",
+      "name": "MRF Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MRPL",
+      "name": "Mangalore Refinery and Petrochemicals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MSUMI",
+      "name": "Motherson Sumi Wiring India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "MUTHOOTFIN",
+      "name": "Muthoot Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NAM-INDIA",
+      "name": "Nippon Life India Asset Management Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NATCOPHARM",
+      "name": "Natco Pharma Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NATIONALUM",
+      "name": "National Aluminium Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NAUKRI",
+      "name": "Info Edge (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NAVA",
+      "name": "NAVA LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NAVINFLUOR",
+      "name": "Navin Fluorine International Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NBCC",
+      "name": "NBCC (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NCC",
+      "name": "NCC Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NESTLEIND",
+      "name": "Nestle India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NETWEB",
+      "name": "Netweb Technologies India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NEULANDLAB",
+      "name": "Neuland Laboratories Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NEWGEN",
+      "name": "Newgen Software Technologies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NH",
+      "name": "Narayana Hrudayalaya Ltd.",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NHPC",
+      "name": "NHPC Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NIACL",
+      "name": "The New India Assurance Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NIFTY 500",
+      "name": "NIFTY 500",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NIVABUPA",
+      "name": "Niva Bupa Health Insurance Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NLCINDIA",
+      "name": "NLC India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NMDC",
+      "name": "NMDC Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NSLNISP",
+      "name": "NMDC Steel Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NTPC",
+      "name": "NTPC Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NTPCGREEN",
+      "name": "NTPC Green Energy Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NUVAMA",
+      "name": "Nuvama Wealth Management Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NUVOCO",
+      "name": "Nuvoco Vistas Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "NYKAA",
+      "name": "FSN E-Commerce Ventures Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "OBEROIRLTY",
+      "name": "Oberoi Realty Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "OFSS",
+      "name": "Oracle Financial Services Software Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "OIL",
+      "name": "Oil India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "OLAELEC",
+      "name": "Ola Electric Mobility Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "OLECTRA",
+      "name": "Olectra Greentech Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ONESOURCE",
+      "name": "Onesource Specialty Pharma Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ONGC",
+      "name": "Oil & Natural Gas Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PAGEIND",
+      "name": "Page Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PATANJALI",
+      "name": "Patanjali Foods Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PAYTM",
+      "name": "One 97 Communications Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PCBL",
+      "name": "PCBL Chemical Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PEL",
+      "name": "Piramal Enterprises Ltd",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PERSISTENT",
+      "name": "Persistent Systems Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PETRONET",
+      "name": "Petronet LNG Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PFC",
+      "name": "Power Finance Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PFIZER",
+      "name": "Pfizer Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PGEL",
+      "name": "PG Electroplast Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PGHH",
+      "name": "Procter & Gamble Hygiene and Health Care Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PHOENIXLTD",
+      "name": "The Phoenix Mills Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PIDILITIND",
+      "name": "Pidilite Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PIIND",
+      "name": "PI Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PNB",
+      "name": "Punjab National Bank",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PNBHOUSING",
+      "name": "PNB Housing Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "POLICYBZR",
+      "name": "PB Fintech Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "POLYCAB",
+      "name": "Polycab India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "POLYMED",
+      "name": "Poly Medicure Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "POONAWALLA",
+      "name": "Poonawalla Fincorp Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "POWERGRID",
+      "name": "Power Grid Corporation of India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "POWERINDIA",
+      "name": "Hitachi Energy India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PPLPHARMA",
+      "name": "Piramal Pharma Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PRAJIND",
+      "name": "Praj Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PREMIERENE",
+      "name": "Premier Energies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PRESTIGE",
+      "name": "Prestige Estates Projects Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PTCIL",
+      "name": "PTC Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "PVRINOX",
+      "name": "PVR INOX Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RADICO",
+      "name": "Radico Khaitan Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RAILTEL",
+      "name": "Railtel Corporation Of India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RAINBOW",
+      "name": "Rainbow Childrens Medicare Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RAMCOCEM",
+      "name": "The Ramco Cements Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RBLBANK",
+      "name": "RBL Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RCF",
+      "name": "Rashtriya Chemicals and Fertilizers Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RECLTD",
+      "name": "REC Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "REDINGTON",
+      "name": "Redington Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RELIANCE",
+      "name": "Reliance Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RELINFRA",
+      "name": "Reliance Infrastructure Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RHIM",
+      "name": "RHI MAGNESITA INDIA LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RITES",
+      "name": "RITES Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RKFORGE",
+      "name": "Ramkrishna Forgings Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RPOWER",
+      "name": "Reliance Power Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RRKABEL",
+      "name": "R R Kabel Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "RVNL",
+      "name": "Rail Vikas Nigam Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SAGILITY",
+      "name": "SAGILITY LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SAIL",
+      "name": "Steel Authority of India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SAILIFE",
+      "name": "Sai Life Sciences Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SAMMAANCAP",
+      "name": "Sammaan Capital Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SAPPHIRE",
+      "name": "Sapphire Foods India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SARDAEN",
+      "name": "Sarda Energy & Minerals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SAREGAMA",
+      "name": "Saregama India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SBFC",
+      "name": "SBFC Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SBICARD",
+      "name": "SBI Cards and Payment Services Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SBILIFE",
+      "name": "SBI Life Insurance Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SBIN",
+      "name": "State Bank of India",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SCHAEFFLER",
+      "name": "Schaeffler India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SCHNEIDER",
+      "name": "Schneider Electric Infrastructure Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SCI",
+      "name": "Shipping Corporation Of India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SHREECEM",
+      "name": "SHREE CEMENT LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SHRIRAMFIN",
+      "name": "Shriram Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SHYAMMETL",
+      "name": "Shyam Metalics and Energy Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SIEMENS",
+      "name": "Siemens Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SIGNATURE",
+      "name": "Signatureglobal (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SJVN",
+      "name": "SJVN Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SOBHA",
+      "name": "Sobha Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SOLARINDS",
+      "name": "Solar Industries India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SONACOMS",
+      "name": "Sona BLW Precision Forgings Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SONATSOFTW",
+      "name": "Sonata Software Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SRF",
+      "name": "SRF Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "STARHEALTH",
+      "name": "Star Health and Allied Insurance Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SUMICHEM",
+      "name": "Sumitomo Chemical India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SUNDARMFIN",
+      "name": "Sundaram Finance Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SUNDRMFAST",
+      "name": "Sundram Fasteners Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SUNPHARMA",
+      "name": "Sun Pharmaceutical Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SUNTV",
+      "name": "Sun TV Network Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SUPREMEIND",
+      "name": "Supreme Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SUZLON",
+      "name": "Suzlon Energy Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SWANCORP",
+      "name": "SWAN CORP LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SWIGGY",
+      "name": "Swiggy Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SYNGENE",
+      "name": "Syngene International Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "SYRMA",
+      "name": "Syrma SGS Technology Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TARIL",
+      "name": "Transformers And Rectifiers (India) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TATACHEM",
+      "name": "Tata Chemicals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TATACOMM",
+      "name": "Tata Communications Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TATACONSUM",
+      "name": "TATA CONSUMER PRODUCTS LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TATAELXSI",
+      "name": "Tata Elxsi Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TATAINVEST",
+      "name": "Tata Investment Corporation Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TATAMOTORS",
+      "name": "Tata Motors Ltd",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TATAPOWER",
+      "name": "Tata Power Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TATASTEEL",
+      "name": "Tata Steel Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TATATECH",
+      "name": "Tata Technologies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TBOTEK",
+      "name": "TBO Tek Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TCS",
+      "name": "Tata Consultancy Services Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TECHM",
+      "name": "Tech Mahindra Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TECHNOE",
+      "name": "Techno Electric & Engineering Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TEJASNET",
+      "name": "Tejas Networks Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "THELEELA",
+      "name": "Leela Palaces Hotels & Resorts Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "THERMAX",
+      "name": "Thermax Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TIINDIA",
+      "name": "Tube Investments of India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TIMKEN",
+      "name": "Timken India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TITAGARH",
+      "name": "TITAGARH RAIL SYSTEMS LIMITED",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TITAN",
+      "name": "Titan Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TMPV",
+      "name": "Tata Motors Passenger Vehicles Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TORNTPHARM",
+      "name": "Torrent Pharmaceuticals Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TORNTPOWER",
+      "name": "Torrent Power Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TRENT",
+      "name": "Trent Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TRIDENT",
+      "name": "Trident Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TRITURBINE",
+      "name": "Triveni Turbine Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TRIVENI",
+      "name": "Triveni Engineering & Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TTML",
+      "name": "Tata Teleservices (Maharashtra) Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "TVSMOTOR",
+      "name": "TVS Motor Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "UBL",
+      "name": "United Breweries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "UCOBANK",
+      "name": "UCO Bank",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ULTRACEMCO",
+      "name": "UltraTech Cement Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "UNIONBANK",
+      "name": "Union Bank of India",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "UNITDSPR",
+      "name": "United Spirits Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "UNOMINDA",
+      "name": "UNO Minda Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "UPL",
+      "name": "UPL Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "USHAMART",
+      "name": "Usha Martin Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "UTIAMC",
+      "name": "UTI Asset Management Company Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "VBL",
+      "name": "Varun Beverages Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "VEDL",
+      "name": "Vedanta Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "VENTIVE",
+      "name": "Ventive Hospitality Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "VGUARD",
+      "name": "V-Guard Industries Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "VIJAYA",
+      "name": "Vijaya Diagnostic Centre Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "VMM",
+      "name": "Vishal Mega Mart Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "VOLTAS",
+      "name": "Voltas Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "VTL",
+      "name": "Vardhman Textiles Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "WAAREEENER",
+      "name": "Waaree Energies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "WELCORP",
+      "name": "Welspun Corp Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "WELSPUNLIV",
+      "name": "Welspun Living Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "WHIRLPOOL",
+      "name": "Whirlpool of India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "WIPRO",
+      "name": "Wipro Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "WOCKPHARMA",
+      "name": "Wockhardt Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "YESBANK",
+      "name": "Yes Bank Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ZEEL",
+      "name": "Zee Entertainment Enterprises Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ZENSARTECH",
+      "name": "Zensar Technologies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ZENTEC",
+      "name": "Zen Technologies Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ZFCVINDIA",
+      "name": "ZF Commercial Vehicle Control Systems India Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ZOMATO",
+      "name": "Zomato Ltd",
+      "exchange": "NSE",
+      "type": "STOCK"
+    },
+    {
+      "symbol": "ZYDUSLIFE",
+      "name": "Zydus Lifesciences Limited",
+      "exchange": "NSE",
+      "type": "STOCK"
+    }
+  ],
+  "total": 823,
+  "stocks": 507,
+  "etfs": 316,
+  "generated_at": "2026-02-24 22:45:46",
+  "source": "NSE India API + Curated List"
+}

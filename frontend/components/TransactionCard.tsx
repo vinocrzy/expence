@@ -1,7 +1,7 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { ArrowUpRight, ArrowDownLeft, ArrowRightLeft, MoreHorizontal, Edit, Trash2, Split, ChevronDown, TrendingUp, HandCoins } from "lucide-react"
+import { ArrowUpRight, ArrowDownLeft, ArrowRightLeft, MoreHorizontal, Edit, Trash2, Split, ChevronDown, TrendingUp, HandCoins, Tag } from "lucide-react"
 import { Transaction, Category } from "../lib/db-types"
 import { cn } from "@/lib/utils"
 
@@ -120,6 +120,18 @@ export function TransactionCard({
                     {format(new Date(transaction.date), 'MMM d')}
                 </span>
             </div>
+
+            {/* Tags Row */}
+            {transaction.tags && transaction.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-0.5">
+                {transaction.tags.map(tag => (
+                  <span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-teal-500/10 text-teal-400 text-[11px] font-medium border border-teal-500/15">
+                    <Tag className="w-2.5 h-2.5" />
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
         </div>
 
         {/* ACTIONS MENU (Col 4 - Floating) */}
@@ -205,3 +217,5 @@ export function TransactionCard({
     </div>
   )
 }
+
+export default TransactionCard

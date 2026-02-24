@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, memo } from 'react';
-import { X, Split } from 'lucide-react';
+import { X, Split, Tag } from 'lucide-react';
 import { Category } from '../lib/db-types';
 import { categoryService, transactionService, budgetService, getHouseholdId } from '../lib/localdb-services';
 import SplitTransactionForm from './SplitTransactionForm';
@@ -39,6 +39,8 @@ function TransactionModal({
   const [categoryId, setCategoryId] = useState('');
   const [type, setType] = useState('EXPENSE');
   const [description, setDescription] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   
   const [subCategoryId, setSubCategoryId] = useState('');
   const [transferAccountId, setTransferAccountId] = useState('');
@@ -175,6 +177,8 @@ function TransactionModal({
             setTransferAccountId(initialData.transferAccountId || '');
             setType(initialData.type);
             setDescription(initialData.description || '');
+            setTags(initialData.tags || []);
+            setTagInput('');
             setSelectedEventId(initialData.budgetId || '');
             
             if (initialData.isSplit && initialData.splits) {
@@ -194,6 +198,8 @@ function TransactionModal({
             setTransferAccountId('');
             setType(initialType);
             setDescription('');
+            setTags([]);
+            setTagInput('');
             setSelectedEventId('');
              // Default date to today unless provided in a "partial" initialData
              setDate(new Date().toISOString().split('T')[0]);
@@ -237,6 +243,7 @@ function TransactionModal({
       subCategoryId: (isSplit || type === 'TRANSFER') ? undefined : (subCategoryId || undefined),
       type: type as any,
       description,
+      tags: tags.length > 0 ? tags : undefined,
       budgetId: selectedEventId || undefined,
       isSplit,
       splits: isSplit ? splits : undefined
@@ -481,6 +488,47 @@ function TransactionModal({
                   onBlur={handleDescriptionBlur}
                   className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                   placeholder="What is this for? (e.g. Uber, Netflix)"
+                />
+              </div>
+
+              {/* Tags */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-teal-400" />
+                  Tags <span className="text-gray-500 text-xs font-normal">(Optional)</span>
+                </label>
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {tags.map(tag => (
+                      <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-500/15 text-teal-300 text-xs font-medium border border-teal-500/20">
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => setTags(prev => prev.filter(t => t !== tag))}
+                          className="text-teal-400 hover:text-white transition-colors ml-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+                      e.preventDefault();
+                      const newTag = tagInput.trim().replace(/,$/,'');
+                      if (newTag && !tags.includes(newTag)) {
+                        setTags(prev => [...prev, newTag]);
+                      }
+                      setTagInput('');
+                    }
+                  }}
+                  className="block w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 text-sm"
+                  placeholder="e.g. Valentine's Day, Goa Trip (press Enter)"
                 />
               </div>
 

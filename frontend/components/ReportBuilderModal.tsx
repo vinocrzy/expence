@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, FileDown, FileSpreadsheet, FileText, Calendar, Check, ChevronDown, Filter, TrendingUp } from 'lucide-react';
+import { X, FileDown, FileSpreadsheet, FileText, Calendar, Check, ChevronDown, Filter, TrendingUp, Tag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { Category, Account } from '@/lib/db-types';
@@ -109,8 +109,16 @@ export default function ReportBuilderModal({ isOpen, onClose, onExport }: Report
       
       setAccounts(allAccounts);
       setCategories(categoriesData || []);
-      // Tags can be extracted from transactions if needed
-      setAvailableTags([]);
+
+      // Populate available tags from transaction data
+      try {
+        const { transactionService } = await import('@/lib/localdb-services');
+        const allTags = await transactionService.getAllTags(householdId);
+        setAvailableTags(allTags);
+      } catch (tagErr) {
+        console.error('Failed to fetch tags:', tagErr);
+        setAvailableTags([]);
+      }
     } catch (err) {
       console.error('Failed to fetch metadata:', err);
     }
@@ -434,6 +442,33 @@ export default function ReportBuilderModal({ isOpen, onClose, onExport }: Report
                             })}
                          </div>
                     </div>
+
+                    {/* Tags */}
+                    {availableTags.length > 0 && (
+                        <div>
+                             <div className="text-xs text-gray-500 mb-2 pl-1">Tags</div>
+                             <div className="flex flex-wrap gap-2">
+                                {availableTags.map(tag => {
+                                    const isSelected = selectedTags.includes(tag);
+                                    return (
+                                        <button
+                                            key={tag}
+                                            onClick={() => toggleTag(tag)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                                                isSelected 
+                                                    ? 'bg-teal-500/20 border-teal-500/50 text-teal-300' 
+                                                    : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
+                                            }`}
+                                        >
+                                            {isSelected && <Check className="w-3 h-3" />}
+                                            <Tag className="w-3 h-3" />
+                                            {tag}
+                                        </button>
+                                    );
+                                })}
+                             </div>
+                        </div>
+                    )}
                 </div>
 
               </div>

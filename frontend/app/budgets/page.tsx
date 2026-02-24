@@ -5,6 +5,7 @@ import Navbar from '../../components/Navbar';
 import NativeHeader from '../../components/dashboard/NativeHeader';
 import { useBudgets } from '../../hooks/useLocalData';
 import { transactionService, getHouseholdId } from '../../lib/localdb-services';
+import { calculateBudgetSpent, getBudgetPeriodWindow } from '../../lib/budget-engine';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { Plus, Calendar, Target, AlertTriangle, Trash2, ArrowRight, PieChart, MoreVertical, Flag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,36 +45,10 @@ export default function BudgetsPage() {
 
   const loading = budgetsLoading || txLoading;
 
-  // Calculate spent amounts (Same logic as before)
+  // Calculate spent amounts using shared engine
   const budgetsWithSpent = budgets.map(b => {
-      let spent = 0;
-      const now = new Date();
-      let start = new Date(0); 
-      let end = new Date(8640000000000000); 
-
-      if (b.budgetMode === 'EVENT') {
-          if (b.startDate) start = new Date(b.startDate);
-          if (b.endDate) end = new Date(b.endDate);
-          start.setHours(0,0,0,0);
-          end.setHours(23,59,59,999);
-      } else {
-          start = new Date(now.getFullYear(), now.getMonth(), 1);
-          end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          end.setHours(23,59,59,999);
-      }
-
-      spent = transactions
-        .filter(t => t.type === 'EXPENSE')
-        .filter(t => {
-            const tDate = new Date(t.date);
-            if (b.budgetLimitConfig && b.budgetLimitConfig.length > 0) {
-                 const catIds = b.budgetLimitConfig.map((c: any) => c.categoryId);
-                 return tDate >= start && tDate <= end && catIds.includes(t.categoryId);
-            }
-            return tDate >= start && tDate <= end;
-        })
-        .reduce((sum, t) => sum + t.amount, 0);
-
+      const { start, end } = getBudgetPeriodWindow(b);
+      const spent = calculateBudgetSpent(b, transactions, start, end);
       return { ...b, totalSpent: spent };
   });
 

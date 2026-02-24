@@ -19,4 +19,5 @@ export const EVENTS = {
   BUDGETS_CHANGED: 'budgets_changed',
   LOANS_CHANGED: 'loans_changed',
   CREDIT_CARDS_CHANGED: 'credit_cards_changed',
+  PORTFOLIO_CHANGED: 'portfolio_changed',
 };

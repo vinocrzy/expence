@@ -8,7 +8,7 @@ import {
     BarChart2, TrendingUp, TrendingDown, 
     RefreshCw, Layers, PieChart as PieIcon, Activity,
     AlertCircle, Check, ChevronDown, Filter, ArrowUpRight,
-    PiggyBank, HandCoins
+    PiggyBank, HandCoins, Tag
 } from 'lucide-react';
 import { 
     PieChart, Pie, Cell, BarChart, Bar, 
@@ -33,6 +33,7 @@ export default function AnalyticsPage() {
 
     // -- State for Independent Filters --
     const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]); // Empty = ALL
+    const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]); // Empty = ALL
     
     // Drill-down State
     const [selectedDrilldownCategory, setSelectedDrilldownCategory] = useState<string | null>(null);
@@ -52,15 +53,33 @@ export default function AnalyticsPage() {
         color: c.color 
     })), [categories]);
 
-    // Filter transactions (Global - only Date Range applies)
+    // Compute available tag options from transactions in range
+    const tagOptions = useMemo(() => {
+        const tagSet = new Set<string>();
+        transactions.forEach(t => {
+            const d = new Date(t.date);
+            if (d >= dateRange.start && d <= dateRange.end && t.tags) {
+                t.tags.forEach(tag => tagSet.add(tag));
+            }
+        });
+        return Array.from(tagSet).sort().map(tag => ({ id: tag, label: tag }));
+    }, [transactions, dateRange]);
+
+    // Helper: does a transaction match the selected tags filter?
+    const matchesTags = (t: any) => {
+        if (selectedTagIds.length === 0) return true;
+        return t.tags && t.tags.some((tag: string) => selectedTagIds.includes(tag));
+    };
+
+    // Filter transactions (Global - Date Range + Tag filter)
     const filteredTransactions = useMemo(() => {
          return transactions.filter(t => {
             const d = new Date(t.date);
             const inDate = d >= dateRange.start && d <= dateRange.end;
             const isExpense = t.type === 'EXPENSE';
-            return inDate && isExpense;
+            return inDate && isExpense && matchesTags(t);
         }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [transactions, dateRange]);
+    }, [transactions, dateRange, selectedTagIds]);
     
     // 1. Calculate Monthly Trend Data
     const chartMonthlyData = useMemo(() => {
@@ -77,7 +96,7 @@ export default function AnalyticsPage() {
 
         transactions.forEach(t => {
             const d = new Date(t.date);
-            if (d >= dateRange.start && d <= dateRange.end) {
+            if (d >= dateRange.start && d <= dateRange.end && matchesTags(t)) {
                 const key = format(d, 'MMM');
                 if (data[key]) {
                     if (t.type === 'INCOME') data[key].income += t.amount;
@@ -97,7 +116,7 @@ export default function AnalyticsPage() {
                 debt: stats.debt || 0
             }))
         };
-    }, [transactions, dateRange]);
+    }, [transactions, dateRange, selectedTagIds]);
 
     // 2. Calculate Category Breakdown (with Drill-down)
     const chartCategoryData = useMemo(() => {
@@ -108,7 +127,7 @@ export default function AnalyticsPage() {
 
         transactions.forEach(t => {
             const d = new Date(t.date);
-            if (d >= dateRange.start && d <= dateRange.end && t.type === 'EXPENSE') {
+            if (d >= dateRange.start && d <= dateRange.end && t.type === 'EXPENSE' && matchesTags(t)) {
                 
                 // Helper to process a single entry (either full tx or split)
                 const processEntry = (catId: string, amount: number, subCatId?: string) => {
@@ -168,7 +187,7 @@ export default function AnalyticsPage() {
                 })
                 .sort((a, b) => b.value - a.value)
         };
-    }, [transactions, dateRange, categories, selectedCategoryIds, selectedDrilldownCategory]);
+    }, [transactions, dateRange, categories, selectedCategoryIds, selectedDrilldownCategory, selectedTagIds]);
 
     // 3. Current Period Stats
     const currentStats = useMemo(() => {
@@ -195,6 +214,7 @@ export default function AnalyticsPage() {
 
         transactions.forEach(t => {
              if (t.type !== 'EXPENSE') return;
+             if (!matchesTags(t)) return;
              
              const tDate = new Date(t.date);
              const tKey = format(tDate, 'yyyy-MM');
@@ -220,7 +240,23 @@ export default function AnalyticsPage() {
             { name: 'Last', amount: lastMonthTotal, fill: '#6b7280' },
             { name: 'This', amount: thisMonthTotal, fill: thisMonthTotal > lastMonthTotal ? '#ef4444' : '#10b981' }
         ];
-    }, [selectedCategoryIds, transactions]);
+    }, [selectedCategoryIds, transactions, selectedTagIds]);
+
+    // 5. Tag Breakdown Data
+    const tagBreakdownData = useMemo(() => {
+        const tagMap = new Map<string, number>();
+        transactions.forEach(t => {
+            const d = new Date(t.date);
+            if (d >= dateRange.start && d <= dateRange.end && t.type === 'EXPENSE' && t.tags) {
+                t.tags.forEach(tag => {
+                    tagMap.set(tag, (tagMap.get(tag) || 0) + t.amount);
+                });
+            }
+        });
+        return Array.from(tagMap.entries())
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+    }, [transactions, dateRange]);
 
 
     return (
@@ -245,13 +281,25 @@ export default function AnalyticsPage() {
                         ]}
                     />
 
-                    <div className="w-full md:w-64">
-                         <MultiSelect 
-                            options={categoryOptions}
-                            selectedIds={selectedCategoryIds}
-                            onChange={setSelectedCategoryIds}
-                            placeholder="Filter Categories"
-                         />
+                    <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                        <div className="flex-1 md:w-64">
+                             <MultiSelect 
+                                options={categoryOptions}
+                                selectedIds={selectedCategoryIds}
+                                onChange={setSelectedCategoryIds}
+                                placeholder="Filter Categories"
+                             />
+                        </div>
+                        {tagOptions.length > 0 && (
+                            <div className="flex-1 md:w-64">
+                                 <MultiSelect 
+                                    options={tagOptions}
+                                    selectedIds={selectedTagIds}
+                                    onChange={setSelectedTagIds}
+                                    placeholder="Filter Tags"
+                                 />
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -455,6 +503,40 @@ export default function AnalyticsPage() {
                                     <EmptyState text="No data" />
                                 )}
                             </div>
+
+                            {/* Tag Breakdown */}
+                            {tagBreakdownData.length > 0 && (
+                                <div className="bg-[#18181b] rounded-3xl p-5 border border-white/5">
+                                    <h3 className="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
+                                        <Tag className="h-4 w-4 text-teal-500" /> Spend by Tag
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {tagBreakdownData.map((item, i) => {
+                                            const maxVal = tagBreakdownData[0]?.value || 1;
+                                            const pct = Math.round((item.value / maxVal) * 100);
+                                            return (
+                                                <div key={item.name} className="space-y-1">
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-gray-300 font-medium flex items-center gap-1.5">
+                                                            <Tag className="w-3 h-3 text-teal-400" />
+                                                            {item.name}
+                                                        </span>
+                                                        <span className="text-white font-semibold font-mono">
+                                                            ₹{Math.round(item.value).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                    <div className="w-full bg-white/5 rounded-full h-2">
+                                                        <div 
+                                                            className="h-2 rounded-full bg-gradient-to-r from-teal-500 to-cyan-400 transition-all duration-500"
+                                                            style={{ width: `${pct}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
 
                         </div>
                     </>

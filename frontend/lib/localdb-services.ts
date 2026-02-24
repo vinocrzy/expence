@@ -24,8 +24,12 @@ import type {
   Budget,
   Household,
   SharedTransaction,
-  SharedAccountBalance
+  SharedAccountBalance,
+  EnvelopeConfig,
+  EnvelopeTransfer,
+  EnvelopeState
 } from './db-types';
+import { buildInitialEnvelopeConfig, applyRollover, calculateEnvelopeState, getBudgetPeriodWindow } from './budget-engine';
 
 // Helper to generate IDs
 const generateId = () => uuidv4();
@@ -225,10 +229,11 @@ export const transactionService = {
         householdId: { $eq: householdId },
         date: { $gt: null }
       },
-      sort: [{ date: 'desc' }],
       limit: 10000
     });
-    return result.docs as unknown as Transaction[];
+    return (result.docs as unknown as Transaction[]).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
   },
 
   async getByDateRange(
@@ -247,10 +252,11 @@ export const transactionService = {
           $lte: endStr
         }
       },
-      sort: [{ date: 'desc' }],
       limit: 10000
     });
-    return result.docs as unknown as Transaction[];
+    return (result.docs as unknown as Transaction[]).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
   },
 
   async getByAccount(accountId: string): Promise<Transaction[]> {
@@ -261,19 +267,13 @@ export const transactionService = {
     const result = await transactionsDB.find({
       selector: {
         accountId: { $eq: accountId },
-        date: { $gt: null } // Trick to use date index if compound? 
-                            // Actually PouchDB requires 'date' in selector to sort by 'date'.
+        date: { $gt: null }
       },
-      sort: [{ date: 'desc' }], // This requires an index on date.
       limit: 10000
     });
-    // Fallback sort if needed, but let's try relying on PouchDB first.
-    // Actually, PouchDB find implementation often requires all sort fields to be in selector.
-    // simpler:
-    const docs = result.docs as unknown as Transaction[];
-    return docs; 
-    // If PouchDB complains, we might need in-memory sort:
-    // .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    return (result.docs as unknown as Transaction[]).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
   },
 
   async getByCategory(categoryId: string): Promise<Transaction[]> {
@@ -614,6 +614,24 @@ export const transactionService = {
     return transactions
       .filter(t => t.type === 'INVESTMENT')
       .reduce((sum, t) => sum + t.amount, 0);
+  },
+
+  // Get all unique tags across all transactions
+  async getAllTags(householdId: string): Promise<string[]> {
+    const transactions = await this.getAll(householdId);
+    const tagSet = new Set<string>();
+    transactions.forEach(t => {
+      if (t.tags && Array.isArray(t.tags)) {
+        t.tags.forEach(tag => tagSet.add(tag));
+      }
+    });
+    return Array.from(tagSet).sort();
+  },
+
+  // Get all transactions matching a specific tag
+  async getByTag(householdId: string, tag: string): Promise<Transaction[]> {
+    const transactions = await this.getAll(householdId);
+    return transactions.filter(t => t.tags && t.tags.includes(tag));
   },
 };
 
@@ -1086,7 +1104,88 @@ export const budgetService = {
 
   async activate(budgetId: string): Promise<Budget> {
       return this.update(budgetId, { status: 'ACTIVE' });
-  }
+  },
+
+  // ── Envelope Strategy Methods ────────────────────────────────────────────
+
+  /**
+   * Turns on the envelope strategy for an existing budget.
+   * Mirrors the current budgetLimitConfig into envelopeConfig with safe defaults.
+   * Safe to call more than once – only overwrites if envelopeConfig is not yet set.
+   */
+  async enableEnvelopeStrategy(budgetId: string): Promise<Budget> {
+    const doc = await budgetsDB.get(budgetId) as any;
+    const existingEnvConfig: EnvelopeConfig[] = doc.envelopeConfig ?? [];
+    const envelopeConfig =
+      existingEnvConfig.length > 0
+        ? existingEnvConfig
+        : buildInitialEnvelopeConfig(doc.budgetLimitConfig ?? []);
+    return this.update(budgetId, { budgetStrategy: 'ENVELOPE', envelopeConfig });
+  },
+
+  /** Persists the full envelopeConfig array (replaces previous value). */
+  async updateEnvelopeConfig(budgetId: string, config: EnvelopeConfig[]): Promise<Budget> {
+    return this.update(budgetId, { envelopeConfig: config });
+  },
+
+  /** Appends a new envelope-to-envelope transfer to the budget document. */
+  async addEnvelopeTransfer(
+    budgetId: string,
+    transfer: Omit<EnvelopeTransfer, 'id'>,
+  ): Promise<EnvelopeTransfer> {
+    const doc = await budgetsDB.get(budgetId) as any;
+    const newTransfer: EnvelopeTransfer = { ...transfer, id: generateId() };
+    const updated = {
+      ...doc,
+      envelopeTransfers: [...(doc.envelopeTransfers ?? []), newTransfer],
+      updatedAt: new Date().toISOString(),
+    };
+    await budgetsDB.put(updated);
+    return newTransfer;
+  },
+
+  /** Removes an envelope transfer by id. */
+  async removeEnvelopeTransfer(budgetId: string, transferId: string): Promise<void> {
+    const doc = await budgetsDB.get(budgetId) as any;
+    const updated = {
+      ...doc,
+      envelopeTransfers: (doc.envelopeTransfers ?? []).filter((t: EnvelopeTransfer) => t.id !== transferId),
+      updatedAt: new Date().toISOString(),
+    };
+    await budgetsDB.put(updated);
+  },
+
+  /**
+   * Computes rollover amounts from the just-finished period and persists the
+   * updated envelopeConfig so the next period starts with correct rollover balances.
+   *
+   * @param budgetId  - target budget
+   * @param transactions - all transactions for the household (pre-fetched by caller)
+   * @param categories   - all categories (pre-fetched by caller)
+   * @param viewDate     - any date inside the period that is rolling over
+   */
+  async applyPeriodRollover(
+    budgetId: string,
+    transactions: any[],
+    categories: any[],
+    viewDate: Date,
+  ): Promise<Budget> {
+    const budget = await this.getById(budgetId);
+    if (!budget) throw new Error('Budget not found');
+    if (!budget.envelopeConfig || budget.envelopeConfig.length === 0) {
+      throw new Error('No envelope config to roll over');
+    }
+    const { start, end } = getBudgetPeriodWindow(budget, viewDate);
+    const periodState: EnvelopeState[] = calculateEnvelopeState(
+      budget,
+      transactions,
+      categories,
+      start,
+      end,
+    );
+    const updatedConfig = applyRollover(budget.envelopeConfig, periodState);
+    return this.update(budgetId, { envelopeConfig: updatedConfig });
+  },
 };
 
 export const creditCardTransactionService = {

@@ -5,10 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import NativeHeader from '@/components/dashboard/NativeHeader';
 import { budgetService, transactionService, categoryService, accountService, creditCardService, getHouseholdId } from '@/lib/localdb-services';
+import { getBudgetPeriodWindow } from '@/lib/budget-engine';
 import { 
     ArrowLeft, PieChart, TrendingUp, AlertCircle, 
     Calendar, Wallet, CheckCircle2, AlertTriangle, ArrowUpRight,
-    ChevronLeft, ChevronRight, Edit2
+    ChevronLeft, ChevronRight, Edit2, Layers
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
@@ -17,6 +18,7 @@ import {
 } from 'recharts';
 import { Transaction, Budget, Category, Account, CreditCard, BudgetCategoryLimit } from '@/lib/db-types';
 import PieChartDetailsList from '@/components/dashboard/PieChartDetailsList';
+import EnvelopeView from '@/components/EnvelopeView';
 
 export default function BudgetDetailPage() {
   const { id } = useParams();
@@ -32,6 +34,7 @@ export default function BudgetDetailPage() {
   
   // View State
   const [viewDate, setViewDate] = useState(new Date());
+  const [activeTab, setActiveTab] = useState<'analytics' | 'envelopes'>('analytics');
 
   useEffect(() => {
     if (id) fetchInitialData();
@@ -78,18 +81,7 @@ export default function BudgetDetailPage() {
     let start: Date;
     let end: Date;
 
-    if (budget.budgetMode === 'EVENT' && budget.startDate && budget.endDate) {
-        start = new Date(budget.startDate);
-        end = new Date(budget.endDate);
-    } else {
-        // Recurring: Use View Date Month
-        start = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1); 
-        end = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
-    }
-    
-    // Inclusive timing
-    start.setHours(0,0,0,0);
-    end.setHours(23,59,59,999);
+    ({ start, end } = getBudgetPeriodWindow(budget, viewDate));
 
     // 2. Filter Transactions
     const expenses = allTransactions.filter((t) => {
@@ -306,6 +298,48 @@ export default function BudgetDetailPage() {
             )}
         </div>
 
+        {/* ── Tab bar (only when envelope strategy is enabled) ───────────────────────── */}
+        {budget?.budgetStrategy === 'ENVELOPE' && !loading && (
+            <div className="flex gap-1 mb-6 bg-[#1c1c1e] border border-white/5 rounded-2xl p-1">
+                <button
+                    onClick={() => setActiveTab('analytics')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                        activeTab === 'analytics'
+                            ? 'bg-[#2c2c2e] text-white shadow'
+                            : 'text-gray-500 hover:text-gray-300'
+                    }`}
+                >
+                    <PieChart className="h-4 w-4" />
+                    Analytics
+                </button>
+                <button
+                    onClick={() => setActiveTab('envelopes')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                        activeTab === 'envelopes'
+                            ? 'bg-purple-500/20 text-purple-300 shadow'
+                            : 'text-gray-500 hover:text-gray-300'
+                    }`}
+                >
+                    <Layers className="h-4 w-4" />
+                    Envelopes
+                </button>
+            </div>
+        )}
+
+        {/* ── Envelope View ─────────────────────────────────────────────── */}
+        {activeTab === 'envelopes' && budget && analytics && (
+            <EnvelopeView
+                budget={budget}
+                transactions={allTransactions}
+                categories={categories}
+                periodStart={analytics.start}
+                periodEnd={analytics.end}
+                onRefresh={fetchInitialData}
+            />
+        )}
+
+        {/* ── Analytics View (default) ────────────────────────────────────── */}
+        {activeTab === 'analytics' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             {/* Left Col: Overview & Insights */}
@@ -535,6 +569,7 @@ export default function BudgetDetailPage() {
 
             </div>
         </div>
+        )}
 
       </main>
     </div>

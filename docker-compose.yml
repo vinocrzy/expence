@@ -1,16 +1,14 @@
-version: '3.8'
-
 services:
   # Cloudflare Tunnel
-  tunnel:
-    image: cloudflare/cloudflared:latest
-    container_name: tunnel
-    restart: unless-stopped
-    command: tunnel run
-    environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
-    depends_on:
-      - reverse-proxy
+  # tunnel:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: tunnel
+  #   restart: unless-stopped
+  #   command: tunnel run
+  #   environment:
+  #     - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+  #   depends_on:
+  #     - reverse-proxy
 
   # Nginx Reverse Proxy
   reverse-proxy:
