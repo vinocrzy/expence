@@ -7,7 +7,8 @@ import {
     Wallet, CreditCard, Landmark, LogOut, ChevronDown, Menu, Target,
     MoreHorizontal, Home, Settings, CloudOff, RefreshCw, CloudUpload, FileDown,
     Users,
-    ChartBar
+    ChartBar,
+    TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useState, useCallback, useMemo, useEffect } from 'react';
@@ -111,7 +112,7 @@ export default function Navbar() {
                     {/* Finances Dropdown (Simple Hover Group) */}
                     <div className="relative group">
                         <button className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-white ${
-                            ['/accounts', '/loans', '/credit-cards', '/finances'].some(p => pathname.startsWith(p)) ? 'text-white' : 'text-gray-400'
+                            ['/accounts', '/loans', '/credit-cards', '/finances', '/portfolio'].some(p => pathname.startsWith(p)) ? 'text-white' : 'text-gray-400'
                         }`}>
                             Finances <ChevronDown className="h-4 w-4" />
                         </button>
@@ -127,8 +128,11 @@ export default function Navbar() {
                              <Link href="/credit-cards" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50">
                                 <CreditCard className="h-4 w-4" /> Credit Cards
                             </Link>
-                             <Link href="/loans" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-b-xl">
+                             <Link href="/loans" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50">
                                 <Landmark className="h-4 w-4" /> Loans
+                            </Link>
+                             <Link href="/portfolio" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50">
+                                <TrendingUp className="h-4 w-4" /> Portfolio
                             </Link>
                              <Link href="/budgets" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-b-xl">
                                 <ChartBar className="h-4 w-4" /> Budgets
@@ -335,6 +339,13 @@ export default function Navbar() {
                                     <RefreshCw className="h-5 w-5" />
                                 </div>
                                 <span className="text-base font-medium flex-1">Subscriptions & EMIs</span>
+                                <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
+                            </Link>
+                             <Link href="/portfolio" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                                    <TrendingUp className="h-5 w-5" />
+                                </div>
+                                <span className="text-base font-medium flex-1">Stock Portfolio</span>
                                 <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
                             </Link>
                         </div>
