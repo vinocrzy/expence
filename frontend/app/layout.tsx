@@ -36,6 +36,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import ClientShell from './ClientShell';
 
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY;
+const clerkProviderProps = clerkPublishableKey ? { publishableKey: clerkPublishableKey } : {};
 
 export default function RootLayout({
   children,
@@ -43,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider publishableKey={clerkPublishableKey}>
+    <ClerkProvider {...clerkProviderProps}>
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased selection:bg-purple-500 selection:text-white`}
