@@ -10,7 +10,17 @@ const clerkMiddlewareOptions = {
 const canUseClerkMiddleware = Boolean(clerkPublishableKey && clerkSecretKey)
 
 // Define public routes
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/', '/manifest.json', '/sw.js'])
+const isPublicRoute = createRouteMatcher([
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/',
+  '/manifest.json',
+  '/sw.js',
+  '/api/health',
+  '/api/portfolio/market-sync',
+  '/api/portfolio/market-data',
+  '/api/portfolio/debug-storage',
+])
 
 const handleDbProxy = (request: NextRequest) => {
   const { pathname, search } = request.nextUrl
