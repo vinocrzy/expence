@@ -15,8 +15,7 @@
  */
 
 import {
-  fetchIndexConstituents,
-  fetchEtfList,
+  fetchAllNseQuotes,
   fetchSymbolQuote,
   type NseQuote,
 } from './nse-client';
@@ -117,9 +116,10 @@ function mergeQuotes(cache: PriceCache, quotes: NseQuote[]): void {
 }
 
 /**
- * Full refresh: fetch NIFTY 50, NIFTY 500, and ETF list in parallel.
- * Merges all results; NIFTY 500 supersedes NIFTY 50 for the same symbol.
- * ETFs are stored with type='ETF'.
+ * Full refresh: fetch all broad-market NSE indices + ETFs.
+ * Covers NIFTY TOTAL MARKET (~750), NIFTY SMALLCAP 250, NIFTY MICROCAP 250,
+ * SECURITIES IN F&O, and the full ETF list — deduplicated by symbol.
+ * This ensures stocks like TMB and TATAMTRDVR are always in the cache.
  *
  * Returns the number of symbols now in the cache.
  */
@@ -132,27 +132,17 @@ export async function refreshAll(): Promise<number> {
   }
 
   cache.isRefreshing = true;
-  console.log('[PriceCache] refreshAll: starting…');
+  console.log('[PriceCache] refreshAll: starting broad-market fetch…');
 
   try {
-    // Fetch the three sources in parallel
-    const [nifty50, nifty500, etfs] = await Promise.allSettled([
-      fetchIndexConstituents('NIFTY 50'),
-      fetchIndexConstituents('NIFTY 500'),
-      fetchEtfList(),
-    ]);
-
-    if (nifty50.status === 'fulfilled') mergeQuotes(cache, nifty50.value);
-    else console.warn('[PriceCache] NIFTY 50 fetch failed:', nifty50.reason);
-
-    if (nifty500.status === 'fulfilled') mergeQuotes(cache, nifty500.value);
-    else console.warn('[PriceCache] NIFTY 500 fetch failed:', nifty500.reason);
-
-    if (etfs.status === 'fulfilled') mergeQuotes(cache, etfs.value);
-    else console.warn('[PriceCache] ETF list fetch failed:', etfs.reason);
+    const quotes = await fetchAllNseQuotes();
+    mergeQuotes(cache, quotes);
 
     cache.lastRefreshedAt = Date.now();
     console.log(`[PriceCache] refreshAll: done, ${cache.quotes.size} symbols cached`);
+    return cache.quotes.size;
+  } catch (err) {
+    console.error('[PriceCache] refreshAll: failed:', err);
     return cache.quotes.size;
   } finally {
     cache.isRefreshing = false;

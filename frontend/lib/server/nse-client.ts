@@ -205,12 +205,58 @@ interface NseQuoteEquityResponse {
 
 // ─── Public helpers ────────────────────────────────────────────────────────────
 
+/** All NSE index names supported by the equity-stockIndices endpoint. */
+export type NseIndex =
+  | 'NIFTY 50'
+  | 'NIFTY NEXT 50'
+  | 'NIFTY 100'
+  | 'NIFTY 200'
+  | 'NIFTY 500'
+  | 'NIFTY TOTAL MARKET'      // ~750 large+mid+small cap stocks
+  | 'NIFTY MIDCAP 50'
+  | 'NIFTY MIDCAP 100'
+  | 'NIFTY MIDCAP 150'
+  | 'NIFTY MIDCAP SELECT'
+  | 'NIFTY SMALLCAP 50'
+  | 'NIFTY SMALLCAP 100'
+  | 'NIFTY SMALLCAP 250'       // covers TMB, TATAMTRDVR etc.
+  | 'NIFTY MICROCAP 250'       // deepest smallcap coverage
+  | 'NIFTY LARGEMIDCAP 250'
+  | 'NIFTY BANK'
+  | 'NIFTY AUTO'
+  | 'NIFTY FINANCIAL SERVICES'
+  | 'NIFTY FMCG'
+  | 'NIFTY IT'
+  | 'NIFTY MEDIA'
+  | 'NIFTY METAL'
+  | 'NIFTY PHARMA'
+  | 'NIFTY PSU BANK'
+  | 'NIFTY REALTY'
+
+/**
+ * Broad-market indices fetched by fetchAllNseQuotes().
+ * Together these cover nearly every actively-traded NSE equity.
+ */
+const BROAD_MARKET_INDICES: NseIndex[] = [
+  'NIFTY TOTAL MARKET',   // ~750 stocks (large + mid + small)
+  'NIFTY SMALLCAP 250',   // additional smallcaps not in total market
+];
+
+/**
+ * Symbols that don't appear in any index but should always be fetched
+ * individually via the quote-equity endpoint.
+ */
+const ALWAYS_FETCH_SYMBOLS: string[] = [
+  'TMB',          // Tamilnad Mercantile Bank – not in any Nifty index
+  'TATAMTRDVR',   // Tata Motors DVR – separate symbol from TATAMOTORS
+];
+
 /**
  * Fetch all constituent quotes for a given index (e.g. "NIFTY 50", "NIFTY 500").
  * NSE encodes spaces as %20 in the index query param.
  */
 export async function fetchIndexConstituents(
-  index: 'NIFTY 50' | 'NIFTY 500' | 'NIFTY MIDCAP 150'
+  index: NseIndex
 ): Promise<NseQuote[]> {
   const encoded = encodeURIComponent(index);
   const data = await nseGet<NseIndexResponse>(
@@ -241,6 +287,60 @@ export async function fetchIndexConstituents(
 
   console.log(`[NSE] fetchIndexConstituents(${index}): ${quotes.length} quotes`);
   return quotes;
+}
+
+/**
+ * Fetch quotes from all broad-market indices + ETFs, deduplicated by symbol.
+ * Covers the vast majority of NSE-listed equities including small/microcaps
+ * like TMB and DVR shares like TATAMTRDVR.
+ *
+ * Symbols absent from every index are still reachable via fetchSymbolQuote().
+ */
+export async function fetchAllNseQuotes(): Promise<NseQuote[]> {
+  const map = new Map<string, NseQuote>();
+
+  // Fetch each broad index sequentially to avoid hammering NSE
+  for (const index of BROAD_MARKET_INDICES) {
+    try {
+      const quotes = await fetchIndexConstituents(index);
+      for (const q of quotes) {
+        if (!map.has(q.symbol)) map.set(q.symbol, q); // first-seen wins
+      }
+      console.log(`[NSE] fetchAllNseQuotes: ${index} → ${quotes.length} (total unique: ${map.size})`);
+    } catch (err) {
+      console.warn(`[NSE] fetchAllNseQuotes: failed for index "${index}":`, err);
+    }
+  }
+
+  // Also include ETFs
+  try {
+    const etfs = await fetchEtfList();
+    for (const q of etfs) {
+      if (!map.has(q.symbol)) map.set(q.symbol, q);
+    }
+    console.log(`[NSE] fetchAllNseQuotes: ETFs → ${etfs.length} (total unique: ${map.size})`);
+  } catch (err) {
+    console.warn('[NSE] fetchAllNseQuotes: ETF fetch failed:', err);
+  }
+
+  // Always fetch specific symbols individually — these may not appear in any index
+  for (const symbol of ALWAYS_FETCH_SYMBOLS) {
+    try {
+      const q = await fetchSymbolQuote(symbol);
+      if (q) {
+        map.set(q.symbol, q); // overwrite with fresh individual quote
+        console.log(`[NSE] fetchAllNseQuotes: individually fetched ${symbol} @ ${q.price}`);
+      } else {
+        console.warn(`[NSE] fetchAllNseQuotes: no data returned for ${symbol}`);
+      }
+    } catch (err) {
+      console.warn(`[NSE] fetchAllNseQuotes: failed to fetch ${symbol}:`, err);
+    }
+  }
+
+  const all = Array.from(map.values());
+  console.log(`[NSE] fetchAllNseQuotes: done — ${all.length} unique symbols`);
+  return all;
 }
 
 /**
