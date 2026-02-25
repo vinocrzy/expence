@@ -201,6 +201,32 @@ export async function generatePDF(data: ReportData, type: ReportType): Promise<B
       renderBreakdownTable('Debt Breakdown', data.debtBreakdown);
   }
 
+  // --- Portfolio Summary Section ---
+  if ((type === 'PORTFOLIO_HOLDINGS' || type === 'PORTFOLIO_PERFORMANCE') && data.portfolioSummary) {
+    const ps = data.portfolioSummary;
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text('Portfolio Summary', 14, startY);
+    startY += 8;
+
+    const summaryRows = [
+      ['Total Holdings', ps.totalHoldings.toString()],
+      ['Total Invested', `\u20b9${ps.totalInvestment.toLocaleString()}`],
+      ['Current Value', `\u20b9${ps.totalCurrentValue.toLocaleString()}`],
+      ['Unrealised P&L', `${ps.totalUnrealisedPnL >= 0 ? '+' : ''}\u20b9${ps.totalUnrealisedPnL.toLocaleString()}`],
+      ['Portfolio Return', `${ps.totalUnrealisedPnLPercent >= 0 ? '+' : ''}${ps.totalUnrealisedPnLPercent.toFixed(2)}%`],
+    ];
+
+    autoTable(doc, {
+      startY,
+      body: summaryRows,
+      styles: { fontSize: 10, cellPadding: 3 },
+      columnStyles: { 0: { fontStyle: 'bold', fillColor: [241, 245, 249], cellWidth: 60 }, 1: { halign: 'right' } },
+    });
+    // @ts-ignore
+    startY = doc.lastAutoTable.finalY + 15;
+  }
+
   // --- Summary Text Section ---
   if (data.summary) {
     // Only show if not CONSOLIDATED (as it has its own table), or if it's general summary

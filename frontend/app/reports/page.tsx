@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileDown, FileSpreadsheet, FileText, TrendingUp, Calendar, ChevronRight } from 'lucide-react';
+import { FileDown, FileSpreadsheet, FileText, TrendingUp, Calendar, ChevronRight, BarChart2, Briefcase } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import NativeHeader from '@/components/dashboard/NativeHeader';
 import ReportBuilderModal from '@/components/ReportBuilderModal';
@@ -47,6 +47,26 @@ export default function ReportsPage() {
           startDate: start.toISOString().split('T')[0],
           endDate: end.toISOString().split('T')[0]
         });
+      }
+    },
+    {
+      title: 'Portfolio Holdings',
+      description: 'All current stock holdings',
+      icon: Briefcase,
+      color: 'bg-purple-500/10 text-purple-400',
+      onClick: () => {
+        const today = new Date().toISOString().split('T')[0];
+        exportReport('PORTFOLIO_HOLDINGS', 'EXCEL', { startDate: today, endDate: today });
+      }
+    },
+    {
+      title: 'Portfolio Performance',
+      description: 'P&L sorted by best performer',
+      icon: BarChart2,
+      color: 'bg-emerald-500/10 text-emerald-400',
+      onClick: () => {
+        const today = new Date().toISOString().split('T')[0];
+        exportReport('PORTFOLIO_PERFORMANCE', 'PDF', { startDate: today, endDate: today });
       }
     }
   ];
@@ -136,6 +156,8 @@ export default function ReportsPage() {
                 { name: 'Account Summary', desc: 'Balances & flows', icon: FileSpreadsheet },
                 { name: 'Loan Metrics', desc: 'EMI & Interest', icon: FileText },
                 { name: 'Budget Analysis', desc: 'Planned vs Actual', icon: Calendar },
+                { name: 'Portfolio Holdings', desc: 'All stocks & units', icon: Briefcase },
+                { name: 'Portfolio Performance', desc: 'P&L by Holdings', icon: BarChart2 },
                 ].map((item, i, arr) => (
                     <div key={i} className={`p-4 flex items-center justify-between ${i !== arr.length -1 ? 'border-b border-white/5' : ''}`}>
                          <div className="flex items-center gap-4">
