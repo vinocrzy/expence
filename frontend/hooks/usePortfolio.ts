@@ -116,10 +116,11 @@ export function usePortfolio() {
 
   /**
    * Load all portfolio data
+   * @param silent - if true, skip the loading spinner (for background refreshes after mutations)
    */
-  const loadPortfolioData = useCallback(async () => {
+  const loadPortfolioData = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
 
       const householdId = getHouseholdId();
@@ -369,7 +370,7 @@ export function usePortfolio() {
     deleteTransaction,
     syncPrices,
     refreshSyncStatus,
-    refresh: loadPortfolioData,
+    refresh: () => loadPortfolioData(true),
   };
 }
 

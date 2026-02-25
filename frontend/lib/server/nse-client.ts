@@ -155,13 +155,22 @@ interface NseIndexResponse {
 
 interface NseEtfItem {
   symbol: string;
-  companyName: string;
-  lastPrice?: number;
-  open?: number;
-  previousClose?: number;
-  change?: number;
-  pChange?: number;
-  totalTradedVolume?: number;
+  // NSE /api/etf returns abbreviated string fields — different from equity-stockIndices
+  ltP?: string;        // last traded price (e.g. "11.70")
+  open?: string;       // open price
+  high?: string;       // day high
+  low?: string;        // day low
+  prevClose?: string;  // previous close (NOT "previousClose")
+  chn?: string;        // change amount (NOT "change")
+  per?: string;        // percent change (NOT "pChange")
+  qty?: string;        // traded volume (NOT "totalTradedVolume")
+  assets?: string;     // ETF underlying assets description
+  meta?: {
+    companyName?: string;
+    symbol?: string;
+    isin?: string;
+    industry?: string;
+  };
 }
 
 interface NseEtfResponse {
@@ -245,24 +254,27 @@ export async function fetchEtfList(): Promise<NseQuote[]> {
 
   for (const item of data.data ?? []) {
     if (!item.symbol) continue;
+    // NSE /api/etf returns all numeric fields as strings — parse them explicitly
+    const price = parseFloat(item.ltP ?? '0');
     quotes.push({
       symbol: item.symbol,
-      name: item.companyName ?? item.symbol,
-      price: item.lastPrice ?? 0,
-      open: item.open ?? 0,
-      previousClose: item.previousClose ?? 0,
-      change: item.change ?? 0,
-      changePercent: item.pChange ?? 0,
-      dayHigh: 0,
-      dayLow: 0,
-      volume: item.totalTradedVolume ?? 0,
+      name: item.meta?.companyName ?? item.assets ?? item.symbol,
+      price,
+      open: parseFloat(item.open ?? '0'),
+      previousClose: parseFloat(item.prevClose ?? '0'),
+      change: parseFloat(item.chn ?? '0'),
+      changePercent: parseFloat(item.per ?? '0'),
+      dayHigh: parseFloat(item.high ?? '0'),
+      dayLow: parseFloat(item.low ?? '0'),
+      volume: parseInt(item.qty ?? '0', 10),
       lastUpdated: now,
       type: 'ETF',
       exchange: 'NSE',
     });
   }
 
-  console.log(`[NSE] fetchEtfList(): ${quotes.length} ETFs`);
+  const withPrice = quotes.filter(q => q.price > 0).length;
+  console.log(`[NSE] fetchEtfList(): ${quotes.length} ETFs (${withPrice} with price)`);
   return quotes;
 }
 
