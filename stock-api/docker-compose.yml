@@ -1,0 +1,11 @@
+services:
+  stock-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stock-api
+    restart: unless-stopped
+    ports:
+      - "${STOCK_API_PORT:-8000}:8000"
+    environment:
+      - CACHE_TTL_SECONDS=${CACHE_TTL_SECONDS:-300}

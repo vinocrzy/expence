@@ -1,13 +1,16 @@
 /**
  * Market Sync API Route
- * 
+ *
  * POST /api/portfolio/market-sync
- * 
- * Fetches market data from RapidAPI and caches it
+ *
+ * Fetches market data from the internal yfinance stock-api service and caches it.
  * Can be triggered by:
  * - Scheduled functions (Netlify/Vercel)
  * - GitHub Actions
  * - Manual testing
+ *
+ * Requires STOCK_API_URL env var (defaults to http://stock-api:8000 in Docker).
+ * Set USE_MOCK_DATA=true to use generated mock data without the service running.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -69,8 +72,8 @@ export async function POST(request: NextRequest) {
         changePercent: stock.changePercent,
       }));
     } else {
-      console.log('🌐 Fetching REAL market data from RapidAPI');
-      quotes = await fetchFromRapidAPI(symbols);
+      console.log('🌐 Fetching REAL market data from yfinance stock-api service');
+      quotes = await fetchFromYFinanceService(symbols);
     }
 
     // Create snapshot
@@ -111,155 +114,94 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Fetch real market data from RapidAPI
+ * Fetch real market data from the internal yfinance stock-api service.
+ *
+ * The service accepts NSE and BSE symbols separately, so we split by exchange,
+ * make up to two calls, and merge the results.
  */
-async function fetchFromRapidAPI(symbols: string[]) {
-  const apiKey = process.env.RAPIDAPI_KEY;
-  const apiHost = process.env.RAPIDAPI_HOST || 'indian-stock-exchange-api2.p.rapidapi.com';
-  const configuredEndpoint = process.env.RAPIDAPI_ENDPOINT;
+async function fetchFromYFinanceService(symbols: string[]) {
+  const baseUrl = process.env.STOCK_API_URL || 'http://stock-api:8000';
 
-  if (!apiKey) {
-    throw new Error('RAPIDAPI_KEY environment variable not set');
-  }
+  // Determine exchange per-symbol from env or default to NSE.
+  // Format: ACTIVE_SYMBOLS=RELIANCE:NSE,HDFCBANK:BSE or plain RELIANCE,TCS
+  const nsePairs: string[] = [];
+  const bsePairs: string[] = [];
 
-  const querySymbols = symbols.join(',');
-  const endpointAttempts: Array<{
-    method: 'GET' | 'POST';
-    path: string;
-    body?: unknown;
-  }> = configuredEndpoint
-    ? [
-        {
-          method: 'POST',
-          path: configuredEndpoint,
-          body: { symbols, exchange: 'NSE' },
-        },
-      ]
-    : [
-        {
-          method: 'POST',
-          path: '/stock_prices',
-          body: { symbols, exchange: 'NSE' },
-        },
-        {
-          method: 'GET',
-          path: `/price?Indices=${encodeURIComponent(querySymbols)}`,
-        },
-      ];
-
-  const errors: string[] = [];
-
-  for (const attempt of endpointAttempts) {
-    const url = `https://${apiHost}${attempt.path}`;
-
-    try {
-      const response = await fetch(url, {
-        method: attempt.method,
-        headers: {
-          ...(attempt.method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': apiHost,
-        },
-        body: attempt.body ? JSON.stringify(attempt.body) : undefined,
-        signal: AbortSignal.timeout(15000),
-      });
-
-      if (!response.ok) {
-        const errorText = `RapidAPI ${attempt.method} ${attempt.path} failed: ${response.status} ${response.statusText}`;
-        errors.push(errorText);
-        continue;
-      }
-
-      const data = await response.json();
-      const quotes = parseRapidApiResponse(data, symbols);
-
-      if (quotes.length > 0) {
-        return quotes;
-      }
-
-      errors.push(`RapidAPI ${attempt.method} ${attempt.path} returned no quote rows`);
-    } catch (error) {
-      errors.push(
-        `RapidAPI ${attempt.method} ${attempt.path} request error: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+  for (const raw of symbols) {
+    const [sym, exch = 'NSE'] = raw.split(':');
+    if (exch.toUpperCase() === 'BSE') {
+      bsePairs.push(sym.toUpperCase());
+    } else {
+      nsePairs.push(sym.toUpperCase());
     }
   }
 
-  throw new Error(`RapidAPI fetch failed (${apiHost}). Attempts: ${errors.join(' | ')}`);
-}
+  const results: Array<{
+    symbol: string;
+    exchange: string;
+    price: number;
+    timestamp: string;
+    change?: number;
+    changePercent?: number;
+  }> = [];
 
-function parseRapidApiResponse(data: unknown, requestedSymbols: string[]) {
-  const rows = extractRows(data);
+  const fetchBatch = async (batchSymbols: string[], exchange: 'NSE' | 'BSE') => {
+    if (batchSymbols.length === 0) return;
 
-  return rows
-    .map((row) => normalizeQuoteRow(row, requestedSymbols))
-    .filter((quote): quote is {
-      symbol: string;
-      exchange: string;
-      price: number;
-      timestamp: string;
-      change?: number;
-      changePercent?: number;
-    } => Boolean(quote));
-}
+    const response = await fetch(`${baseUrl}/quotes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbols: batchSymbols, exchange }),
+      signal: AbortSignal.timeout(20000),
+    });
 
-function extractRows(data: unknown): unknown[] {
-  if (Array.isArray(data)) {
-    return data;
-  }
+    if (!response.ok) {
+      throw new Error(
+        `stock-api responded ${response.status} ${response.statusText} for ${exchange} batch`
+      );
+    }
 
-  if (!data || typeof data !== 'object') {
-    return [];
-  }
+    const data = await response.json() as {
+      quotes: Array<{
+        symbol: string;
+        exchange: string;
+        price: number;
+        change?: number;
+        changePercent?: number;
+        timestamp: string;
+      }>;
+      cachedCount: number;
+      fetchedCount: number;
+    };
 
-  const payload = data as Record<string, unknown>;
+    console.log(
+      `📈 stock-api ${exchange}: ${data.fetchedCount} fetched, ${data.cachedCount} from cache`
+    );
 
-  if (Array.isArray(payload.stocks)) {
-    return payload.stocks;
-  }
-
-  if (Array.isArray(payload.data)) {
-    return payload.data;
-  }
-
-  return [payload];
-}
-
-function normalizeQuoteRow(row: unknown, requestedSymbols: string[]) {
-  if (!row || typeof row !== 'object') {
-    return null;
-  }
-
-  const item = row as Record<string, unknown>;
-
-  const symbolValue = item.symbol ?? item.Symbol ?? item.ticker ?? item.Ticker ?? item.companySymbol;
-  const symbol = typeof symbolValue === 'string' && symbolValue.trim().length > 0
-    ? symbolValue.trim()
-    : requestedSymbols[0];
-
-  const priceValue = item.lastPrice ?? item.price ?? item.ltp ?? item.last ?? item.close;
-  const price = Number(priceValue);
-
-  if (!Number.isFinite(price)) {
-    return null;
-  }
-
-  const exchangeValue = item.exchange ?? item.Exchange ?? 'NSE';
-  const exchange = typeof exchangeValue === 'string' && exchangeValue.trim().length > 0
-    ? exchangeValue.trim()
-    : 'NSE';
-
-  const changeNumber = Number(item.change ?? item.Change);
-  const changePercentNumber = Number(item.changePercent ?? item.pChange ?? item.percentChange ?? item.ChangePercent);
-
-  return {
-    symbol,
-    exchange,
-    price,
-    timestamp: new Date().toISOString(),
-    ...(Number.isFinite(changeNumber) ? { change: changeNumber } : {}),
-    ...(Number.isFinite(changePercentNumber) ? { changePercent: changePercentNumber } : {}),
+    for (const q of data.quotes) {
+      if (q.price > 0) {
+        results.push({
+          symbol: q.symbol,
+          exchange: q.exchange,
+          price: q.price,
+          timestamp: q.timestamp,
+          ...(q.change != null ? { change: q.change } : {}),
+          ...(q.changePercent != null ? { changePercent: q.changePercent } : {}),
+        });
+      }
+    }
   };
+
+  await Promise.all([
+    fetchBatch(nsePairs, 'NSE'),
+    fetchBatch(bsePairs, 'BSE'),
+  ]);
+
+  if (results.length === 0) {
+    throw new Error('stock-api returned no valid quotes for the requested symbols');
+  }
+
+  return results;
 }
 
 /**
