@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Upload, Download, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { addStockTransaction } from '../lib/portfolio/repository';
 import type { Exchange } from '../lib/portfolio/types';
 import { getHouseholdId } from '../lib/localdb-services';
@@ -132,20 +133,28 @@ TCS,5,3680.00,2024-02-01,Existing holding`;
     window.URL.revokeObjectURL(url);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <motion.div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+          />
 
-      {/* Modal */}
-      <div className="relative bg-zinc-900 w-full sm:max-w-4xl sm:rounded-2xl rounded-t-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-zinc-800">
+          <motion.div
+            className="relative bg-[#1c1c1e]/95 backdrop-blur-xl w-full sm:max-w-4xl sm:rounded-3xl rounded-t-3xl max-h-[92vh] sm:max-h-[88vh] overflow-y-auto shadow-2xl border border-white/5 pb-safe"
+            initial={{ y: 52, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 60, opacity: 0, scale: 0.985 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 28, mass: 0.88 }}
+          >
         {/* Header */}
-        <div className="sticky top-0 bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-[#1c1c1e]/95 backdrop-blur-xl border-b border-white/5 px-4 sm:px-6 py-4 flex items-center justify-between z-10">
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <Upload className="h-6 w-6 text-blue-400" />
@@ -157,15 +166,15 @@ TCS,5,3680.00,2024-02-01,Existing holding`;
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white transition p-2 hover:bg-zinc-800 rounded-lg"
+            className="text-zinc-400 hover:text-white transition p-2 hover:bg-black/30 border border-white/10 rounded-xl"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6">
           {/* Instructions */}
-          <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4">
+          <div className="bg-blue-900/20 border border-blue-700/30 rounded-2xl p-4">
             <div className="flex gap-3">
               <AlertCircle className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-blue-200">
@@ -191,7 +200,7 @@ TCS,5,3680.00,2024-02-01,Existing holding`;
 
           {/* Error Display */}
           {error && (
-            <div className="bg-rose-900/20 border border-rose-700/30 rounded-lg p-4">
+            <div className="bg-rose-900/20 border border-rose-700/30 rounded-2xl p-4">
               <div className="flex gap-2">
                 <AlertCircle className="h-5 w-5 text-rose-400 flex-shrink-0" />
                 <p className="text-sm text-rose-200">{error}</p>
@@ -200,11 +209,11 @@ TCS,5,3680.00,2024-02-01,Existing holding`;
           )}
 
           {/* Holdings Table */}
-          <div className="border border-zinc-700 rounded-lg overflow-hidden">
+          <div className="border border-white/10 rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-zinc-800 border-b border-zinc-700">
+                  <tr className="bg-black/30 border-b border-white/10">
                     <th className="text-left px-4 py-3 text-sm font-medium text-zinc-300">
                       Symbol *
                     </th>
@@ -239,7 +248,7 @@ TCS,5,3680.00,2024-02-01,Existing holding`;
                             updateHolding(holding.id, 'symbol', e.target.value.toUpperCase())
                           }
                           placeholder="RELIANCE"
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </td>
                       <td className="px-4 py-3">
@@ -251,7 +260,7 @@ TCS,5,3680.00,2024-02-01,Existing holding`;
                           }
                           placeholder="10"
                           step="0.01"
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </td>
                       <td className="px-4 py-3">
@@ -263,7 +272,7 @@ TCS,5,3680.00,2024-02-01,Existing holding`;
                           }
                           placeholder="2450.50"
                           step="0.01"
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </td>
                       <td className="px-4 py-3">
@@ -273,7 +282,7 @@ TCS,5,3680.00,2024-02-01,Existing holding`;
                           onChange={(e) =>
                             updateHolding(holding.id, 'date', e.target.value)
                           }
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </td>
                       <td className="px-4 py-3">
@@ -284,7 +293,7 @@ TCS,5,3680.00,2024-02-01,Existing holding`;
                             updateHolding(holding.id, 'notes', e.target.value)
                           }
                           placeholder="Optional notes"
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </td>
                       <td className="px-4 py-3">
@@ -308,26 +317,26 @@ TCS,5,3680.00,2024-02-01,Existing holding`;
           <button
             type="button"
             onClick={addRow}
-            className="w-full py-3 border-2 border-dashed border-zinc-700 rounded-lg text-zinc-400 hover:text-white hover:border-zinc-600 transition flex items-center justify-center gap-2"
+            className="w-full py-3 border-2 border-dashed border-white/15 rounded-2xl text-zinc-400 hover:text-white hover:border-white/30 transition flex items-center justify-center gap-2"
           >
             <Plus className="h-4 w-4" />
             Add Another Stock
           </button>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 sticky bottom-0 bg-zinc-900 pt-4 border-t border-zinc-800">
+          <div className="flex gap-3 sticky bottom-0 bg-[#1c1c1e]/95 backdrop-blur-xl pt-4 border-t border-white/5">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 bg-zinc-800 text-white py-3 rounded-lg font-medium hover:bg-zinc-700 transition disabled:opacity-50"
+              className="flex-1 bg-black/30 border border-white/10 text-white py-3 rounded-2xl font-medium hover:bg-black/40 transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleImport}
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 bg-gradient-to-br from-blue-500 to-purple-600 text-white py-3 rounded-2xl font-medium transition active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -344,7 +353,9 @@ TCS,5,3680.00,2024-02-01,Existing holding`;
             </button>
           </div>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Plus, RefreshCw, Filter, Search, ChevronDown, Upload } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, RefreshCw, Search, Upload } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { useAccounts } from '../../hooks/useLocalData';
@@ -11,6 +11,7 @@ import BulkStockImport from '../../components/BulkStockImport';
 import StockCard from '../../components/StockCard';
 import PortfolioSummaryWidget from '../../components/PortfolioSummaryWidget';
 import LoadingScreen from '../../components/ui/LoadingScreen';
+import NativeHeader from '../../components/dashboard/NativeHeader';
 import { syncMarketPrices, getMarketSyncStatus } from '../../lib/portfolio/market-sync-service';
 import { getHouseholdId } from '../../lib/localdb-services';
 import type { TransactionType } from '../../lib/portfolio/types';
@@ -115,12 +116,14 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black pb-24">
+    <div className="min-h-screen bg-black text-white font-sans pb-32 md:pb-8">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 space-y-5 md:space-y-6">
+        <NativeHeader title="Portfolio" />
+
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="hidden md:flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
               <TrendingUp className="h-8 w-8 text-blue-400" />
@@ -131,11 +134,10 @@ export default function PortfolioPage() {
             </p>
           </div>
 
-          {/* Sync Button */}
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-[#1c1c1e]/80 backdrop-blur-xl border border-white/5 text-white rounded-2xl hover:bg-[#1c1c1e] transition active:scale-[0.98] disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
             Sync Prices
@@ -144,7 +146,7 @@ export default function PortfolioPage() {
 
         {/* Sync Status */}
         {syncStatus && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm">
+          <div className="bg-[#1c1c1e]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-4 text-sm">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-4">
                 <span className="text-zinc-400">Market:</span>
@@ -158,6 +160,14 @@ export default function PortfolioPage() {
                   {syncStatus.isMarketOpen ? 'Open' : 'Closed'}
                 </span>
               </div>
+              <button
+                onClick={handleSync}
+                disabled={syncing}
+                className="md:hidden inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-white/10 bg-black/30 text-sm text-white active:scale-[0.98] disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                Sync
+              </button>
               {syncStatus.lastSyncTime && (
                 <div className="text-zinc-400">
                   Last sync:{' '}
@@ -176,24 +186,24 @@ export default function PortfolioPage() {
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             onClick={openBuyModal}
-            className="flex-1 sm:flex-none px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition flex items-center justify-center gap-2"
+            className="px-6 py-3.5 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-2xl font-semibold transition active:scale-[0.98] flex items-center justify-center gap-2"
           >
             <Plus className="h-5 w-5" />
             Buy Stock
           </button>
           <button
             onClick={openSellModal}
-            className="flex-1 sm:flex-none px-6 py-3 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition flex items-center justify-center gap-2"
+            className="px-6 py-3.5 bg-rose-500/20 border border-rose-500/30 text-rose-300 rounded-2xl font-semibold transition active:scale-[0.98] flex items-center justify-center gap-2"
           >
             <Plus className="h-5 w-5" />
             Sell Stock
           </button>
           <button
             onClick={() => setShowBulkImport(true)}
-            className="flex-1 sm:flex-none px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2"
+            className="px-6 py-3.5 bg-[#1c1c1e]/80 backdrop-blur-xl border border-white/10 text-white rounded-2xl font-semibold transition active:scale-[0.98] flex items-center justify-center gap-2"
           >
             <Upload className="h-5 w-5" />
             Import Portfolio
@@ -209,7 +219,7 @@ export default function PortfolioPage() {
         {(topGainer || topLoser) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {topGainer && (
-              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+              <div className="bg-[#1c1c1e]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="h-5 w-5 text-emerald-400" />
                   <h3 className="text-sm font-medium text-emerald-400">Top Gainer</h3>
@@ -225,7 +235,7 @@ export default function PortfolioPage() {
             )}
 
             {topLoser && (
-              <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4">
+              <div className="bg-[#1c1c1e]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingDown className="h-5 w-5 text-rose-400" />
                   <h3 className="text-sm font-medium text-rose-400">Top Loser</h3>
@@ -244,46 +254,45 @@ export default function PortfolioPage() {
 
         {/* Search and Filters */}
         {holdings.length > 0 && (
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search */}
-            <div className="relative flex-1">
+          <div className="bg-[#1c1c1e]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-3 md:p-4 space-y-3">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search stocks..."
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-black/30 border border-white/10 rounded-2xl pl-10 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            {/* Sort By */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="value">Sort by Value</option>
-              <option value="pnl">Sort by P&L</option>
-              <option value="symbol">Sort by Symbol</option>
-            </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="value">Sort by Value</option>
+                <option value="pnl">Sort by P&L</option>
+                <option value="symbol">Sort by Symbol</option>
+              </select>
 
-            {/* Filter */}
-            <select
-              value={filterProfit}
-              onChange={(e) => setFilterProfit(e.target.value as any)}
-              className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Holdings</option>
-              <option value="profit">Profit Only</option>
-              <option value="loss">Loss Only</option>
-            </select>
+              <select
+                value={filterProfit}
+                onChange={(e) => setFilterProfit(e.target.value as any)}
+                className="bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Holdings</option>
+                <option value="profit">Profit Only</option>
+                <option value="loss">Loss Only</option>
+              </select>
+            </div>
           </div>
         )}
 
         {/* Holdings List */}
         {holdings.length === 0 ? (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 text-center">
+          <div className="bg-[#1c1c1e]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-10 text-center">
             <TrendingUp className="h-16 w-16 text-zinc-700 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">
               No stocks in your portfolio
@@ -293,14 +302,14 @@ export default function PortfolioPage() {
             </p>
             <button
               onClick={openBuyModal}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition inline-flex items-center gap-2"
+              className="px-6 py-3 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-2xl font-semibold transition active:scale-[0.98] inline-flex items-center gap-2"
             >
               <Plus className="h-5 w-5" />
               Buy Your First Stock
             </button>
           </div>
         ) : filteredHoldings.length === 0 ? (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
+          <div className="bg-[#1c1c1e]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-8 text-center">
             <p className="text-zinc-400">No stocks match your filters</p>
           </div>
         ) : (
@@ -313,7 +322,7 @@ export default function PortfolioPage() {
 
         {/* Recent Transactions Preview */}
         {transactions.length > 0 && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-[#1c1c1e]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-5 md:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">Recent Transactions</h3>
               <span className="text-sm text-zinc-500">Last 5</span>
@@ -322,7 +331,7 @@ export default function PortfolioPage() {
               {transactions.slice(0, 5).map((tx) => (
                 <div
                   key={tx._id}
-                  className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-black/25 border border-white/5 rounded-2xl"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -346,7 +355,7 @@ export default function PortfolioPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-white font-medium">
+                    <p className="text-white font-medium font-mono">
                       ₹{(tx.quantity * tx.price).toLocaleString('en-IN')}
                     </p>
                     <p className="text-xs text-zinc-500">
@@ -358,7 +367,7 @@ export default function PortfolioPage() {
             </div>
           </div>
         )}
-      </div>
+      </main>
 
       {/* Stock Transaction Modal */}
       <StockTransactionModal

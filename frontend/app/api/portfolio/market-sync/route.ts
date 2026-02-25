@@ -116,50 +116,150 @@ export async function POST(request: NextRequest) {
 async function fetchFromRapidAPI(symbols: string[]) {
   const apiKey = process.env.RAPIDAPI_KEY;
   const apiHost = process.env.RAPIDAPI_HOST || 'indian-stock-exchange-api2.p.rapidapi.com';
+  const configuredEndpoint = process.env.RAPIDAPI_ENDPOINT;
 
   if (!apiKey) {
     throw new Error('RAPIDAPI_KEY environment variable not set');
   }
 
-  try {
-    const response = await fetch(
-      `https://${apiHost}/stock_prices`,
-      {
-        method: 'POST',
+  const querySymbols = symbols.join(',');
+  const endpointAttempts: Array<{
+    method: 'GET' | 'POST';
+    path: string;
+    body?: unknown;
+  }> = configuredEndpoint
+    ? [
+        {
+          method: 'POST',
+          path: configuredEndpoint,
+          body: { symbols, exchange: 'NSE' },
+        },
+      ]
+    : [
+        {
+          method: 'POST',
+          path: '/stock_prices',
+          body: { symbols, exchange: 'NSE' },
+        },
+        {
+          method: 'GET',
+          path: `/price?Indices=${encodeURIComponent(querySymbols)}`,
+        },
+      ];
+
+  const errors: string[] = [];
+
+  for (const attempt of endpointAttempts) {
+    const url = `https://${apiHost}${attempt.path}`;
+
+    try {
+      const response = await fetch(url, {
+        method: attempt.method,
         headers: {
-          'Content-Type': 'application/json',
+          ...(attempt.method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
           'X-RapidAPI-Key': apiKey,
           'X-RapidAPI-Host': apiHost,
         },
-        body: JSON.stringify({
-          symbols,
-          exchange: 'NSE'
-        }),
-        signal: AbortSignal.timeout(15000), // 15 second timeout
+        body: attempt.body ? JSON.stringify(attempt.body) : undefined,
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (!response.ok) {
+        const errorText = `RapidAPI ${attempt.method} ${attempt.path} failed: ${response.status} ${response.statusText}`;
+        errors.push(errorText);
+        continue;
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(`RapidAPI error: ${response.status} ${response.statusText}`);
+      const data = await response.json();
+      const quotes = parseRapidApiResponse(data, symbols);
+
+      if (quotes.length > 0) {
+        return quotes;
+      }
+
+      errors.push(`RapidAPI ${attempt.method} ${attempt.path} returned no quote rows`);
+    } catch (error) {
+      errors.push(
+        `RapidAPI ${attempt.method} ${attempt.path} request error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
-
-    const data = await response.json();
-    
-    // Transform API response to our format
-    // Note: Adjust based on actual RapidAPI response structure
-    return data.stocks.map((stock: any) => ({
-      symbol: stock.symbol,
-      exchange: 'NSE',
-      price: stock.lastPrice || stock.price,
-      timestamp: new Date().toISOString(),
-      change: stock.change,
-      changePercent: stock.changePercent || stock.pChange,
-    }));
-
-  } catch (error) {
-    console.error('RapidAPI fetch error:', error);
-    throw error;
   }
+
+  throw new Error(`RapidAPI fetch failed (${apiHost}). Attempts: ${errors.join(' | ')}`);
+}
+
+function parseRapidApiResponse(data: unknown, requestedSymbols: string[]) {
+  const rows = extractRows(data);
+
+  return rows
+    .map((row) => normalizeQuoteRow(row, requestedSymbols))
+    .filter((quote): quote is {
+      symbol: string;
+      exchange: string;
+      price: number;
+      timestamp: string;
+      change?: number;
+      changePercent?: number;
+    } => Boolean(quote));
+}
+
+function extractRows(data: unknown): unknown[] {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (!data || typeof data !== 'object') {
+    return [];
+  }
+
+  const payload = data as Record<string, unknown>;
+
+  if (Array.isArray(payload.stocks)) {
+    return payload.stocks;
+  }
+
+  if (Array.isArray(payload.data)) {
+    return payload.data;
+  }
+
+  return [payload];
+}
+
+function normalizeQuoteRow(row: unknown, requestedSymbols: string[]) {
+  if (!row || typeof row !== 'object') {
+    return null;
+  }
+
+  const item = row as Record<string, unknown>;
+
+  const symbolValue = item.symbol ?? item.Symbol ?? item.ticker ?? item.Ticker ?? item.companySymbol;
+  const symbol = typeof symbolValue === 'string' && symbolValue.trim().length > 0
+    ? symbolValue.trim()
+    : requestedSymbols[0];
+
+  const priceValue = item.lastPrice ?? item.price ?? item.ltp ?? item.last ?? item.close;
+  const price = Number(priceValue);
+
+  if (!Number.isFinite(price)) {
+    return null;
+  }
+
+  const exchangeValue = item.exchange ?? item.Exchange ?? 'NSE';
+  const exchange = typeof exchangeValue === 'string' && exchangeValue.trim().length > 0
+    ? exchangeValue.trim()
+    : 'NSE';
+
+  const changeNumber = Number(item.change ?? item.Change);
+  const changePercentNumber = Number(item.changePercent ?? item.pChange ?? item.percentChange ?? item.ChangePercent);
+
+  return {
+    symbol,
+    exchange,
+    price,
+    timestamp: new Date().toISOString(),
+    ...(Number.isFinite(changeNumber) ? { change: changeNumber } : {}),
+    ...(Number.isFinite(changePercentNumber) ? { changePercent: changePercentNumber } : {}),
+  };
 }
 
 /**

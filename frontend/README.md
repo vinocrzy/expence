@@ -25,6 +25,27 @@ npm run dev
 http://localhost:3000
 ```
 
+## Netlify + Clerk setup
+
+If you deploy to Netlify and see `@clerk/nextjs: Missing secretKey`, configure these environment variables in Netlify (Site settings → Environment variables):
+
+- `CLERK_SECRET_KEY` (required, server-side)
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (required, client-side)
+
+Optional aliases supported by this app:
+
+- `CLERK_SECRET`
+- `CLERK_PUBLISHABLE_KEY`
+
+Set via Netlify CLI:
+
+```bash
+netlify env:set CLERK_SECRET_KEY "sk_live_..."
+netlify env:set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY "pk_live_..."
+```
+
+After updating env vars, trigger a new deploy (clear cache and redeploy if needed).
+
 ## 📖 Documentation
 
 - **[MIGRATION_FINAL_SUMMARY.md](./MIGRATION_FINAL_SUMMARY.md)** - Complete migration overview

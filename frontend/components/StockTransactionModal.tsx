@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, TrendingUp, TrendingDown, Search, Plus } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { addStockTransaction } from '../lib/portfolio/repository';
 import type { TransactionType, Exchange } from '../lib/portfolio/types';
 import { getHouseholdId } from '../lib/localdb-services';
@@ -186,20 +187,28 @@ export default function StockTransactionModal({
 
   const totalAmount = (parseFloat(quantity) || 0) * (parseFloat(price) || 0);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <motion.div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+          />
 
-      {/* Modal */}
-      <div className="relative bg-zinc-900 w-full sm:max-w-2xl sm:rounded-2xl rounded-t-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-zinc-800">
+          <motion.div
+            className="relative bg-[#1c1c1e]/95 backdrop-blur-xl w-full sm:max-w-2xl sm:rounded-3xl rounded-t-3xl max-h-[92vh] sm:max-h-[88vh] overflow-y-auto shadow-2xl border border-white/5 pb-safe"
+            initial={{ y: 48, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 56, opacity: 0, scale: 0.985 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 28, mass: 0.85 }}
+          >
         {/* Header */}
-        <div className="sticky top-0 bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-[#1c1c1e]/95 backdrop-blur-xl border-b border-white/5 px-4 sm:px-6 py-4 flex items-center justify-between z-10">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             {type === 'BUY' ? (
               <TrendingUp className="h-6 w-6 text-emerald-400" />
@@ -210,21 +219,21 @@ export default function StockTransactionModal({
           </h2>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white transition p-2 hover:bg-zinc-800 rounded-lg"
+            className="text-zinc-400 hover:text-white transition p-2 hover:bg-black/30 border border-white/10 rounded-xl"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6">
           {/* Transaction Type Toggle */}
-          <div className="flex gap-2 p-1 bg-zinc-800 rounded-lg">
+          <div className="flex gap-2 p-1 bg-black/30 border border-white/10 rounded-2xl">
             <button
               type="button"
               onClick={() => setType('BUY')}
-              className={`flex-1 py-2 px-4 rounded-md font-medium transition flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2.5 px-4 rounded-xl font-medium transition active:scale-[0.98] flex items-center justify-center gap-2 ${
                 type === 'BUY'
-                  ? 'bg-emerald-600 text-white'
+                  ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
                   : 'text-zinc-400 hover:text-white'
               }`}
             >
@@ -234,9 +243,9 @@ export default function StockTransactionModal({
             <button
               type="button"
               onClick={() => setType('SELL')}
-              className={`flex-1 py-2 px-4 rounded-md font-medium transition flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2.5 px-4 rounded-xl font-medium transition active:scale-[0.98] flex items-center justify-center gap-2 ${
                 type === 'SELL'
-                  ? 'bg-rose-600 text-white'
+                  ? 'bg-rose-500/20 border border-rose-500/30 text-rose-300'
                   : 'text-zinc-400 hover:text-white'
               }`}
             >
@@ -298,7 +307,7 @@ export default function StockTransactionModal({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search stocks or ETFs..."
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-10 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-black/30 border border-white/10 rounded-2xl px-10 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -361,7 +370,7 @@ export default function StockTransactionModal({
                   value={customSymbol}
                   onChange={(e) => setCustomSymbol(e.target.value.toUpperCase())}
                   placeholder="e.g., TATAMOTORS"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                  className="w-full bg-black/30 border border-white/10 rounded-2xl px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                   autoFocus
                 />
                 <button
@@ -391,7 +400,7 @@ export default function StockTransactionModal({
                 placeholder="0"
                 step="0.001"
                 min="0"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-black/30 border border-white/10 rounded-2xl px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -411,7 +420,7 @@ export default function StockTransactionModal({
                   placeholder="0.00"
                   step="0.01"
                   min="0"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-8 pr-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-black/30 border border-white/10 rounded-2xl pl-8 pr-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
@@ -420,10 +429,10 @@ export default function StockTransactionModal({
 
           {/* Total Amount Display */}
           {totalAmount > 0 && (
-            <div className="bg-zinc-800 rounded-lg p-4 border border-zinc-700">
+            <div className="bg-black/30 rounded-2xl p-4 border border-white/10">
               <div className="flex items-center justify-between">
                 <span className="text-zinc-400">Total Amount</span>
-                <span className="text-2xl font-bold text-white">
+                <span className="text-2xl font-bold text-white font-mono">
                   ₹{totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                 </span>
               </div>
@@ -439,13 +448,13 @@ export default function StockTransactionModal({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-black/30 border border-white/10 rounded-2xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
 
           {/* Link to Account Toggle */}
-          <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
+          <div className="flex items-center justify-between p-4 bg-black/30 rounded-2xl border border-white/10">
             <div>
               <label className="text-sm font-medium text-zinc-300">
                 Link to Account
@@ -478,7 +487,7 @@ export default function StockTransactionModal({
               <select
                 value={accountId}
                 onChange={(e) => setAccountId(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-black/30 border border-white/10 rounded-2xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required={linkToAccount}
               >
                 <option value="">Select account</option>
@@ -501,7 +510,7 @@ export default function StockTransactionModal({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Add any additional notes..."
               rows={3}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full bg-black/30 border border-white/10 rounded-2xl px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>
 
@@ -517,24 +526,26 @@ export default function StockTransactionModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-zinc-800 text-white rounded-lg font-medium hover:bg-zinc-700 transition"
+              className="flex-1 px-6 py-3 bg-black/30 border border-white/10 text-white rounded-2xl font-medium hover:bg-black/40 transition active:scale-[0.98]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className={`flex-1 px-6 py-3 rounded-lg font-medium transition ${
+              className={`flex-1 px-6 py-3 rounded-2xl font-medium transition active:scale-[0.98] ${
                 type === 'BUY'
-                  ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-rose-600 hover:bg-rose-700'
-              } text-white disabled:opacity-50 disabled:cursor-not-allowed`}
+                  ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
+                  : 'bg-rose-500/20 border border-rose-500/30 text-rose-300'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {loading ? 'Adding...' : type === 'BUY' ? 'Buy Stock' : 'Sell Stock'}
             </button>
           </div>
         </form>
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }
