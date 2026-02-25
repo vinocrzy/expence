@@ -17,9 +17,12 @@ const isPublicRoute = createRouteMatcher([
   '/manifest.json',
   '/sw.js',
   '/api/health',
+  // Portfolio price cache — public so the Netlify scheduled trigger can POST without user auth
+  '/api/portfolio/prices',
+  // Backwards-compat wrappers (also called by Netlify trigger)
   '/api/portfolio/market-sync',
   '/api/portfolio/market-data',
-  '/api/portfolio/debug-storage',
+  // NOTE: /api/portfolio/calculate is intentionally NOT public (processes user holdings)
 ])
 
 const handleDbProxy = (request: NextRequest) => {

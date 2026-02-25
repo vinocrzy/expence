@@ -84,13 +84,19 @@ export function generateMockMarketData(symbols: string[]): MockStockData[] {
 }
 
 /**
- * Check if we should use mock data
+ * Check if we should use mock data.
+ *
+ * Mock mode is active when:
+ *  - USE_MOCK_DATA=true  (explicit override, useful in local dev without Docker)
+ *  - STOCK_API_URL is not set  (service not configured)
+ *
+ * NODE_ENV=development no longer forces mock by itself, so you can run
+ * the real stock-api container locally and still get live prices.
  */
 export function shouldUseMock(): boolean {
   return (
-    process.env.NODE_ENV === 'development' || 
     process.env.USE_MOCK_DATA === 'true' ||
-    !process.env.RAPIDAPI_KEY
+    !process.env.STOCK_API_URL
   );
 }
 

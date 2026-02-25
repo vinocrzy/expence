@@ -9,7 +9,9 @@ export type ReportType =
   | 'BUDGET_VS_ACTUAL' 
   | 'TRIP_EVENT' 
   | 'YEARLY_SUMMARY'
-  | 'CONSOLIDATED';
+  | 'CONSOLIDATED'
+  | 'PORTFOLIO_HOLDINGS'
+  | 'PORTFOLIO_PERFORMANCE';
 
 export type ReportFormat = 'EXCEL' | 'PDF';
 
@@ -88,4 +90,27 @@ export interface ReportData {
   investmentBreakdown?: Record<string, number>;
   debtBreakdown?: Record<string, number>;
   consolidatedSummary?: ConsolidatedAccountSummary[];
+  // Portfolio
+  portfolioHoldings?: PortfolioHoldingReportRow[];
+  portfolioSummary?: PortfolioSummaryReportData;
+}
+
+export interface PortfolioHoldingReportRow {
+  symbol: string;
+  exchange: string;
+  totalUnits: number;
+  avgBuyPrice: number;
+  currentPrice: number;
+  investedValue: number;
+  currentValue: number;
+  unrealisedPnL: number;
+  unrealisedPnLPercent: number;
+}
+
+export interface PortfolioSummaryReportData {
+  totalInvestment: number;
+  totalCurrentValue: number;
+  totalUnrealisedPnL: number;
+  totalUnrealisedPnLPercent: number;
+  totalHoldings: number;
 }

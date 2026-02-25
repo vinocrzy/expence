@@ -19,7 +19,9 @@ import {
   calculateTransactionTotal,
   calculateNetWorth 
 } from '../../lib/financial-math';
-import { Wallet, TrendingUp, TrendingDown, PiggyBank } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, PiggyBank, BarChart2, ExternalLink } from 'lucide-react';
+import { usePortfolio } from '../../hooks/usePortfolio';
+import PortfolioSummaryWidget from '../../components/PortfolioSummaryWidget';
 
 // Widgets
 import StatCard from '../../components/dashboard/StatCard';
@@ -42,6 +44,15 @@ export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const { transactions, loading: txLoading } = useTransactions(); 
   const { accounts, loading: accLoading } = useAccounts();
+
+  // Portfolio data for dashboard widget
+  const {
+    summary: portfolioSummary,
+    analytics: portfolioAnalytics,
+    pricesLastUpdated,
+    syncStatus,
+    loading: portfolioLoading,
+  } = usePortfolio();
   const [loading, setLoading] = useState(true);
 
   // Dashboard Data State
@@ -130,6 +141,7 @@ export default function DashboardPage() {
             setCategoryBreakdown(cats);
             setNetWorth(netWorth);
             setAvailableBalance(availableBalance);
+            // Note: portfolioSummary.totalCurrentValue is added in the render layer via state
             setInvestmentTotal(investments);
             setTotalLoanOutstanding(calculateTotalLoanOutstanding(loans));
             // Debt Total from transactions? Or Loan Outstanding?
@@ -245,10 +257,15 @@ export default function DashboardPage() {
                 <div className="glass-panel p-5 rounded-3xl flex items-center justify-between relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
                     <div className="relative z-10 space-y-1">
                         <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Total Assets</p>
-                        <h3 className="text-2xl font-bold text-white tabular-nums tracking-tight">₹{investmentTotal.toLocaleString()}</h3>
-                        <p className="text-emerald-400 text-xs flex items-center gap-1">
+                        <h3 className="text-2xl font-bold text-white tabular-nums tracking-tight">
+                          ₹{(investmentTotal + (portfolioSummary?.totalCurrentValue ?? 0)).toLocaleString()}
+                        </h3>
+                        <p className="text-emerald-400 text-xs flex items-center gap-2">
                             <TrendingUp className="w-3 h-3" /> 
                             <span>Investments & Savings</span>
+                            {(portfolioSummary?.totalCurrentValue ?? 0) > 0 && (
+                              <span className="text-purple-400">· Portfolio ₹{portfolioSummary!.totalCurrentValue.toLocaleString()}</span>
+                            )}
                         </p>
                     </div>
                     <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-400 relative z-10">
@@ -296,7 +313,27 @@ export default function DashboardPage() {
             {/* Right Column: Insights */}
             <div className="space-y-4 md:space-y-6">
                 <InsightsWidget />
-                
+
+                {/* Portfolio Summary Widget */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <BarChart2 className="w-3 h-3 text-purple-400" /> Portfolio
+                    </span>
+                    <Link href="/portfolio" className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                      View All <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
+                  <PortfolioSummaryWidget
+                    summary={portfolioSummary}
+                    analytics={portfolioAnalytics}
+                    pricesLastUpdated={pricesLastUpdated}
+                    isMarketOpen={syncStatus?.isMarketOpen}
+                    isStale={syncStatus?.isStale}
+                    loading={portfolioLoading}
+                  />
+                </div>
+
                 {/* Upcoming Payments Widget */}
                 {upcomingTxs.length > 0 && !isLoading && (
                     <div className="glass-panel p-5 rounded-3xl border border-white/5 space-y-4 bg-[#1c1c1e]">

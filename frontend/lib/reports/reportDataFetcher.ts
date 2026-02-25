@@ -9,6 +9,8 @@ import {
 } from '../localdb-services';
 import { ReportFilters, ReportType, ReportData } from './types';
 import { format } from 'date-fns';
+import { getStockTransactionsByHousehold, getLatestQuotes } from '../portfolio/repository';
+import { calculateHoldings } from '../portfolio/holdings-calculator';
 
 export async function fetchReportData(type: ReportType, filters: ReportFilters): Promise<ReportData> {
   const household = await householdService.getCurrent();
@@ -541,6 +543,78 @@ export async function fetchReportData(type: ReportType, filters: ReportFilters):
         investmentBreakdown,
         debtBreakdown,
         consolidatedSummary
+      };
+    }
+
+    case 'PORTFOLIO_HOLDINGS': {
+      const txns = await getStockTransactionsByHousehold({ householdId });
+      const quotesMap = await getLatestQuotes();
+      const { holdings } = calculateHoldings({ transactions: txns, quotes: quotesMap });
+
+      const totalInvestment = holdings.reduce((s, h) => s + h.investedValue, 0);
+      const totalCurrentValue = holdings.reduce((s, h) => s + h.currentValue, 0);
+      const totalPnL = totalCurrentValue - totalInvestment;
+      const totalPnLPct = totalInvestment > 0 ? (totalPnL / totalInvestment) * 100 : 0;
+
+      return {
+        title: 'Portfolio Holdings Report',
+        subtitle: `Generated ${format(new Date(), 'PP')}`,
+        generatedAt,
+        headers: ['Symbol', 'Exchange', 'Units', 'Avg Buy', 'Current Price', 'Invested', 'Current Value', 'P&L', 'P&L %'],
+        rows: holdings.map(h => [
+          h.symbol, h.exchange, h.totalUnits,
+          h.avgBuyPrice.toFixed(2), h.currentPrice.toFixed(2),
+          h.investedValue.toFixed(2), h.currentValue.toFixed(2),
+          h.unrealisedPnL.toFixed(2), `${h.unrealisedPnLPercent.toFixed(2)}%`,
+        ]),
+        summary: {
+          'Total Holdings': holdings.length,
+          'Total Invested': `\u20b9${totalInvestment.toLocaleString()}`,
+          'Current Value': `\u20b9${totalCurrentValue.toLocaleString()}`,
+          'Unrealised P&L': `\u20b9${totalPnL.toLocaleString()}`,
+          'P&L %': `${totalPnLPct.toFixed(2)}%`,
+        },
+        portfolioHoldings: holdings.map(h => ({
+          symbol: h.symbol, exchange: h.exchange, totalUnits: h.totalUnits,
+          avgBuyPrice: h.avgBuyPrice, currentPrice: h.currentPrice,
+          investedValue: h.investedValue, currentValue: h.currentValue,
+          unrealisedPnL: h.unrealisedPnL, unrealisedPnLPercent: h.unrealisedPnLPercent,
+        })),
+        portfolioSummary: { totalInvestment, totalCurrentValue, totalUnrealisedPnL: totalPnL, totalUnrealisedPnLPercent: totalPnLPct, totalHoldings: holdings.length },
+      };
+    }
+
+    case 'PORTFOLIO_PERFORMANCE': {
+      const txns = await getStockTransactionsByHousehold({ householdId });
+      const quotesMap = await getLatestQuotes();
+      const { holdings } = calculateHoldings({ transactions: txns, quotes: quotesMap });
+      const sorted = [...holdings].sort((a, b) => b.unrealisedPnLPercent - a.unrealisedPnLPercent);
+
+      const totalInvestment = sorted.reduce((s, h) => s + h.investedValue, 0);
+      const totalCurrentValue = sorted.reduce((s, h) => s + h.currentValue, 0);
+      const totalPnL = totalCurrentValue - totalInvestment;
+      const totalPnLPct = totalInvestment > 0 ? (totalPnL / totalInvestment) * 100 : 0;
+
+      return {
+        title: 'Portfolio Performance Report',
+        subtitle: `Generated ${format(new Date(), 'PP')}`,
+        generatedAt,
+        headers: ['Symbol', 'Exchange', 'Units', 'Invested', 'Current Value', 'P&L', 'P&L %', 'Since'],
+        rows: sorted.map(h => [
+          h.symbol, h.exchange, h.totalUnits,
+          h.investedValue.toFixed(2), h.currentValue.toFixed(2),
+          `${h.unrealisedPnL >= 0 ? '+' : ''}${h.unrealisedPnL.toFixed(2)}`,
+          `${h.unrealisedPnLPercent >= 0 ? '+' : ''}${h.unrealisedPnLPercent.toFixed(2)}%`,
+          h.firstBuyDate ? format(new Date(h.firstBuyDate), 'PP') : '-',
+        ]),
+        summary: {
+          'Total Holdings': holdings.length,
+          'Total Invested': `\u20b9${totalInvestment.toLocaleString()}`,
+          'Current Value': `\u20b9${totalCurrentValue.toLocaleString()}`,
+          'Total P&L': `${totalPnL >= 0 ? '+' : ''}\u20b9${Math.abs(totalPnL).toLocaleString()}`,
+          'Portfolio Return': `${totalPnLPct >= 0 ? '+' : ''}${totalPnLPct.toFixed(2)}%`,
+        },
+        portfolioSummary: { totalInvestment, totalCurrentValue, totalUnrealisedPnL: totalPnL, totalUnrealisedPnLPercent: totalPnLPct, totalHoldings: holdings.length },
       };
     }
 

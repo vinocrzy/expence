@@ -1,16 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, Activity, Calendar, DollarSign } from 'lucide-react';
-import type { Holding } from '../lib/portfolio/types';
+import { TrendingUp, TrendingDown, ChevronDown, Activity, Calendar, DollarSign, BarChart2, ArrowUp, ArrowDown } from 'lucide-react';
+import type { Holding, MarketQuote } from '../lib/portfolio/types';
 import { format } from 'date-fns';
 
 interface StockCardProps {
   holding: Holding;
+  quote?: MarketQuote | null;
   onClick?: () => void;
 }
 
-export default function StockCard({ holding, onClick }: StockCardProps) {
+export default function StockCard({ holding, quote, onClick }: StockCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const {
@@ -26,6 +27,10 @@ export default function StockCard({ holding, onClick }: StockCardProps) {
 
   const isProfit = unrealisedPnL >= 0;
 
+  // Day change from quote (returned by /api/portfolio/calculate)
+  const dayChange = quote?.change;
+  const dayChangePercent = quote?.changePercent;
+  const isDayUp = (dayChange ?? 0) >= 0;
 
   return (
     <div
@@ -36,9 +41,22 @@ export default function StockCard({ holding, onClick }: StockCardProps) {
       <div className="p-4 md:p-5">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-lg font-bold text-white">{symbol}</h3>
+              {/* Day change badge — live from NSE */}
+              {dayChange !== undefined && dayChangePercent !== undefined && (
+                <span
+                  className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-xs font-semibold ${
+                    isDayUp
+                      ? 'bg-emerald-500/15 text-emerald-400'
+                      : 'bg-rose-500/15 text-rose-400'
+                  }`}
+                >
+                  {isDayUp ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                  {isDayUp ? '+' : ''}{dayChangePercent.toFixed(2)}%
+                </span>
+              )}
             </div>
             <p className="text-sm text-zinc-500 mt-0.5">
               {totalUnits.toLocaleString('en-IN', { maximumFractionDigits: 3 })} shares
@@ -58,12 +76,23 @@ export default function StockCard({ holding, onClick }: StockCardProps) {
           </button>
         </div>
 
-        {/* Current Price */}
-        <div className="flex items-baseline gap-2 mb-4">
-          <span className="text-3xl font-bold text-white font-mono">
-            ₹{currentPrice?.toLocaleString('en-IN', { maximumFractionDigits: 2 }) || '—'}
-          </span>
-          <span className="text-sm text-zinc-500">per share</span>
+        {/* Current Price + Day Change */}
+        <div className="flex items-baseline justify-between mb-4">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-white font-mono">
+              ₹{currentPrice?.toLocaleString('en-IN', { maximumFractionDigits: 2 }) || '—'}
+            </span>
+            <span className="text-sm text-zinc-500">per share</span>
+          </div>
+          {dayChange !== undefined && (
+            <span
+              className={`text-sm font-semibold font-mono ${
+                isDayUp ? 'text-emerald-400' : 'text-rose-400'
+              }`}
+            >
+              {isDayUp ? '+' : ''}₹{Math.abs(dayChange).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+            </span>
+          )}
         </div>
 
         {/* P&L Summary */}
@@ -129,7 +158,45 @@ export default function StockCard({ holding, onClick }: StockCardProps) {
               </div>
             </div>
 
-            {/* Note: Realized P&L feature can be added later */}
+            {/* Day Range — only when quote available */}
+            {quote && (
+              <div className="bg-black/20 border border-white/5 rounded-2xl p-2.5">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <BarChart2 className="h-3.5 w-3.5 text-zinc-500" />
+                  <p className="text-xs text-zinc-500">Day Range</p>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-rose-400 font-mono">
+                    {(quote as any).dayLow !== undefined
+                      ? `₹${(quote as any).dayLow.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+                      : '—'}
+                  </span>
+                  <div className="flex-1 h-1 bg-zinc-700 rounded-full overflow-hidden">
+                    {(quote as any).dayLow !== undefined && (quote as any).dayHigh !== undefined && (
+                      <div
+                        className="h-full bg-gradient-to-r from-rose-500 to-emerald-500 rounded-full"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.max(
+                              0,
+                              ((currentPrice - (quote as any).dayLow) /
+                                Math.max((quote as any).dayHigh - (quote as any).dayLow, 1)) *
+                                100
+                            )
+                          )}%`,
+                        }}
+                      />
+                    )}
+                  </div>
+                  <span className="text-emerald-400 font-mono">
+                    {(quote as any).dayHigh !== undefined
+                      ? `₹${(quote as any).dayHigh.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+                      : '—'}
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Last Updated */}
             {currentPrice && (

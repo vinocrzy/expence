@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import NativeHeader from '../../components/dashboard/NativeHeader';
 import { useTransactions, useCategories } from '../../hooks/useLocalData';
+import { usePortfolio } from '../../hooks/usePortfolio';
 import { 
     BarChart2, TrendingUp, TrendingDown, 
     RefreshCw, Layers, PieChart as PieIcon, Activity,
     AlertCircle, Check, ChevronDown, Filter, ArrowUpRight,
-    PiggyBank, HandCoins, Tag
+    PiggyBank, HandCoins, Tag, Briefcase, ExternalLink
 } from 'lucide-react';
 import { 
     PieChart, Pie, Cell, BarChart, Bar, 
@@ -23,6 +25,7 @@ import MultiSelect from '../../components/ui/MultiSelect';
 const COLORS = ['#8b5cf6', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1', '#14b8a6'];
 
 export default function AnalyticsPage() {
+    const [view, setView] = useState<'EXPENSES' | 'PORTFOLIO'>('EXPENSES');
     const [range, setRange] = useState<'MONTH' | 'QUARTER' | 'YEAR'>('MONTH');
     const months = range === 'YEAR' ? 12 : range === 'QUARTER' ? 3 : 1;
     
@@ -30,6 +33,14 @@ export default function AnalyticsPage() {
     const { transactions, loading: txLoading } = useTransactions();
     const { categories, loading: catLoading } = useCategories();
     const loading = txLoading || catLoading;
+
+    // Portfolio data
+    const {
+        holdings,
+        summary: portfolioSummary,
+        analytics: portfolioAnalytics,
+        loading: portfolioLoading,
+    } = usePortfolio();
 
     // -- State for Independent Filters --
     const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]); // Empty = ALL
@@ -259,6 +270,31 @@ export default function AnalyticsPage() {
     }, [transactions, dateRange]);
 
 
+    // Portfolio allocation chart data
+    const portfolioAllocationData = useMemo(() =>
+        holdings.map(h => ({
+            name: h.symbol,
+            value: h.currentValue,
+            invested: h.investedValue,
+            pnl: h.unrealisedPnL,
+            pnlPct: h.unrealisedPnLPercent,
+        })).sort((a, b) => b.value - a.value),
+    [holdings]);
+
+    // Top gainers/losers
+    const portfolioGainersLosers = useMemo(() => {
+        return [...holdings]
+            .filter(h => h.unrealisedPnL !== 0)
+            .sort((a, b) => Math.abs(b.unrealisedPnLPercent) - Math.abs(a.unrealisedPnLPercent))
+            .slice(0, 8)
+            .map(h => ({
+                symbol: h.symbol,
+                pnlPct: h.unrealisedPnLPercent,
+                pnl: h.unrealisedPnL,
+                fill: h.unrealisedPnL >= 0 ? '#10b981' : '#ef4444',
+            }));
+    }, [holdings]);
+
     return (
         <div className="min-h-screen bg-black text-white font-sans pb-32">
             <Navbar />
@@ -270,42 +306,68 @@ export default function AnalyticsPage() {
                     <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 w-fit hidden md:block">
                         Analytics
                     </h1>
-                    
-                    <NativeSegmentedControl 
-                        value={range}
-                        onChange={(v) => setRange(v as any)}
-                        options={[
-                            { label: '1M', value: 'MONTH' },
-                            { label: '3M', value: 'QUARTER' },
-                            { label: '1Y', value: 'YEAR' }
-                        ]}
-                    />
 
-                    <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                        <div className="flex-1 md:w-64">
-                             <MultiSelect 
-                                options={categoryOptions}
-                                selectedIds={selectedCategoryIds}
-                                onChange={setSelectedCategoryIds}
-                                placeholder="Filter Categories"
-                             />
-                        </div>
-                        {tagOptions.length > 0 && (
-                            <div className="flex-1 md:w-64">
-                                 <MultiSelect 
-                                    options={tagOptions}
-                                    selectedIds={selectedTagIds}
-                                    onChange={setSelectedTagIds}
-                                    placeholder="Filter Tags"
-                                 />
-                            </div>
-                        )}
+                    {/* View Toggle: Expenses vs Portfolio */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setView('EXPENSES')}
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                                view === 'EXPENSES' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/30' : 'bg-[#1c1c1e] text-gray-400 hover:text-white border border-white/5'
+                            }`}
+                        >
+                            <BarChart2 className="w-4 h-4" /> Expenses
+                        </button>
+                        <button
+                            onClick={() => setView('PORTFOLIO')}
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                                view === 'PORTFOLIO' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/30' : 'bg-[#1c1c1e] text-gray-400 hover:text-white border border-white/5'
+                            }`}
+                        >
+                            <Briefcase className="w-4 h-4" /> Portfolio
+                        </button>
                     </div>
+
+                    {view === 'EXPENSES' && (
+                        <>
+                            <NativeSegmentedControl 
+                                value={range}
+                                onChange={(v) => setRange(v as any)}
+                                options={[
+                                    { label: '1M', value: 'MONTH' },
+                                    { label: '3M', value: 'QUARTER' },
+                                    { label: '1Y', value: 'YEAR' }
+                                ]}
+                            />
+
+                            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                                <div className="flex-1 md:w-64">
+                                     <MultiSelect 
+                                        options={categoryOptions}
+                                        selectedIds={selectedCategoryIds}
+                                        onChange={setSelectedCategoryIds}
+                                        placeholder="Filter Categories"
+                                     />
+                                </div>
+                                {tagOptions.length > 0 && (
+                                    <div className="flex-1 md:w-64">
+                                         <MultiSelect 
+                                            options={tagOptions}
+                                            selectedIds={selectedTagIds}
+                                            onChange={setSelectedTagIds}
+                                            placeholder="Filter Tags"
+                                         />
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
 
-                {loading ? (
+                {/* ── EXPENSES VIEW ─────────────────────────────────────────── */}
+                {view === 'EXPENSES' && (
+                  loading ? (
                      <div className="flex justify-center py-20"><RefreshCw className="animate-spin h-8 w-8 text-gray-500" /></div>
-                ) : (
+                  ) : (
                     <>
                         {/* Summary Grid (Responsive) */}
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -540,7 +602,145 @@ export default function AnalyticsPage() {
 
                         </div>
                     </>
+                  )
                 )}
+
+                {/* ── PORTFOLIO VIEW ────────────────────────────────────────── */}
+                {view === 'PORTFOLIO' && (
+                  portfolioLoading ? (
+                    <div className="flex justify-center py-20"><RefreshCw className="animate-spin h-8 w-8 text-gray-500" /></div>
+                  ) : portfolioSummary.totalHoldings === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
+                      <Briefcase className="h-12 w-12 text-gray-500" />
+                      <p className="text-gray-400 font-medium">No portfolio holdings yet.</p>
+                      <Link href="/portfolio" className="text-purple-400 text-sm hover:underline flex items-center gap-1">
+                        Add stocks <ExternalLink className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Portfolio Summary Cards */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-[#18181b] rounded-2xl p-4 border border-white/5 space-y-1">
+                          <span className="text-gray-500 text-xs uppercase tracking-wider font-medium">Invested</span>
+                          <p className="text-xl font-bold text-white">₹{portfolioSummary.totalInvestment.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-[#18181b] rounded-2xl p-4 border border-white/5 space-y-1">
+                          <span className="text-gray-500 text-xs uppercase tracking-wider font-medium">Current Value</span>
+                          <p className="text-xl font-bold text-white">₹{portfolioSummary.totalCurrentValue.toLocaleString()}</p>
+                        </div>
+                        <div className={`bg-[#18181b] rounded-2xl p-4 border space-y-1 ${portfolioSummary.totalUnrealisedPnL >= 0 ? 'border-emerald-500/20' : 'border-red-500/20'}`}>
+                          <span className="text-gray-500 text-xs uppercase tracking-wider font-medium">Unrealised P&L</span>
+                          <p className={`text-xl font-bold ${portfolioSummary.totalUnrealisedPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {portfolioSummary.totalUnrealisedPnL >= 0 ? '+' : ''}₹{portfolioSummary.totalUnrealisedPnL.toLocaleString()}
+                          </p>
+                          <p className={`text-xs font-medium ${portfolioSummary.totalUnrealisedPnL >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                            {portfolioSummary.totalUnrealisedPnLPercent >= 0 ? '+' : ''}{portfolioSummary.totalUnrealisedPnLPercent.toFixed(2)}%
+                          </p>
+                        </div>
+                        <div className={`bg-[#18181b] rounded-2xl p-4 border space-y-1 ${(portfolioAnalytics?.todayPnL ?? 0) >= 0 ? 'border-emerald-500/20' : 'border-red-500/20'}`}>
+                          <span className="text-gray-500 text-xs uppercase tracking-wider font-medium">Today P&L</span>
+                          <p className={`text-xl font-bold ${(portfolioAnalytics?.todayPnL ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {(portfolioAnalytics?.todayPnL ?? 0) >= 0 ? '+' : ''}₹{(portfolioAnalytics?.todayPnL ?? 0).toLocaleString()}
+                          </p>
+                          <p className={`text-xs font-medium ${(portfolioAnalytics?.todayPnLPercent ?? 0) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                            {(portfolioAnalytics?.todayPnLPercent ?? 0) >= 0 ? '+' : ''}{(portfolioAnalytics?.todayPnLPercent ?? 0).toFixed(2)}%
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Asset Allocation Pie */}
+                      {portfolioAllocationData.length > 0 && (
+                        <div className="bg-[#18181b] rounded-3xl p-5 border border-white/5">
+                          <h3 className="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
+                            <PieIcon className="h-4 w-4 text-purple-500" /> Asset Allocation
+                          </h3>
+                          <div className="flex flex-col md:flex-row gap-6 items-center">
+                            <ResponsiveContainer width="100%" height={220}>
+                              <PieChart>
+                                <Pie
+                                  data={portfolioAllocationData}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={55}
+                                  outerRadius={80}
+                                  paddingAngle={3}
+                                  dataKey="value"
+                                  nameKey="name"
+                                  stroke="none"
+                                >
+                                  {portfolioAllocationData.map((_entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} style={{ outline: 'none' }} />
+                                  ))}
+                                </Pie>
+                                <Tooltip
+                                  contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px' }}
+                                  formatter={(value: any, name: any) => [`₹${Number(value).toLocaleString()}`, name]}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="mt-2 space-y-2">
+                            {portfolioAllocationData.map((item, i) => {
+                              const total = portfolioAllocationData.reduce((s, h) => s + h.value, 0);
+                              const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0';
+                              return (
+                                <div key={item.name} className="flex items-center justify-between text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                                    <span className="text-gray-200 font-medium">{item.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className={`text-xs font-semibold ${item.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                      {item.pnl >= 0 ? '+' : ''}{item.pnlPct.toFixed(1)}%
+                                    </span>
+                                    <span className="text-white font-bold tabular-nums">₹{item.value.toLocaleString()}</span>
+                                    <span className="text-gray-500 text-xs w-10 text-right">{pct}%</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Gainers / Losers */}
+                      {portfolioGainersLosers.length > 0 && (
+                        <div className="bg-[#18181b] rounded-3xl p-5 border border-white/5">
+                          <h3 className="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
+                            <Activity className="h-4 w-4 text-blue-500" /> Gainers & Losers
+                          </h3>
+                          <ResponsiveContainer width="100%" height={portfolioGainersLosers.length * 40 + 20}>
+                            <BarChart data={portfolioGainersLosers} layout="vertical" barGap={2}>
+                              <XAxis type="number" hide tickFormatter={(v) => `${v}%`} />
+                              <YAxis dataKey="symbol" type="category" stroke="#9ca3af" fontSize={11} width={70} tickLine={false} axisLine={false} />
+                              <Tooltip
+                                cursor={{ fill: 'transparent' }}
+                                contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '8px', fontSize: '12px' }}
+                                formatter={(value: any, name: any) => [`${Number(value).toFixed(2)}%`, 'P&L %']}
+                              />
+                              <Bar dataKey="pnlPct" radius={[0, 4, 4, 0]} barSize={18}
+                                label={{ position: 'right', fill: '#d1d5db', fontSize: 11, formatter: (val: any) => `${(Number(val) >= 0 ? '+' : '')}${Number(val).toFixed(1)}%` }}>
+                                {portfolioGainersLosers.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+
+                      {/* Link to full portfolio */}
+                      <div className="flex justify-center pb-2">
+                        <Link href="/portfolio" className="flex items-center gap-2 px-5 py-2.5 bg-purple-600/20 border border-purple-500/30 text-purple-300 rounded-xl text-sm font-semibold hover:bg-purple-600/30 transition-colors">
+                          <Briefcase className="w-4 h-4" /> Open Full Portfolio
+                          <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      </div>
+                    </div>
+                  )
+                )}
+
             </main>
         </div>
     );
