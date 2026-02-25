@@ -25,6 +25,7 @@ import {
   addStockTransaction as addStockTransactionRepo,
   updateStockTransaction as updateStockTransactionRepo,
   deleteStockTransaction as deleteStockTransactionRepo,
+  upsertMarketQuotes,
 } from '@/lib/portfolio/repository';
 import { calculateHoldings } from '@/lib/portfolio/holdings-calculator';
 import {
@@ -34,12 +35,37 @@ import {
   type PortfolioInsight,
 } from '@/lib/portfolio/portfolio-analytics';
 import {
-  syncMarketPrices,
-  manualSync,
   getMarketSyncStatus,
   type MarketSyncStatus,
 } from '@/lib/portfolio/market-sync-service';
 import { events, EVENTS } from '@/lib/events';
+import type { SimpleHolding } from '@/app/api/portfolio/calculate/route';
+
+// ─── Server calculate helper ───────────────────────────────────────────────────
+
+interface ServerCalcResult {
+  holdings: Holding[];
+  summary: PortfolioSummary;
+  analytics: PortfolioAnalytics;
+  quotes: Record<string, MarketQuote>;
+  pricesLastUpdated: string | null;
+  isStale: boolean;
+}
+
+async function serverCalculate(simpleHoldings: SimpleHolding[]): Promise<ServerCalcResult | null> {
+  try {
+    const res = await fetch('/api/portfolio/calculate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ holdings: simpleHoldings }),
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!res.ok) return null;
+    return res.json() as Promise<ServerCalcResult>;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Get household ID (reuse existing pattern)
@@ -84,6 +110,10 @@ export function usePortfolio() {
   const [error, setError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<MarketSyncStatus | null>(null);
 
+  // Server-calculated data (preferred over local calculation when available)
+  const [serverResult, setServerResult] = useState<ServerCalcResult | null>(null);
+  const [pricesLastUpdated, setPricesLastUpdated] = useState<string | null>(null);
+
   /**
    * Load all portfolio data
    */
@@ -94,26 +124,53 @@ export function usePortfolio() {
 
       const householdId = getHouseholdId();
 
-      // Load transactions and quotes in parallel
-      const [txns, latestQuotes] = await Promise.all([
-        getStockTransactionsByHousehold({ householdId }),
-        getLatestQuotes(),
-      ]);
-
+      // 1. Load transactions from local PouchDB
+      const txns = await getStockTransactionsByHousehold({ householdId });
       setTransactions(txns);
-      setQuotes(latestQuotes);
 
-      // Load today's snapshots
-      const today = getTodayIST();
-      const [openSnaps, closeSnaps] = await Promise.all([
-        getMarketSnapshots(today, 'OPEN'),
-        getMarketSnapshots(today, 'CLOSE'),
+      // 2. Try server-side path first (enriches with live NSE prices + full analytics)
+      if (txns.length > 0) {
+        // Build SimpleHolding[] from local transactions (no prices needed)
+        const localRaw = calculateHoldings({ transactions: txns, quotes: {} });
+        const simpleHoldings: SimpleHolding[] = localRaw.holdings.map((h) => ({
+          symbol: h.symbol,
+          exchange: h.exchange,
+          totalUnits: h.totalUnits,
+          avgBuyPrice: h.avgBuyPrice,
+          investedValue: h.investedValue,
+          firstBuyDate: h.firstBuyDate,
+          lastTransactionDate: h.lastTransactionDate,
+        }));
+
+        const result = await serverCalculate(simpleHoldings);
+        if (result) {
+          setServerResult(result);
+          setPricesLastUpdated(result.pricesLastUpdated);
+
+          // Push server-returned quotes into PouchDB so the offline path stays warm
+          if (result.quotes && Object.keys(result.quotes).length > 0) {
+            try {
+              await upsertMarketQuotes(Object.values(result.quotes));
+            } catch {
+              // Non-critical — ignore PouchDB write errors
+            }
+          }
+        } else {
+          setServerResult(null);
+        }
+      }
+
+      // 3. Always load local quotes + snapshots for the offline fallback
+      const [latestQuotes, openSnaps, closeSnaps] = await Promise.all([
+        getLatestQuotes(),
+        getMarketSnapshots(getTodayIST(), 'OPEN'),
+        getMarketSnapshots(getTodayIST(), 'CLOSE'),
       ]);
-
+      setQuotes(latestQuotes);
       setTodayOpenSnapshots(openSnaps);
       setTodayCloseSnapshots(closeSnaps);
 
-      // Get sync status
+      // 4. Sync status
       const status = await getMarketSyncStatus();
       setSyncStatus(status);
     } catch (err) {
@@ -137,9 +194,14 @@ export function usePortfolio() {
   }, [loadPortfolioData]);
 
   /**
-   * Calculate holdings (memoized)
+   * Calculate holdings — prefer server result, fall back to local when offline
    */
   const { holdings, summary } = useMemo(() => {
+    // Server result takes priority (has live NSE prices)
+    if (serverResult) {
+      return { holdings: serverResult.holdings, summary: serverResult.summary };
+    }
+
     if (transactions.length === 0) {
       return {
         holdings: [],
@@ -154,31 +216,29 @@ export function usePortfolio() {
       };
     }
 
-    return calculateHoldings({
-      transactions,
-      quotes,
-    });
-  }, [transactions, quotes]);
+    // Offline fallback: local PouchDB quotes
+    return calculateHoldings({ transactions, quotes });
+  }, [serverResult, transactions, quotes]);
 
   /**
-   * Calculate analytics (memoized)
+   * Calculate analytics — prefer server result, fall back to local
    */
   const analytics = useMemo((): PortfolioAnalytics | null => {
+    if (serverResult?.analytics) return serverResult.analytics;
+
     if (holdings.length === 0) return null;
 
-    // Use full analytics if we have today's snapshots
     if (Object.keys(todayOpenSnapshots).length > 0) {
       return calculatePortfolioAnalytics({
         holdings,
         todayOpenQuotes: todayOpenSnapshots,
-        todayCloseQuotes: quotes, // Always use quotes (latest prices)
+        todayCloseQuotes: quotes,
         portfolioSummary: summary,
       });
     }
 
-    // Fallback to simple analytics
     return calculatePortfolioAnalyticsSimple(holdings, summary);
-  }, [holdings, summary, todayOpenSnapshots, quotes]);
+  }, [serverResult, holdings, summary, todayOpenSnapshots, quotes]);
 
   /**
    * Generate insights (memoized)
@@ -192,8 +252,8 @@ export function usePortfolio() {
    * Dashboard data (memoized)
    */
   const dashboardData = useMemo((): PortfolioDashboardData => {
-    const lastUpdated = syncStatus?.lastSyncTime || summary.lastUpdated;
-    const isStale = syncStatus?.isStale ?? false;
+    const lastUpdated = pricesLastUpdated ?? syncStatus?.lastSyncTime ?? summary.lastUpdated;
+    const isStale = serverResult ? serverResult.isStale : (syncStatus?.isStale ?? false);
 
     return {
       totalInvestment: summary.totalInvestment,
@@ -208,7 +268,7 @@ export function usePortfolio() {
       holdingsCount: summary.totalHoldings,
       isStale,
     };
-  }, [summary, analytics, syncStatus]);
+  }, [summary, analytics, syncStatus, pricesLastUpdated, serverResult]);
 
   /**
    * Actions
@@ -253,17 +313,23 @@ export function usePortfolio() {
     }
   }, []);
 
-  const syncPrices = useCallback(async (force: boolean = false) => {
+  /**
+   * Trigger a full NSE price refresh, then re-run the portfolio calculation.
+   * force=true is kept for interface compatibility.
+   */
+  const syncPrices = useCallback(async (_force: boolean = false) => {
     try {
-      const householdId = getHouseholdId();
-      const result = await (force ? manualSync(householdId) : syncMarketPrices(householdId));
-      
-      if (result.success) {
-        // Reload quotes after sync
-        await loadPortfolioData();
-      }
-      
-      return result;
+      // Trigger a full cache refresh on the server
+      const res = await fetch('/api/portfolio/prices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+
+      // Reload all portfolio data with fresh prices
+      await loadPortfolioData();
+
+      return { success: res.ok, data };
     } catch (err) {
       console.error('Failed to sync prices:', err);
       throw err;
@@ -291,6 +357,7 @@ export function usePortfolio() {
     transactions,
     quotes,
     syncStatus,
+    pricesLastUpdated,
     
     // State
     loading,

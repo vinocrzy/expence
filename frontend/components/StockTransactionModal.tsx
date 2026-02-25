@@ -72,17 +72,30 @@ export default function StockTransactionModal({
   const [loadingStocks, setLoadingStocks] = useState(true);
   const [linkToAccount, setLinkToAccount] = useState(false);
 
-  // Load stock symbols from JSON
+  // Load stock symbols from the live NSE price cache
   useEffect(() => {
     const loadStocks = async () => {
       try {
-        const response = await fetch('/data/nse_stocks.json');
-        if (!response.ok) throw new Error('Failed to fetch stocks');
-        
+        const response = await fetch('/api/portfolio/prices');
+        if (!response.ok) throw new Error('Failed to fetch prices');
+
         const data = await response.json();
-        if (data.symbols && Array.isArray(data.symbols)) {
-          setAvailableStocks(data.symbols);
-          console.log(`Loaded ${data.symbols.length} symbols from NSE (${data.stocks} stocks, ${data.etfs} ETFs)`);
+        if (data.quotes && typeof data.quotes === 'object') {
+          const symbols: StockData[] = Object.values(data.quotes).map((q: unknown) => {
+            const quote = q as { symbol: string; name: string; exchange: string; type: string };
+            return {
+              symbol: quote.symbol,
+              name: quote.name,
+              exchange: quote.exchange,
+              type: quote.type ?? 'STOCK',
+            };
+          });
+          if (symbols.length > 0) {
+            setAvailableStocks(symbols);
+            const stocks = symbols.filter((s) => s.type === 'STOCK').length;
+            const etfs = symbols.filter((s) => s.type === 'ETF').length;
+            console.log(`Loaded ${symbols.length} symbols from NSE cache (${stocks} stocks, ${etfs} ETFs)`);
+          }
         }
       } catch (err) {
         console.warn('Failed to load stock symbols, using fallback:', err);

@@ -49,13 +49,13 @@ const handler: NetlifyHandler = async (event, context) => {
     // Get the base URL from environment
     const baseUrl = process.env.URL || 'http://localhost:3000';
 
-    // Call Next.js API route
-    const response = await fetch(`${baseUrl}/api/portfolio/market-sync`, {
+    // Call Next.js prices API route (triggers full NSE cache refresh)
+    const response = await fetch(`${baseUrl}/api/portfolio/prices`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ session }),
+      body: JSON.stringify({}),
     });
 
     const data = await response.json();
