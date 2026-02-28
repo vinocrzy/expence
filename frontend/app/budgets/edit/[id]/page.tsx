@@ -8,7 +8,7 @@ import { useCategories } from '@/hooks/useLocalData';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Trash2, Layers, RotateCcw, Loader2,
-    RefreshCw, Flag, CheckCircle2, X, Calendar,
+    RefreshCw, Flag, CheckCircle2, X, Calendar, ChevronRight,
 } from 'lucide-react';
 import { BudgetCategoryLimit, EnvelopeConfig } from '@/lib/db-types';
 import { budgetService } from '@/lib/localdb-services';
@@ -23,11 +23,12 @@ export default function EditBudgetPage() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [categoryRows, setCategoryRows] = useState<
-        { tempId: string; categoryId: string; amount: string; activeUntil?: string }[]
+        { tempId: string; categoryId: string; amount: string; activeUntil?: string; subCategoryLimits?: { subCategoryId: string; amount: string }[] }[]
     >([]);
 
     const [envelopeEnabled, setEnvelopeEnabled] = useState(false);
     const [rolloverMap, setRolloverMap] = useState<Record<string, boolean>>({});
+    const [expandedSubLimits, setExpandedSubLimits] = useState<Set<string>>(new Set());
 
     const totalBudget = categoryRows.reduce(
         (sum, row) => sum + (Number(row.amount) || 0),
@@ -60,6 +61,9 @@ export default function EditBudgetPage() {
                             categoryId: c.categoryId,
                             amount: c.amount.toString(),
                             activeUntil: c.activeUntil ?? '',
+                            subCategoryLimits: c.subCategoryLimits
+                                ? c.subCategoryLimits.map(s => ({ subCategoryId: s.subCategoryId, amount: s.amount.toString() }))
+                                : [],
                         })),
                     );
                 }
@@ -87,7 +91,7 @@ export default function EditBudgetPage() {
     const addCategoryRow = () =>
         setCategoryRows([
             ...categoryRows,
-            { tempId: Math.random().toString(), categoryId: '', amount: '', activeUntil: '' },
+            { tempId: Math.random().toString(), categoryId: '', amount: '', activeUntil: '', subCategoryLimits: [] },
         ]);
 
     const updateRow = (index: number, field: 'categoryId' | 'amount' | 'activeUntil', value: string) => {
@@ -98,6 +102,31 @@ export default function EditBudgetPage() {
 
     const removeRow = (index: number) =>
         setCategoryRows(categoryRows.filter((_, i) => i !== index));
+
+    const toggleSubLimits = (tempId: string) =>
+        setExpandedSubLimits(prev => {
+            const next = new Set(prev);
+            if (next.has(tempId)) next.delete(tempId); else next.add(tempId);
+            return next;
+        });
+
+    const handleSetSubLimitEdit = (catIndex: number, subCategoryId: string, amount: string) => {
+        const newRows = [...categoryRows];
+        const existing = newRows[catIndex].subCategoryLimits || [];
+        const idx = existing.findIndex(s => s.subCategoryId === subCategoryId);
+        const newSub = idx >= 0
+            ? existing.map((s, i) => i === idx ? { subCategoryId, amount } : s)
+            : [...existing, { subCategoryId, amount }];
+        newRows[catIndex] = { ...newRows[catIndex], subCategoryLimits: newSub };
+        setCategoryRows(newRows);
+    };
+
+    const handleRemoveSubLimitEdit = (catIndex: number, subCategoryId: string) => {
+        const newRows = [...categoryRows];
+        const existing = newRows[catIndex].subCategoryLimits || [];
+        newRows[catIndex] = { ...newRows[catIndex], subCategoryLimits: existing.filter(s => s.subCategoryId !== subCategoryId) };
+        setCategoryRows(newRows);
+    };
 
     const toggleRollover = (categoryId: string) =>
         setRolloverMap(prev => ({ ...prev, [categoryId]: !prev[categoryId] }));
@@ -113,6 +142,11 @@ export default function EditBudgetPage() {
                 categoryId: row.categoryId,
                 amount: Number(row.amount),
                 ...(row.activeUntil ? { activeUntil: row.activeUntil } : {}),
+                ...(row.subCategoryLimits && row.subCategoryLimits.length > 0
+                    ? { subCategoryLimits: row.subCategoryLimits
+                            .filter(s => Number(s.amount) > 0)
+                            .map(s => ({ subCategoryId: s.subCategoryId, amount: Number(s.amount) })) }
+                    : {}),
             }));
 
             const envelopeConfig: EnvelopeConfig[] | undefined = envelopeEnabled
@@ -378,6 +412,58 @@ export default function EditBudgetPage() {
                                                     </button>
                                                 )}
                                             </div>
+
+                                            {/* ── Sub-category limits (optional) ─────────── */}
+                                            {selectedCat?.subCategories && selectedCat.subCategories.length > 0 && (
+                                                <div className="px-4 pb-3 border-t border-white/5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleSubLimits(row.tempId)}
+                                                        className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-300 transition-colors py-2"
+                                                    >
+                                                        <ChevronRight className={`w-3 h-3 transition-transform duration-150 ${expandedSubLimits.has(row.tempId) ? 'rotate-90' : ''}`} />
+                                                        Sub-category limits
+                                                        {row.subCategoryLimits && row.subCategoryLimits.filter(s => Number(s.amount) > 0).length > 0 && (
+                                                            <span className="ml-1 px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-[10px] font-bold">
+                                                                {row.subCategoryLimits.filter(s => Number(s.amount) > 0).length}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                    <AnimatePresence>
+                                                        {expandedSubLimits.has(row.tempId) && (
+                                                            <motion.div
+                                                                initial={{ opacity: 0, height: 0 }}
+                                                                animate={{ opacity: 1, height: 'auto' }}
+                                                                exit={{ opacity: 0, height: 0 }}
+                                                                className="space-y-2 pl-3 border-l border-white/10"
+                                                            >
+                                                                {selectedCat.subCategories.map((sub: { id: string; name: string }) => {
+                                                                    const subLimit = row.subCategoryLimits?.find(s => s.subCategoryId === sub.id);
+                                                                    return (
+                                                                        <div key={sub.id} className="flex items-center gap-2 py-0.5">
+                                                                            <span className="text-xs text-gray-400 flex-1 truncate">{sub.name}</span>
+                                                                            <span className="text-gray-700 text-[10px]">₹</span>
+                                                                            <input
+                                                                                type="number"
+                                                                                inputMode="numeric"
+                                                                                value={subLimit?.amount || ''}
+                                                                                onChange={e => handleSetSubLimitEdit(index, sub.id, e.target.value)}
+                                                                                placeholder="No limit"
+                                                                                className="w-24 bg-transparent text-gray-300 text-xs font-mono focus:outline-none placeholder-gray-700 text-right"
+                                                                            />
+                                                                            {subLimit && Number(subLimit.amount) > 0 && (
+                                                                                <button type="button" onClick={() => handleRemoveSubLimitEdit(index, sub.id)} className="text-gray-700 hover:text-red-400 transition-colors shrink-0">
+                                                                                    <X className="w-3 h-3" />
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+                                            )}
                                         </motion.div>
                                     );
                                 })}

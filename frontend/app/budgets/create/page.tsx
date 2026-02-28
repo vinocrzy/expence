@@ -8,7 +8,7 @@ import { useCategories, useBudgets } from '@/hooks/useLocalData';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Trash2, Layers, RotateCcw,
-    RefreshCw, Flag, ChevronDown, CheckCircle2,
+    RefreshCw, Flag, ChevronDown, CheckCircle2, ChevronRight, X,
 } from 'lucide-react';
 import { BudgetCategoryLimit, EnvelopeConfig } from '@/lib/db-types';
 
@@ -30,6 +30,7 @@ export default function CreateBudgetPage() {
 
     const [envelopeEnabled, setEnvelopeEnabled] = useState(false);
     const [rolloverMap, setRolloverMap] = useState<Record<number, boolean>>({});
+    const [expandedSubLimits, setExpandedSubLimits] = useState<Set<number>>(new Set());
 
     const totalBudget = categoryLimits.reduce(
         (sum, item) => sum + (Number(item.amount) || 0),
@@ -66,6 +67,31 @@ export default function CreateBudgetPage() {
 
     const toggleRollover = (index: number) =>
         setRolloverMap(prev => ({ ...prev, [index]: !prev[index] }));
+
+    const toggleSubLimits = (index: number) =>
+        setExpandedSubLimits(prev => {
+            const next = new Set(prev);
+            if (next.has(index)) next.delete(index); else next.add(index);
+            return next;
+        });
+
+    const handleSetSubLimit = (catIndex: number, subCategoryId: string, amount: number) => {
+        const newLimits = [...categoryLimits];
+        const existing = newLimits[catIndex].subCategoryLimits || [];
+        const idx = existing.findIndex(s => s.subCategoryId === subCategoryId);
+        const newSub = idx >= 0
+            ? existing.map((s, i) => i === idx ? { subCategoryId, amount } : s)
+            : [...existing, { subCategoryId, amount }];
+        newLimits[catIndex] = { ...newLimits[catIndex], subCategoryLimits: newSub };
+        setCategoryLimits(newLimits);
+    };
+
+    const handleRemoveSubLimit = (catIndex: number, subCategoryId: string) => {
+        const newLimits = [...categoryLimits];
+        const existing = newLimits[catIndex].subCategoryLimits || [];
+        newLimits[catIndex] = { ...newLimits[catIndex], subCategoryLimits: existing.filter(s => s.subCategoryId !== subCategoryId) };
+        setCategoryLimits(newLimits);
+    };
 
     const handleSubmit = async () => {
         if (!name.trim()) return alert('Please enter a budget name');
@@ -272,6 +298,61 @@ export default function CreateBudgetPage() {
                                             exit={{ opacity: 0, height: 0 }}
                                             className="border-b border-gray-800 last:border-b-0"
                                         >
+                                            {/* ── Sub-category limits (optional) ─────────── */}
+                                            {selectedCat?.subCategories && selectedCat.subCategories.length > 0 && (
+                                                <div className="px-4 pb-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleSubLimits(index)}
+                                                        className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-300 transition-colors py-1"
+                                                    >
+                                                        <ChevronRight className={`w-3 h-3 transition-transform duration-150 ${expandedSubLimits.has(index) ? 'rotate-90' : ''}`} />
+                                                        Sub-category limits
+                                                        {limit.subCategoryLimits && limit.subCategoryLimits.length > 0 && (
+                                                            <span className="ml-1 px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-[10px] font-bold">
+                                                                {limit.subCategoryLimits.length}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                    <AnimatePresence>
+                                                        {expandedSubLimits.has(index) && (
+                                                            <motion.div
+                                                                initial={{ opacity: 0, height: 0 }}
+                                                                animate={{ opacity: 1, height: 'auto' }}
+                                                                exit={{ opacity: 0, height: 0 }}
+                                                                className="space-y-2 mt-1.5 pl-3 border-l border-white/10"
+                                                            >
+                                                                {selectedCat.subCategories.map((sub: { id: string; name: string }) => {
+                                                                    const subLimit = limit.subCategoryLimits?.find(s => s.subCategoryId === sub.id);
+                                                                    return (
+                                                                        <div key={sub.id} className="flex items-center gap-2">
+                                                                            <span className="text-xs text-gray-400 flex-1 truncate">{sub.name}</span>
+                                                                            <span className="text-gray-700 text-[10px]">₹</span>
+                                                                            <input
+                                                                                type="number"
+                                                                                inputMode="numeric"
+                                                                                value={subLimit?.amount || ''}
+                                                                                onChange={e => {
+                                                                                    const val = parseFloat(e.target.value);
+                                                                                    if (val > 0) handleSetSubLimit(index, sub.id, val);
+                                                                                    else handleRemoveSubLimit(index, sub.id);
+                                                                                }}
+                                                                                placeholder="No limit"
+                                                                                className="w-24 bg-transparent text-gray-300 text-xs font-mono focus:outline-none placeholder-gray-700 text-right"
+                                                                            />
+                                                                            {subLimit && (
+                                                                                <button type="button" onClick={() => handleRemoveSubLimit(index, sub.id)} className="text-gray-700 hover:text-red-400 transition-colors shrink-0">
+                                                                                    <X className="w-3 h-3" />
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+                                            )}
                                             {/* Row: icon + select + amount */}
                                             <div className="flex items-center gap-3 px-4 py-3.5">
                                                 <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 text-base">
@@ -328,6 +409,62 @@ export default function CreateBudgetPage() {
                                                     </button>
                                                 )}
                                             </div>
+
+                                            {/* ── Sub-category limits (optional) ─────────── */}
+                                            {selectedCat?.subCategories && selectedCat.subCategories.length > 0 && (
+                                                <div className="px-4 pb-3 border-t border-white/5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleSubLimits(index)}
+                                                        className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-300 transition-colors py-2"
+                                                    >
+                                                        <ChevronRight className={`w-3 h-3 transition-transform duration-150 ${expandedSubLimits.has(index) ? 'rotate-90' : ''}`} />
+                                                        Sub-category limits
+                                                        {limit.subCategoryLimits && limit.subCategoryLimits.length > 0 && (
+                                                            <span className="ml-1 px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded text-[10px] font-bold">
+                                                                {limit.subCategoryLimits.length}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                    <AnimatePresence>
+                                                        {expandedSubLimits.has(index) && (
+                                                            <motion.div
+                                                                initial={{ opacity: 0, height: 0 }}
+                                                                animate={{ opacity: 1, height: 'auto' }}
+                                                                exit={{ opacity: 0, height: 0 }}
+                                                                className="space-y-2 pl-3 border-l border-white/10"
+                                                            >
+                                                                {selectedCat.subCategories.map((sub: { id: string; name: string }) => {
+                                                                    const subLimit = limit.subCategoryLimits?.find(s => s.subCategoryId === sub.id);
+                                                                    return (
+                                                                        <div key={sub.id} className="flex items-center gap-2 py-0.5">
+                                                                            <span className="text-xs text-gray-400 flex-1 truncate">{sub.name}</span>
+                                                                            <span className="text-gray-700 text-[10px]">₹</span>
+                                                                            <input
+                                                                                type="number"
+                                                                                inputMode="numeric"
+                                                                                value={subLimit?.amount || ''}
+                                                                                onChange={e => {
+                                                                                    const val = parseFloat(e.target.value);
+                                                                                    if (val > 0) handleSetSubLimit(index, sub.id, val);
+                                                                                    else handleRemoveSubLimit(index, sub.id);
+                                                                                }}
+                                                                                placeholder="No limit"
+                                                                                className="w-24 bg-transparent text-gray-300 text-xs font-mono focus:outline-none placeholder-gray-700 text-right"
+                                                                            />
+                                                                            {subLimit && (
+                                                                                <button type="button" onClick={() => handleRemoveSubLimit(index, sub.id)} className="text-gray-700 hover:text-red-400 transition-colors shrink-0">
+                                                                                    <X className="w-3 h-3" />
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+                                            )}
                                         </motion.div>
                                     );
                                 })}

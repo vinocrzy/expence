@@ -110,9 +110,16 @@ export interface BudgetPlanItem {
   totalAmount?: number;
 }
 
+export interface SubCategoryLimit {
+  subCategoryId: string;
+  amount: number;
+}
+
 export interface BudgetCategoryLimit {
   categoryId: string;
   amount: number;
+  /** Optional per-sub-category spend limits within this parent category */
+  subCategoryLimits?: SubCategoryLimit[];
   /**
    * Optional expiry: the LAST month (YYYY-MM) this category is active.
    * If set and the current period month is after this value, the category

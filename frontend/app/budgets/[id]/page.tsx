@@ -99,22 +99,38 @@ export default function BudgetDetailPage() {
         id: string;
         name: string;
         color: string;
+        icon?: string;
         limit: number;
         spent: number;
         transactions: Transaction[];
+        subLimits: Map<string, { subCategoryId: string; name: string; limit: number; spent: number }>;
     }>();
 
     // Init Config (only include categories active for this period)
     if (budget.budgetLimitConfig && budget.budgetLimitConfig.length > 0) {
         filterActiveCategories(budget.budgetLimitConfig, start).forEach((limit: BudgetCategoryLimit) => {
             const cat = categories.find(c => c.id === limit.categoryId);
+            const subLimits = new Map<string, { subCategoryId: string; name: string; limit: number; spent: number }>();
+            if (limit.subCategoryLimits) {
+                limit.subCategoryLimits.forEach(sl => {
+                    const sub = cat?.subCategories?.find((s: any) => s.id === sl.subCategoryId);
+                    subLimits.set(sl.subCategoryId, {
+                        subCategoryId: sl.subCategoryId,
+                        name: sub?.name || sl.subCategoryId,
+                        limit: sl.amount,
+                        spent: 0,
+                    });
+                });
+            }
             breakdownMap.set(limit.categoryId, {
                 id: limit.categoryId,
                 name: cat?.name || 'Unknown',
                 color: cat?.color || '#64748b',
+                icon: cat?.icon,
                 limit: limit.amount,
                 spent: 0,
-                transactions: []
+                transactions: [],
+                subLimits,
             });
         });
     }
@@ -129,23 +145,35 @@ export default function BudgetDetailPage() {
                 id: catId,
                 name: cat?.name || 'Uncategorized',
                 color: cat?.color || '#94a3b8',
+                icon: cat?.icon,
                 limit: 0,
                 spent: 0,
-                transactions: []
+                transactions: [],
+                subLimits: new Map(),
             });
         }
 
         const entry = breakdownMap.get(catId)!;
         entry.spent += t.amount;
         entry.transactions.push(t);
+        // Track sub-category spend if a limit was set for it
+        if (t.subCategoryId && entry.subLimits.has(t.subCategoryId)) {
+            entry.subLimits.get(t.subCategoryId)!.spent += t.amount;
+        }
     });
 
     // 4. Formatting
     const categoryBreakdown = Array.from(breakdownMap.values()).map(item => {
+        const subBreakdown = Array.from(item.subLimits.values()).map(sl => ({
+            ...sl,
+            percentage: sl.limit > 0 ? (sl.spent / sl.limit) * 100 : 0,
+            isOverBudget: sl.limit > 0 && sl.spent > sl.limit,
+        }));
         return {
             ...item,
             percentage: item.limit > 0 ? (item.spent / item.limit) * 100 : 0,
-            isOverBudget: item.limit > 0 && item.spent > item.limit
+            isOverBudget: item.limit > 0 && item.spent > item.limit,
+            subBreakdown,
         };
     });
 
@@ -182,6 +210,16 @@ export default function BudgetDetailPage() {
              description: `Limit: ₹${c.limit.toLocaleString()}. Spent: ₹${c.spent.toLocaleString()}.`,
              severity: 'error'
          });
+    });
+
+    categoryBreakdown.forEach(c => {
+        c.subBreakdown.filter((sl: any) => sl.isOverBudget).forEach((sl: any) => {
+            insights.push({
+                title: `${c.name} › ${sl.name} Over Limit`,
+                description: `Sub-limit: ₹${sl.limit.toLocaleString()}. Spent: ₹${sl.spent.toLocaleString()}.`,
+                severity: 'warning'
+            });
+        });
     });
 
     return {
@@ -540,6 +578,29 @@ export default function BudgetDetailPage() {
                                         </div>
                                     )}
                                     {cat.isOverBudget && <div className="text-[10px] text-red-400 mt-1 font-bold text-right">Exceeded by ₹{cat.spent - cat.limit}</div>}
+
+                                    {/* Sub-category breakdown rows */}
+                                    {cat.subBreakdown && cat.subBreakdown.length > 0 && (
+                                        <div className="mt-2 pl-3 border-l-2 border-white/5 space-y-1.5">
+                                            {cat.subBreakdown.map((sl: any) => (
+                                                <div key={sl.subCategoryId}>
+                                                    <div className="flex justify-between items-center mb-0.5">
+                                                        <span className="text-[11px] text-gray-400">{sl.name}</span>
+                                                        <div className="text-right">
+                                                            <span className={`text-[11px] font-mono ${sl.isOverBudget ? 'text-red-400' : 'text-gray-300'}`}>₹{sl.spent.toLocaleString()}</span>
+                                                            <span className="text-[10px] text-gray-600 ml-1">/ ₹{sl.limit.toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={`h-full rounded-full ${sl.isOverBudget ? 'bg-orange-500' : 'bg-teal-500/70'}`}
+                                                            style={{ width: `${Math.min(sl.percentage, 100)}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             ))
                         )}
