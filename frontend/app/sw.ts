@@ -14,7 +14,7 @@ declare const self: ServiceWorkerGlobalScope;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: false, // User must wait or manually update
+  skipWaiting: true, // Auto-activate new SW on deploy to prevent stale chunk errors
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: defaultCache,
