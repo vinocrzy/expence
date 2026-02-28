@@ -12,6 +12,7 @@ import {
   loansDB, 
   budgetsDB,
   sharedDB, // New shared DB
+  settingsDB, // Household settings DB
   initDB 
 } from './pouchdb';
 import { v4 as uuidv4 } from 'uuid';
@@ -27,7 +28,9 @@ import type {
   SharedAccountBalance,
   EnvelopeConfig,
   EnvelopeTransfer,
-  EnvelopeState
+  EnvelopeState,
+  HouseholdSettings,
+  SalaryCycleSettings,
 } from './db-types';
 import { buildInitialEnvelopeConfig, applyRollover, calculateEnvelopeState, getBudgetPeriodWindow } from './budget-engine';
 
@@ -1410,5 +1413,64 @@ export const sharedDataService = {
         });
         return result.docs as any[];
     }
+};
+
+// ============================================
+// HOUSEHOLD SETTINGS SERVICE
+// ============================================
+
+/**
+ * Manages the single HouseholdSettings document per household.
+ * Stored in settingsDB with _id = `settings_<householdId>`.
+ *
+ * All RECURRING budget period windows read from this document to determine
+ * whether to use calendar-month or salary-cycle windows.
+ */
+export const householdSettingsService = {
+  _docId(householdId: string) {
+    return `settings_${householdId}`;
+  },
+
+  async get(householdId: string): Promise<HouseholdSettings | null> {
+    try {
+      const doc = await settingsDB.get(this._docId(householdId));
+      return doc as unknown as HouseholdSettings;
+    } catch (e: any) {
+      if (e.status === 404) return null;
+      throw e;
+    }
+  },
+
+  async upsert(
+    householdId: string,
+    patch: Partial<SalaryCycleSettings>,
+  ): Promise<HouseholdSettings> {
+    const docId = this._docId(householdId);
+    const now = new Date().toISOString();
+
+    // Fetch existing doc so we can reuse _rev (required for PouchDB updates)
+    let existing: HouseholdSettings | null = null;
+    try {
+      existing = (await settingsDB.get(docId)) as unknown as HouseholdSettings;
+    } catch (e: any) {
+      if (e.status !== 404) throw e;
+    }
+
+    const updated: HouseholdSettings = {
+      id: docId,
+      householdId,
+      salaryCycle: {
+        cycleType: patch.cycleType ?? existing?.salaryCycle?.cycleType ?? 'CALENDAR',
+      },
+      incomeSourceRules: existing?.incomeSourceRules ?? [],
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+      _id: docId,
+      ...(existing?._rev ? { _rev: existing._rev } : {}),
+    };
+
+    await settingsDB.put(updated as any);
+    return updated;
+  },
 };
 

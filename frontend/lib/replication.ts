@@ -4,21 +4,32 @@ import {
   categoriesDB, 
   creditcardsDB, 
   loansDB, 
-  budgetsDB 
+    budgetsDB,
+    portfolioDB
 } from './pouchdb';
 import { BehaviorSubject } from 'rxjs';
 import PouchDB from 'pouchdb-core';
 
-export const syncState$ = new BehaviorSubject<{
-  status: 'ACTIVE' | 'PAUSED' | 'ERROR' | 'DISABLED' | 'BLOCKED';
-  connected: boolean;
-  lastSync?: Date;
-  error?: any;
-  isAutoSyncEnabled: boolean;
-}>({
+type CollectionSyncStatus = {
+    state: 'ACTIVE' | 'PAUSED' | 'ERROR' | 'DISABLED' | 'IDLE';
+    lastSync?: Date;
+    error?: string;
+};
+
+type SyncState = {
+    status: 'ACTIVE' | 'PAUSED' | 'ERROR' | 'DISABLED' | 'BLOCKED';
+    connected: boolean;
+    lastSync?: Date;
+    error?: any;
+    isAutoSyncEnabled: boolean;
+    collectionStatus: Record<string, CollectionSyncStatus>;
+};
+
+export const syncState$ = new BehaviorSubject<SyncState>({
   status: 'DISABLED',
   connected: false,
   isAutoSyncEnabled: false,
+    collectionStatus: {},
 });
 
   // Store active replication handlers
@@ -216,13 +227,20 @@ import { sharedDB } from './pouchdb';
       { name: 'creditcards', db: creditcardsDB },
       { name: 'loans', db: loansDB },
       { name: 'budgets', db: budgetsDB },
+      { name: 'portfolio', db: portfolioDB },
   ];
+
+  const initialCollectionStatus: Record<string, CollectionSyncStatus> = {
+      ...Object.fromEntries(personalDBs.map(({ name }) => [name, { state: 'IDLE' as const }])),
+      shared: { state: 'IDLE' as const },
+  };
+  syncState$.next({ ...syncState$.getValue(), collectionStatus: initialCollectionStatus });
 
   // 1. Sync Personal Data
   for (const { name, db } of personalDBs) {
       const safeId = personalHouseholdId.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
       const remoteDBName = `hh_${safeId}_${name}`;
-      await startSingleSync(db, remoteDBName, couchURL, authOptions, ajaxOptions);
+      await startSingleSync(db, name, remoteDBName, couchURL, authOptions, ajaxOptions);
   }
 
   // 2. Sync Shared Data (Target depends on Viewing vs Publishing)
@@ -236,7 +254,7 @@ import { sharedDB } from './pouchdb';
   // Note: Guest View needs Read-Only? Or Sync? Sync is fine for now as it's local PouchDB cache.
   // Ideally if Guest, we might want one-way FROM remote (replication.from).
   // But let's stick to .sync for simplicity unless we want to prevent local edits propagating (which UI prevents anyway).
-  await startSingleSync(sharedDB, remoteSharedName, couchURL, authOptions, ajaxOptions);
+    await startSingleSync(sharedDB, 'shared', remoteSharedName, couchURL, authOptions, ajaxOptions);
 
   // Set initial connected state
   syncState$.next({ ...syncState$.getValue(), connected: true, status: 'ACTIVE' });
@@ -245,7 +263,14 @@ import { sharedDB } from './pouchdb';
 };
 
 // Helper to start a sync for one DB
-async function startSingleSync(db: any, remoteDBName: string, couchURL: string, authOptions: any, ajaxOptions: any) {
+async function startSingleSync(
+    db: any,
+    collectionName: string,
+    remoteDBName: string,
+    couchURL: string,
+    authOptions: any,
+    ajaxOptions: any
+) {
       const remoteURL = `${couchURL}/${remoteDBName}`;
 
       let createHeaders: any = {};
@@ -269,13 +294,36 @@ async function startSingleSync(db: any, remoteDBName: string, couchURL: string, 
 
       const syncHandler = db.sync(remoteURL, syncOptions);
 
-      // Attach event aliases to the main subject
+     const updateCollectionStatus = (patch: Partial<CollectionSyncStatus>) => {
+         const current = syncState$.getValue();
+           const existing = current.collectionStatus[collectionName] || { state: 'IDLE' as const };
+         syncState$.next({
+             ...current,
+             collectionStatus: {
+                ...current.collectionStatus,
+                    [collectionName]: {
+                    ...existing,
+                    ...patch,
+                },
+             },
+         });
+     };
+
+     updateCollectionStatus({ state: 'ACTIVE' });
+
+     // Attach event aliases to the main subject
       syncHandler.on('change', () => {
+         updateCollectionStatus({ state: 'ACTIVE', lastSync: new Date(), error: undefined });
            syncState$.next({ ...syncState$.getValue(), status: 'ACTIVE', connected: true, lastSync: new Date() });
       }).on('paused', () => {
+         updateCollectionStatus({ state: 'PAUSED' });
            syncState$.next({ ...syncState$.getValue(), status: 'PAUSED', connected: true });
       }).on('error', (err: any) => {
            console.error(`Sync error on ${remoteDBName}:`, err);
+         updateCollectionStatus({
+            state: 'ERROR',
+            error: err?.message || 'Unknown replication error',
+         });
            // Don't fail global state immediately for one DB?
            // syncState$.next({ ...syncState$.getValue(), status: 'ERROR', error: err, connected: false });
       });
@@ -322,7 +370,16 @@ export const triggerManualSync = async () => {
         { name: 'creditcards', db: creditcardsDB },
         { name: 'loans', db: loansDB },
         { name: 'budgets', db: budgetsDB },
+        { name: 'portfolio', db: portfolioDB },
     ];
+
+    syncState$.next({
+        ...syncState$.getValue(),
+        collectionStatus: {
+            ...syncState$.getValue().collectionStatus,
+            ...Object.fromEntries(collections.map(({ name }) => [name, { state: 'ACTIVE' as const, error: undefined }])),
+        },
+    });
 
     let completed = 0;
 
@@ -348,12 +405,28 @@ export const triggerManualSync = async () => {
        if (Object.keys(ajaxOptions).length > 0) syncOptions.ajax = ajaxOptions;
 
        db.sync(remoteURL, syncOptions).on('complete', () => {
+           const current = syncState$.getValue();
+           syncState$.next({
+               ...current,
+               collectionStatus: {
+                   ...current.collectionStatus,
+                   [name]: { state: 'IDLE', lastSync: new Date() },
+               },
+           });
            completed++;
            if (completed === collections.length) {
                 syncState$.next({ ...syncState$.getValue(), status: 'DISABLED', connected: true, lastSync: new Date() });
            }
        }).on('error', (err) => {
            console.error(`Manual sync error ${name}`, err);
+           const current = syncState$.getValue();
+           syncState$.next({
+               ...current,
+               collectionStatus: {
+                   ...current.collectionStatus,
+                   [name]: { state: 'ERROR', error: (err as any)?.message || 'Manual sync failed' },
+               },
+           });
            // Don't fail all?
        });
     }

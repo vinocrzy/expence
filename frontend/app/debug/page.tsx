@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
-import { accountsDB, transactionsDB, categoriesDB, budgetsDB } from '@/lib/pouchdb';
+import { accountsDB, transactionsDB, categoriesDB, budgetsDB, portfolioDB, sharedDB } from '@/lib/pouchdb';
 import Navbar from '@/components/Navbar';
 import { CheckCircle, XCircle, AlertTriangle, Database, Cloud, Lock, Server } from 'lucide-react';
 
 export default function DebugPage() {
   const { user, loading } = useAuth();
-  const { isOnline, isConnected, isSyncing, error: syncError } = useSyncStatus();
+    const { isConnected, isSyncing, error: syncError, collectionStatus } = useSyncStatus();
   
   const [dbStatus, setDbStatus] = useState<'CHECKING' | 'OK' | 'ERROR'>('CHECKING');
   const [docCount, setDocCount] = useState<Record<string, number>>({});
@@ -33,7 +33,9 @@ export default function DebugPage() {
                 { name: 'accounts', db: accountsDB },
                 { name: 'transactions', db: transactionsDB },
                 { name: 'categories', db: categoriesDB },
-                { name: 'budgets', db: budgetsDB }
+                { name: 'budgets', db: budgetsDB },
+                { name: 'portfolio', db: portfolioDB },
+                { name: 'shared', db: sharedDB }
             ];
             
             for (const { name, db } of collections) {
@@ -114,13 +116,45 @@ export default function DebugPage() {
             </div>
 
             <h2 className="text-xl font-bold mt-8 mb-4">Collection Stats</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {Object.entries(docCount).map(([col, count]) => (
                     <div key={col} className="p-4 bg-gray-800 rounded-xl border border-gray-700 text-center">
                         <div className="text-2xl font-bold text-white">{count}</div>
                         <div className="text-xs text-gray-400 uppercase tracking-widest mt-1">{col}</div>
                     </div>
                 ))}
+            </div>
+
+            <h2 className="text-xl font-bold mt-8 mb-4">Replication By Collection</h2>
+            <div className="grid gap-2">
+                {Object.keys(collectionStatus || {}).length === 0 ? (
+                    <div className="p-3 bg-gray-800/50 rounded-lg text-sm border border-gray-700 text-gray-400">
+                        No active collection sync state yet.
+                    </div>
+                ) : (
+                    Object.entries(collectionStatus).map(([name, state]: [string, any]) => {
+                        const tone =
+                            state.state === 'ERROR'
+                                ? 'text-red-400'
+                                : state.state === 'ACTIVE'
+                                ? 'text-green-400'
+                                : state.state === 'PAUSED'
+                                ? 'text-yellow-400'
+                                : 'text-gray-300';
+
+                        return (
+                            <div key={name} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg text-sm border border-gray-700">
+                                <span className="text-gray-200 uppercase tracking-widest">{name}</span>
+                                <div className="flex items-center gap-3">
+                                    {state.lastSync && (
+                                        <span className="text-gray-400">{new Date(state.lastSync).toLocaleTimeString()}</span>
+                                    )}
+                                    <span className={tone}>{state.state}</span>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
             </div>
         </main>
     </div>

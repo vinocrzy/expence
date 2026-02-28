@@ -38,6 +38,7 @@ export const budgetsDB = createDB('budgets');
 export const recurringDB = createDB('recurring'); // New Recurring DB
 export const sharedDB = createDB('shared'); // New Shared DB
 export const portfolioDB = createDB('portfolio'); // Stock Portfolio DB
+export const settingsDB = createDB('settings'); // Household settings (salary cycle, etc.)
 
 // Map for easier access if needed
 export const collections = {
@@ -50,6 +51,7 @@ export const collections = {
   recurring: recurringDB,
   shared: sharedDB,
   portfolio: portfolioDB,
+  settings: settingsDB,
 };
 
 let initialized = false;
@@ -138,7 +140,10 @@ export const initDB = async () => {
     await portfolioDB.createIndex({
         index: { fields: ['date'] }
     });
-
+    // Household Settings
+    await settingsDB.createIndex({
+      index: { fields: ['householdId'] }
+    });
     console.log('PouchDB indexes initialized.');
     initialized = true;
   } catch (err) {

@@ -5,20 +5,21 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import NativeHeader from '../../components/dashboard/NativeHeader';
-import { User, Mail, Wallet, Calendar, Check, ChevronRight, Save, Camera } from 'lucide-react';
+import { User, Mail, Wallet, Calendar, Check, ChevronRight, Save, Camera, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useToast } from '../../context/ToastContext';
+import { useHouseholdSettings } from '../../hooks/useLocalData';
 
 export default function Profile() {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
   const { showToast } = useToast();
+  const { settings, loading: settingsLoading, updateSettings } = useHouseholdSettings();
   
   const [name, setName] = useState('');
-  const [budgetMode, setBudgetMode] = useState('CALENDAR');
-  const [salaryDay, setSalaryDay] = useState(1);
+  const [budgetMode, setBudgetMode] = useState<'CALENDAR' | 'SALARY'>('CALENDAR');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -30,9 +31,15 @@ export default function Profile() {
   useEffect(() => {
     if (user) {
       setName(user.fullName || user.firstName || '');
-      // Load other settings from localDB / household service if implementing full persistence
     }
   }, [user]);
+
+  // Sync budgetMode from persisted settings
+  useEffect(() => {
+    if (!settingsLoading) {
+      setBudgetMode(settings?.salaryCycle?.cycleType ?? 'CALENDAR');
+    }
+  }, [settings, settingsLoading]);
 
   const handleUpdate = async () => {
     setIsSaving(true);
@@ -42,6 +49,8 @@ export default function Profile() {
               firstName: name, 
           });
       }
+      // Persist salary-cycle setting to PouchDB
+      await updateSettings({ cycleType: budgetMode });
       showToast('Profile updated successfully', 'success');
     } catch (e: any) {
       console.error(e);
@@ -142,7 +151,7 @@ export default function Profile() {
                         </div>
 
                         <div className="grid grid-cols-3 gap-2">
-                             {['CALENDAR', 'SALARY'].map(mode => (
+                             {(['CALENDAR', 'SALARY'] as const).map(mode => (
                                  <button
                                      key={mode}
                                      onClick={() => setBudgetMode(mode)}
@@ -158,18 +167,13 @@ export default function Profile() {
                         </div>
 
                         {budgetMode === 'SALARY' && (
-                            <div className="mt-4 pt-4 border-t border-gray-800 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-                                <span className="text-sm text-gray-300">Salary Date</span>
-                                <div className="flex items-center gap-2">
-                                    <input 
-                                        type="number" 
-                                        min="1" max="31"
-                                        value={salaryDay}
-                                        onChange={(e) => setSalaryDay(Number(e.target.value))}
-                                        className="w-12 bg-gray-900 border border-gray-700 rounded-lg py-1 px-2 text-center text-white text-sm"
-                                    />
-                                    <span className="text-xs text-gray-500">of month</span>
-                                </div>
+                            <div className="mt-4 pt-4 border-t border-gray-800 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                                <Info className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
+                                <p className="text-xs text-gray-400 leading-relaxed">
+                                    Salary received at the <span className="text-white font-medium">end of a month</span> will be applied to the <span className="text-white font-medium">next month&apos;s budget</span>.
+                                    Each budget period runs from the last working weekday of one month to the last working weekday of the next,
+                                    automatically accounting for weekends.
+                                </p>
                             </div>
                         )}
                      </div>

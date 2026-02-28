@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import NativeHeader from '@/components/dashboard/NativeHeader';
 import { budgetService, transactionService, categoryService, accountService, creditCardService, getHouseholdId } from '@/lib/localdb-services';
-import { getBudgetPeriodWindow } from '@/lib/budget-engine';
+import { getBudgetPeriodWindow, getSalaryCycleWindow, getLastWorkingDay, filterActiveCategories } from '@/lib/budget-engine';
 import { 
     ArrowLeft, PieChart, TrendingUp, AlertCircle, 
     Calendar, Wallet, CheckCircle2, AlertTriangle, ArrowUpRight,
@@ -19,6 +19,7 @@ import {
 import { Transaction, Budget, Category, Account, CreditCard, BudgetCategoryLimit } from '@/lib/db-types';
 import PieChartDetailsList from '@/components/dashboard/PieChartDetailsList';
 import EnvelopeView from '@/components/EnvelopeView';
+import { useHouseholdSettings } from '@/hooks/useLocalData';
 
 export default function BudgetDetailPage() {
   const { id } = useParams();
@@ -31,6 +32,7 @@ export default function BudgetDetailPage() {
   const [allAccounts, setAllAccounts] = useState<(Account | CreditCard)[]>([]);
   
   const [loading, setLoading] = useState(true);
+  const { settings } = useHouseholdSettings();
   
   // View State
   const [viewDate, setViewDate] = useState(new Date());
@@ -81,7 +83,7 @@ export default function BudgetDetailPage() {
     let start: Date;
     let end: Date;
 
-    ({ start, end } = getBudgetPeriodWindow(budget, viewDate));
+    ({ start, end } = getBudgetPeriodWindow(budget, viewDate, settings));
 
     // 2. Filter Transactions
     const expenses = allTransactions.filter((t) => {
@@ -97,22 +99,38 @@ export default function BudgetDetailPage() {
         id: string;
         name: string;
         color: string;
+        icon?: string;
         limit: number;
         spent: number;
         transactions: Transaction[];
+        subLimits: Map<string, { subCategoryId: string; name: string; limit: number; spent: number }>;
     }>();
 
-    // Init Config
+    // Init Config (only include categories active for this period)
     if (budget.budgetLimitConfig && budget.budgetLimitConfig.length > 0) {
-        budget.budgetLimitConfig.forEach((limit: BudgetCategoryLimit) => {
+        filterActiveCategories(budget.budgetLimitConfig, start).forEach((limit: BudgetCategoryLimit) => {
             const cat = categories.find(c => c.id === limit.categoryId);
+            const subLimits = new Map<string, { subCategoryId: string; name: string; limit: number; spent: number }>();
+            if (limit.subCategoryLimits) {
+                limit.subCategoryLimits.forEach(sl => {
+                    const sub = cat?.subCategories?.find((s: any) => s.id === sl.subCategoryId);
+                    subLimits.set(sl.subCategoryId, {
+                        subCategoryId: sl.subCategoryId,
+                        name: sub?.name || sl.subCategoryId,
+                        limit: sl.amount,
+                        spent: 0,
+                    });
+                });
+            }
             breakdownMap.set(limit.categoryId, {
                 id: limit.categoryId,
                 name: cat?.name || 'Unknown',
                 color: cat?.color || '#64748b',
+                icon: cat?.icon,
                 limit: limit.amount,
                 spent: 0,
-                transactions: []
+                transactions: [],
+                subLimits,
             });
         });
     }
@@ -127,27 +145,46 @@ export default function BudgetDetailPage() {
                 id: catId,
                 name: cat?.name || 'Uncategorized',
                 color: cat?.color || '#94a3b8',
+                icon: cat?.icon,
                 limit: 0,
                 spent: 0,
-                transactions: []
+                transactions: [],
+                subLimits: new Map(),
             });
         }
 
         const entry = breakdownMap.get(catId)!;
         entry.spent += t.amount;
         entry.transactions.push(t);
+        // Track sub-category spend if a limit was set for it
+        if (t.subCategoryId && entry.subLimits.has(t.subCategoryId)) {
+            entry.subLimits.get(t.subCategoryId)!.spent += t.amount;
+        }
     });
 
     // 4. Formatting
     const categoryBreakdown = Array.from(breakdownMap.values()).map(item => {
+        const subBreakdown = Array.from(item.subLimits.values()).map(sl => ({
+            ...sl,
+            percentage: sl.limit > 0 ? (sl.spent / sl.limit) * 100 : 0,
+            isOverBudget: sl.limit > 0 && sl.spent > sl.limit,
+        }));
         return {
             ...item,
             percentage: item.limit > 0 ? (item.spent / item.limit) * 100 : 0,
-            isOverBudget: item.limit > 0 && item.spent > item.limit
+            isOverBudget: item.limit > 0 && item.spent > item.limit,
+            subBreakdown,
         };
     });
 
     categoryBreakdown.sort((a,b) => (b.spent - a.spent));
+
+    // Compute effective total limit: use max of stored totalBudget vs sum of active category limits
+    // This handles cases where category limits exceed the original totalBudget (e.g. categories added later)
+    const sumOfCategoryLimits = categoryBreakdown
+        .filter(c => c.limit > 0)
+        .reduce((sum, c) => sum + c.limit, 0);
+    const effectiveBudgetLimit = Math.max(Number(budget.totalBudget || 0), sumOfCategoryLimits);
 
     // 5. Timeline & Payment Methods
     const paymentBreakdown = expenses.reduce((acc: any[], t: any) => {
@@ -182,8 +219,19 @@ export default function BudgetDetailPage() {
          });
     });
 
+    categoryBreakdown.forEach(c => {
+        c.subBreakdown.filter((sl: any) => sl.isOverBudget).forEach((sl: any) => {
+            insights.push({
+                title: `${c.name} › ${sl.name} Over Limit`,
+                description: `Sub-limit: ₹${sl.limit.toLocaleString()}. Spent: ₹${sl.spent.toLocaleString()}.`,
+                severity: 'warning'
+            });
+        });
+    });
+
     return {
         totalSpent,
+        effectiveBudgetLimit,
         categoryBreakdown,
         timeline,
         paymentBreakdown,
@@ -200,12 +248,17 @@ export default function BudgetDetailPage() {
       setViewDate(newDate);
   };
 
+  const isSalaryMode =
+    (settings?.salaryCycle?.cycleType === 'SALARY') &&
+    (budget?.budgetMode === 'RECURRING' || !budget?.budgetMode);
+
   const isRecurring = budget?.budgetMode === 'RECURRING' || !budget?.budgetMode; 
   
   // if (loading || !budget || !analytics) return ... (Removed blocking loader)
 
-  const { totalSpent, categoryBreakdown, timeline, paymentBreakdown, insights, start, end } = analytics || {
-      totalSpent: 0, 
+  const { totalSpent, effectiveBudgetLimit: analyticsLimit, categoryBreakdown, timeline, paymentBreakdown, insights, start, end } = analytics || {
+      totalSpent: 0,
+      effectiveBudgetLimit: 0,
       categoryBreakdown: [], 
       timeline: [], 
       paymentBreakdown: [], 
@@ -214,7 +267,8 @@ export default function BudgetDetailPage() {
       end: new Date()
   };
   
-  const budgetLimit = Number(budget?.totalBudget || 0);
+  // Use the effective limit (max of stored totalBudget vs sum of category limits)
+  const budgetLimit = analyticsLimit > 0 ? analyticsLimit : Number(budget?.totalBudget || 0);
   const percentUsed = budgetLimit > 0 ? Math.min((totalSpent / budgetLimit) * 100, 100) : 0;
 
   return (
@@ -253,16 +307,29 @@ export default function BudgetDetailPage() {
 
             {/* Month Selector for Recurring */}
             {isRecurring && (
-                <div className="flex items-center bg-[#1c1c1e] rounded-xl p-1 border border-white/10">
-                    <button onClick={() => changeMonth(-1)} disabled={loading} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white disabled:opacity-50">
-                        <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <div className="px-4 font-bold min-w-[140px] text-center text-sm">
-                        {start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center bg-[#1c1c1e] rounded-xl p-1 border border-white/10">
+                        <button onClick={() => changeMonth(-1)} disabled={loading} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white disabled:opacity-50">
+                            <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <div className="px-4 font-bold min-w-[140px] text-center text-sm">
+                            {viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </div>
+                        <button onClick={() => changeMonth(1)} disabled={loading} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white disabled:opacity-50">
+                            <ChevronRight className="h-5 w-5" />
+                        </button>
                     </div>
-                    <button onClick={() => changeMonth(1)} disabled={loading} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white disabled:opacity-50">
-                        <ChevronRight className="h-5 w-5" />
-                    </button>
+                    {isSalaryMode && start && end && (
+                        <div className="flex items-center gap-1.5 text-xs text-blue-400/80">
+                            <Calendar className="h-3 w-3" />
+                            <span>
+                                {start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                {' – '}
+                                {end.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                {' · salary cycle'}
+                            </span>
+                        </div>
+                    )}
                 </div>
             )}
             
@@ -521,6 +588,29 @@ export default function BudgetDetailPage() {
                                         </div>
                                     )}
                                     {cat.isOverBudget && <div className="text-[10px] text-red-400 mt-1 font-bold text-right">Exceeded by ₹{cat.spent - cat.limit}</div>}
+
+                                    {/* Sub-category breakdown rows */}
+                                    {cat.subBreakdown && cat.subBreakdown.length > 0 && (
+                                        <div className="mt-2 pl-3 border-l-2 border-white/5 space-y-1.5">
+                                            {cat.subBreakdown.map((sl: any) => (
+                                                <div key={sl.subCategoryId}>
+                                                    <div className="flex justify-between items-center mb-0.5">
+                                                        <span className="text-[11px] text-gray-400">{sl.name}</span>
+                                                        <div className="text-right">
+                                                            <span className={`text-[11px] font-mono ${sl.isOverBudget ? 'text-red-400' : 'text-gray-300'}`}>₹{sl.spent.toLocaleString()}</span>
+                                                            <span className="text-[10px] text-gray-600 ml-1">/ ₹{sl.limit.toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={`h-full rounded-full ${sl.isOverBudget ? 'bg-orange-500' : 'bg-teal-500/70'}`}
+                                                            style={{ width: `${Math.min(sl.percentage, 100)}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             ))
                         )}
@@ -536,32 +626,58 @@ export default function BudgetDetailPage() {
                          </div>
                      ) : (
                          <>
+                            {/* Distribution summary: spent vs remaining */}
+                            {budgetLimit > 0 && (
+                                <div className="flex justify-between text-xs text-gray-500 mb-3">
+                                    <span>Spent: <span className="text-white font-mono">₹{totalSpent.toLocaleString()}</span></span>
+                                    <span>Budget: <span className={`font-mono ${totalSpent > budgetLimit ? 'text-red-400' : 'text-green-400'}`}>₹{budgetLimit.toLocaleString()}</span></span>
+                                    <span>Remaining: <span className={`font-mono ${totalSpent > budgetLimit ? 'text-red-400' : 'text-gray-300'}`}>₹{Math.max(0, budgetLimit - totalSpent).toLocaleString()}</span></span>
+                                </div>
+                            )}
                             <div className="h-[200px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RePieChart>
-                                        <Pie
-                                            data={categoryBreakdown}
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            paddingAngle={4}
-                                            dataKey="spent"
-                                            stroke="none"
-                                        >
-                                            {categoryBreakdown.map((entry: any, index: number) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                                            ))}
-                                        </Pie>
-                                        <ReTooltip 
-                                            contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px', fontSize: '12px' }}
-                                            itemStyle={{ color: '#fff' }} 
-                                            formatter={(value: any) => `₹${Number(value).toLocaleString()}`}
-                                        />
-                                        <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} iconType="circle" />
-                                    </RePieChart>
-                                </ResponsiveContainer>
+                                {(() => {
+                                    // Build pie data: category spending + remaining budget slice
+                                    const spentCategories = categoryBreakdown.filter((c: any) => c.spent > 0);
+                                    const remainingBudget = budgetLimit > 0 ? Math.max(0, budgetLimit - totalSpent) : 0;
+                                    const pieData: any[] = [
+                                        ...spentCategories,
+                                        ...(remainingBudget > 0 ? [{ name: 'Remaining', spent: remainingBudget, color: '#374151' }] : []),
+                                    ];
+                                    return (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <RePieChart>
+                                                <Pie
+                                                    data={pieData}
+                                                    innerRadius={60}
+                                                    outerRadius={80}
+                                                    paddingAngle={4}
+                                                    dataKey="spent"
+                                                    stroke="none"
+                                                >
+                                                    {pieData.map((entry: any, index: number) => (
+                                                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                                    ))}
+                                                </Pie>
+                                                <ReTooltip 
+                                                    contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px', fontSize: '12px' }}
+                                                    itemStyle={{ color: '#fff' }} 
+                                                    formatter={(value: any) => `₹${Number(value).toLocaleString()}`}
+                                                />
+                                                <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} iconType="circle" />
+                                            </RePieChart>
+                                        </ResponsiveContainer>
+                                    );
+                                })()}
                             </div>
                             <PieChartDetailsList 
-                                data={categoryBreakdown.map(c => ({ name: c.name, value: c.spent, color: c.color }))} 
+                                data={[
+                                    ...categoryBreakdown
+                                        .filter((c: any) => c.spent > 0)
+                                        .map((c: any) => ({ name: c.name, value: c.spent, color: c.color })),
+                                    ...(budgetLimit > totalSpent && budgetLimit > 0
+                                        ? [{ name: 'Remaining', value: Math.max(0, budgetLimit - totalSpent), color: '#374151' }]
+                                        : []),
+                                ]} 
                             />
                          </>
                      )}

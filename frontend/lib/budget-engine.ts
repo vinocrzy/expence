@@ -12,19 +12,75 @@
  *   standard budgets keep working exactly as before.
  */
 
-import type { Budget, Transaction, Category, EnvelopeConfig, EnvelopeState } from './db-types';
+import type { Budget, Transaction, Category, EnvelopeConfig, EnvelopeState, HouseholdSettings, BudgetCategoryLimit } from './db-types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATE HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Returns the last weekday (Mon–Fri) of the given year/month.
+ * Walks backwards from the last calendar day until a non-weekend day is found.
+ *
+ * @param year  Full year, e.g. 2026
+ * @param month 0-indexed month (0 = January, 11 = December)
+ */
+export function getLastWorkingDay(year: number, month: number): Date {
+  // Start from the last day of the month
+  const date = new Date(year, month + 1, 0); // day 0 of next month = last day of this month
+  // Walk back until we hit Mon–Fri (getDay: 0=Sun, 6=Sat)
+  while (date.getDay() === 0 || date.getDay() === 6) {
+    date.setDate(date.getDate() - 1);
+  }
+  return date;
+}
+
+/**
+ * Computes the salary-cycle window for a given display month.
+ *
+ * Logic:
+ *   salary credited at end of month M-1  →  funds expenses for month M
+ *   start = last working day of month M-1  (inclusive)
+ *   end   = last working day of month M    minus 1 day  (inclusive)
+ *
+ * Example:
+ *   viewDate = any date in February 2026
+ *   start = last working day of January 2026  (e.g. Fri Jan 30)
+ *   end   = last working day of February 2026 - 1 day  (Fri Feb 27 → end = Thu Feb 26)
+ */
+export function getSalaryCycleWindow(viewDate: Date): { start: Date; end: Date } {
+  const y = viewDate.getFullYear();
+  const m = viewDate.getMonth(); // 0-indexed
+
+  // Previous month (handles January → December year-wrap automatically)
+  const prevYear = m === 0 ? y - 1 : y;
+  const prevMonth = m === 0 ? 11 : m - 1;
+
+  const start = getLastWorkingDay(prevYear, prevMonth);
+
+  // End = last working day of current month − 1 day
+  const lastWorkingOfCurrentMonth = getLastWorkingDay(y, m);
+  const end = new Date(lastWorkingOfCurrentMonth);
+  end.setDate(end.getDate() - 1);
+
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
+}
+
+/**
  * Returns the inclusive [start, end] date window for a budget given an
  * arbitrary reference date (used for RECURRING month navigation).
+ *
+ * When household settings have `salaryCycle.cycleType === 'SALARY'` and the
+ * budget is RECURRING, the window is computed as a salary-cycle period instead
+ * of a strict calendar month.  All existing EVENT budgets are unaffected.
  */
 export function getBudgetPeriodWindow(
   budget: Budget,
   viewDate: Date = new Date(),
+  settings?: HouseholdSettings | null,
 ): { start: Date; end: Date } {
   let start: Date;
   let end: Date;
@@ -32,16 +88,48 @@ export function getBudgetPeriodWindow(
   if (budget.budgetMode === 'EVENT' && budget.startDate && budget.endDate) {
     start = new Date(budget.startDate);
     end = new Date(budget.endDate);
+  } else if (settings?.salaryCycle?.cycleType === 'SALARY') {
+    // Salary-cycle mode: window aligns with pay-cycle, not calendar month
+    ({ start, end } = getSalaryCycleWindow(viewDate));
   } else {
-    // RECURRING – use the calendar month of viewDate
+    // RECURRING – use the calendar month of viewDate (default / backward-compatible)
     start = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
     end = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
   }
 
   start.setHours(0, 0, 0, 0);
   end.setHours(23, 59, 59, 999);
 
   return { start, end };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CATEGORY EXPIRY HELPER
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Returns only those BudgetCategoryLimits that are active for the given period.
+ *
+ * A limit is excluded when `activeUntil` (format: "YYYY-MM") is set AND the
+ * period's month is strictly after that value.  Categories without `activeUntil`
+ * are always included (permanent recurring categories).
+ *
+ * Example:
+ *   activeUntil = "2026-02"  →  visible in Feb 2026, hidden from Mar 2026 onward.
+ *
+ * @param limits      The full budgetLimitConfig array
+ * @param periodStart The start date of the period being displayed / calculated
+ */
+export function filterActiveCategories(
+  limits: BudgetCategoryLimit[],
+  periodStart: Date,
+): BudgetCategoryLimit[] {
+  const periodYM = `${periodStart.getFullYear()}-${String(
+    periodStart.getMonth() + 1,
+  ).padStart(2, '0')}`;
+  return limits.filter(c => !c.activeUntil || periodYM <= c.activeUntil);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,7 +149,11 @@ export function getBudgetExpenses(
 ): Transaction[] {
   const trackedCategoryIds =
     budget.budgetLimitConfig && budget.budgetLimitConfig.length > 0
-      ? new Set(budget.budgetLimitConfig.map((c) => c.categoryId))
+      ? new Set(
+          filterActiveCategories(budget.budgetLimitConfig, start).map(
+            (c) => c.categoryId,
+          ),
+        )
       : null; // null = track all categories
 
   return transactions.filter((t) => {

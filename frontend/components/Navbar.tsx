@@ -64,7 +64,7 @@ export default function Navbar() {
     { href: '/dashboard', label: 'Home', icon: Home },
     { href: '/finances', label: 'Wallet', icon: Wallet }, // Grouping: Accounts, Cards, Loans
     { href: '#add', label: 'Add', icon: Plus, isFab: true },
-    { href: '/budgets', label: 'Budgets', icon: Target },
+    { href: '/portfolio', label: 'Portfolio', icon: TrendingUp },
     { href: '#menu', label: 'Menu', icon: Menu, isMenu: true }, // Grouping: Activity, Insights, Household, Profile
   ];
 
@@ -341,11 +341,11 @@ export default function Navbar() {
                                 <span className="text-base font-medium flex-1">Subscriptions & EMIs</span>
                                 <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
                             </Link>
-                             <Link href="/portfolio" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 active:bg-gray-800 transition-colors">
-                                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
-                                    <TrendingUp className="h-5 w-5" />
+                             <Link href="/budgets" onClick={handleCloseMobileMenu} className="flex items-center gap-4 p-4 active:bg-gray-800 transition-colors">
+                                <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                                    <Target className="h-5 w-5" />
                                 </div>
-                                <span className="text-base font-medium flex-1">Stock Portfolio</span>
+                                <span className="text-base font-medium flex-1">Budgets</span>
                                 <div className="text-gray-500"><ChevronDown className="h-4 w-4 -rotate-90" /></div>
                             </Link>
                         </div>

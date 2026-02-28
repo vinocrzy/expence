@@ -14,7 +14,7 @@ interface Props {
 export default function RecurringModal({ isOpen, onClose, onSave, editingItem }: Props) {
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
-  const [type, setType] = useState<'EXPENSE' | 'INVESTMENT' | 'DEBT'>('EXPENSE');
+  const [type, setType] = useState<'EXPENSE' | 'INVESTMENT' | 'DEBT' | 'INCOME'>('EXPENSE');
   const [frequency, setFrequency] = useState<'MONTHLY' | 'YEARLY' | 'QUARTERLY'>('MONTHLY');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState('');
@@ -43,7 +43,7 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
     if (editingItem) {
       setName(editingItem.name);
       setAmount(editingItem.amount.toString());
-      setType(editingItem.type as any);
+      setType(editingItem.type as 'EXPENSE' | 'INVESTMENT' | 'DEBT' | 'INCOME');
       setFrequency(editingItem.frequency as any);
       setStartDate(editingItem.startDate ? new Date(editingItem.startDate).toISOString().split('T')[0] : '');
       setCategoryId(editingItem.categoryId || '');
@@ -112,7 +112,9 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
           {/* Header */}
           <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
             <h2 className="text-xl font-bold text-white">
-              {editingItem ? 'Edit Recurring Payment' : 'New Recurring Payment'}
+              {editingItem
+                ? type === 'INCOME' ? 'Edit Recurring Income' : 'Edit Recurring Payment'
+                : type === 'INCOME' ? 'New Recurring Income' : 'New Recurring Payment'}
             </h2>
             <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
               <X className="w-5 h-5" />
@@ -121,15 +123,18 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
 
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {/* Type Selector */}
-            <div className="grid grid-cols-3 gap-2 bg-black/20 p-1 rounded-xl">
-              {(['EXPENSE', 'INVESTMENT', 'DEBT'] as const).map(t => (
+            <div className="grid grid-cols-4 gap-2 bg-black/20 p-1 rounded-xl">
+              {(['EXPENSE', 'INCOME', 'INVESTMENT', 'DEBT'] as const).map(t => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => { setType(t); setCategoryId(''); setSubCategoryId(''); }}
-                  className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                  className={`py-2 px-3 rounded-lg text-xs font-medium transition-all ${
                     type === t 
-                      ? t === 'EXPENSE' ? 'bg-red-500 text-white' : t === 'INVESTMENT' ? 'bg-emerald-500 text-white' : 'bg-purple-500 text-white'
+                      ? t === 'EXPENSE' ? 'bg-red-500 text-white'
+                        : t === 'INCOME' ? 'bg-blue-500 text-white'
+                        : t === 'INVESTMENT' ? 'bg-emerald-500 text-white'
+                        : 'bg-purple-500 text-white'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
@@ -152,7 +157,9 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
 
              {/* Amount */}
              <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">Amount</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">
+                {type === 'INCOME' ? 'Expected Amount' : 'Amount'}
+              </label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
                     <DollarSign className="w-4 h-4" />
@@ -207,7 +214,9 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
             {/* Category & Account */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">Category</label>
+                    <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">
+                      {type === 'INCOME' ? 'Income Category (optional)' : 'Category'}
+                    </label>
                     <div className="relative">
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
                             <Tag className="w-4 h-4" />
@@ -216,7 +225,7 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
                             value={categoryId}
                             onChange={e => { setCategoryId(e.target.value); setSubCategoryId(''); }}
                             className="w-full bg-black/20 border border-white/5 rounded-xl pl-10 pr-4 py-3 text-white appearance-none focus:outline-none focus:border-blue-500/50 transition-colors"
-                            required
+                            required={type !== 'INCOME'}
                         >
                             <option value="">Select Category</option>
                             {filteredCategories.map(c => (
@@ -238,7 +247,9 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
                     </div>
                  </div>
                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">Pay From</label>
+                    <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">
+                      {type === 'INCOME' ? 'Credit To Account' : 'Pay From'}
+                    </label>
                     <div className="relative">
                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
                             <CreditCard className="w-4 h-4" />
@@ -260,9 +271,15 @@ export default function RecurringModal({ isOpen, onClose, onSave, editingItem }:
             {/* Submit */}
             <button 
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] mt-4"
+                className={`w-full text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] mt-4 ${
+                  type === 'INCOME'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-blue-500/20'
+                    : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-blue-500/20'
+                }`}
             >
-                {editingItem ? 'Update Subscription' : 'Create Subscription'}
+                {editingItem
+                  ? type === 'INCOME' ? 'Update Income' : 'Update Subscription'
+                  : type === 'INCOME' ? 'Save Income' : 'Create Subscription'}
             </button>
 
           </form>

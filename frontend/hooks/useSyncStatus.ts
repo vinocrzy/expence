@@ -17,6 +17,7 @@ export function useSyncStatus() {
     isAutoSyncEnabled: status.isAutoSyncEnabled,
     lastSync: status.lastSync,
     error: status.error,
+    collectionStatus: status.collectionStatus || {},
     unsyncedCount: 0, // TODO: Implement count of unsynced docs if possible via RxDB replication states
     setAutoSync: async (enabled: boolean) => {
         const { setAutoSync } = await import('../lib/replication');

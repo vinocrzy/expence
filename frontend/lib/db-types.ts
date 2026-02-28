@@ -110,9 +110,23 @@ export interface BudgetPlanItem {
   totalAmount?: number;
 }
 
+export interface SubCategoryLimit {
+  subCategoryId: string;
+  amount: number;
+}
+
 export interface BudgetCategoryLimit {
   categoryId: string;
   amount: number;
+  /** Optional per-sub-category spend limits within this parent category */
+  subCategoryLimits?: SubCategoryLimit[];
+  /**
+   * Optional expiry: the LAST month (YYYY-MM) this category is active.
+   * If set and the current period month is after this value, the category
+   * is automatically excluded from budget calculations and the edit UI.
+   * Leave undefined / empty for a permanent recurring category.
+   */
+  activeUntil?: string;
 }
 
 // ── Envelope Strategy ─────────────────────────────────────────────────────────
@@ -227,6 +241,53 @@ export interface SharedBudget {
     name: string;
     totalBudget: number;
     totalSpent: number;
+}
+
+// ── Salary-Cycle / Household Settings ────────────────────────────────────────
+
+/**
+ * Controls whether RECURRING budgets use strict calendar-month windows or
+ * salary-cycle windows (last-working-day-of-month to last-working-day-of-month).
+ */
+export interface SalaryCycleSettings {
+  /**
+   * CALENDAR – standard Jan 1 → Jan 31 windows (default, backward-compatible).
+   * SALARY   – window runs from the last working day of the previous month
+   *            up to (but not including) the last working day of the current
+   *            month, reflecting how salary is credited at end-of-month and
+   *            consumed the following month.
+   */
+  cycleType: 'CALENDAR' | 'SALARY';
+}
+
+/**
+ * Placeholder for future multi-income support (not used in phase 1).
+ * Stored on HouseholdSettings so the data model is forward-compatible.
+ */
+export interface IncomeSourceRule {
+  id: string;
+  /** Human-readable label, e.g. "Primary Salary" */
+  name: string;
+  /** How the credit date is calculated for this source */
+  cycleType: 'LAST_WORKING_DAY';
+  /** Optional: restrict to a specific account */
+  accountId?: string;
+}
+
+/**
+ * Per-household settings document stored in settingsDB.
+ * One document per household; _id is always `settings_<householdId>`.
+ */
+export interface HouseholdSettings {
+  id: string;
+  householdId: string;
+  salaryCycle: SalaryCycleSettings;
+  /** Future: additional income sources beyond the primary salary */
+  incomeSourceRules?: IncomeSourceRule[];
+  createdAt?: string;
+  updatedAt?: string;
+  _rev?: string;
+  _id?: string;
 }
 
 export interface RecurringTransaction {
