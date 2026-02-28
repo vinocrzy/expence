@@ -179,6 +179,13 @@ export default function BudgetDetailPage() {
 
     categoryBreakdown.sort((a,b) => (b.spent - a.spent));
 
+    // Compute effective total limit: use max of stored totalBudget vs sum of active category limits
+    // This handles cases where category limits exceed the original totalBudget (e.g. categories added later)
+    const sumOfCategoryLimits = categoryBreakdown
+        .filter(c => c.limit > 0)
+        .reduce((sum, c) => sum + c.limit, 0);
+    const effectiveBudgetLimit = Math.max(Number(budget.totalBudget || 0), sumOfCategoryLimits);
+
     // 5. Timeline & Payment Methods
     const paymentBreakdown = expenses.reduce((acc: any[], t: any) => {
          let accName = 'Unknown Account';
@@ -224,6 +231,7 @@ export default function BudgetDetailPage() {
 
     return {
         totalSpent,
+        effectiveBudgetLimit,
         categoryBreakdown,
         timeline,
         paymentBreakdown,
@@ -248,8 +256,9 @@ export default function BudgetDetailPage() {
   
   // if (loading || !budget || !analytics) return ... (Removed blocking loader)
 
-  const { totalSpent, categoryBreakdown, timeline, paymentBreakdown, insights, start, end } = analytics || {
-      totalSpent: 0, 
+  const { totalSpent, effectiveBudgetLimit: analyticsLimit, categoryBreakdown, timeline, paymentBreakdown, insights, start, end } = analytics || {
+      totalSpent: 0,
+      effectiveBudgetLimit: 0,
       categoryBreakdown: [], 
       timeline: [], 
       paymentBreakdown: [], 
@@ -258,7 +267,8 @@ export default function BudgetDetailPage() {
       end: new Date()
   };
   
-  const budgetLimit = Number(budget?.totalBudget || 0);
+  // Use the effective limit (max of stored totalBudget vs sum of category limits)
+  const budgetLimit = analyticsLimit > 0 ? analyticsLimit : Number(budget?.totalBudget || 0);
   const percentUsed = budgetLimit > 0 ? Math.min((totalSpent / budgetLimit) * 100, 100) : 0;
 
   return (
@@ -616,32 +626,58 @@ export default function BudgetDetailPage() {
                          </div>
                      ) : (
                          <>
+                            {/* Distribution summary: spent vs remaining */}
+                            {budgetLimit > 0 && (
+                                <div className="flex justify-between text-xs text-gray-500 mb-3">
+                                    <span>Spent: <span className="text-white font-mono">₹{totalSpent.toLocaleString()}</span></span>
+                                    <span>Budget: <span className={`font-mono ${totalSpent > budgetLimit ? 'text-red-400' : 'text-green-400'}`}>₹{budgetLimit.toLocaleString()}</span></span>
+                                    <span>Remaining: <span className={`font-mono ${totalSpent > budgetLimit ? 'text-red-400' : 'text-gray-300'}`}>₹{Math.max(0, budgetLimit - totalSpent).toLocaleString()}</span></span>
+                                </div>
+                            )}
                             <div className="h-[200px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RePieChart>
-                                        <Pie
-                                            data={categoryBreakdown}
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            paddingAngle={4}
-                                            dataKey="spent"
-                                            stroke="none"
-                                        >
-                                            {categoryBreakdown.map((entry: any, index: number) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                                            ))}
-                                        </Pie>
-                                        <ReTooltip 
-                                            contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px', fontSize: '12px' }}
-                                            itemStyle={{ color: '#fff' }} 
-                                            formatter={(value: any) => `₹${Number(value).toLocaleString()}`}
-                                        />
-                                        <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} iconType="circle" />
-                                    </RePieChart>
-                                </ResponsiveContainer>
+                                {(() => {
+                                    // Build pie data: category spending + remaining budget slice
+                                    const spentCategories = categoryBreakdown.filter((c: any) => c.spent > 0);
+                                    const remainingBudget = budgetLimit > 0 ? Math.max(0, budgetLimit - totalSpent) : 0;
+                                    const pieData: any[] = [
+                                        ...spentCategories,
+                                        ...(remainingBudget > 0 ? [{ name: 'Remaining', spent: remainingBudget, color: '#374151' }] : []),
+                                    ];
+                                    return (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <RePieChart>
+                                                <Pie
+                                                    data={pieData}
+                                                    innerRadius={60}
+                                                    outerRadius={80}
+                                                    paddingAngle={4}
+                                                    dataKey="spent"
+                                                    stroke="none"
+                                                >
+                                                    {pieData.map((entry: any, index: number) => (
+                                                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                                    ))}
+                                                </Pie>
+                                                <ReTooltip 
+                                                    contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fff', borderRadius: '12px', fontSize: '12px' }}
+                                                    itemStyle={{ color: '#fff' }} 
+                                                    formatter={(value: any) => `₹${Number(value).toLocaleString()}`}
+                                                />
+                                                <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} iconType="circle" />
+                                            </RePieChart>
+                                        </ResponsiveContainer>
+                                    );
+                                })()}
                             </div>
                             <PieChartDetailsList 
-                                data={categoryBreakdown.map(c => ({ name: c.name, value: c.spent, color: c.color }))} 
+                                data={[
+                                    ...categoryBreakdown
+                                        .filter((c: any) => c.spent > 0)
+                                        .map((c: any) => ({ name: c.name, value: c.spent, color: c.color })),
+                                    ...(budgetLimit > totalSpent && budgetLimit > 0
+                                        ? [{ name: 'Remaining', value: Math.max(0, budgetLimit - totalSpent), color: '#374151' }]
+                                        : []),
+                                ]} 
                             />
                          </>
                      )}
