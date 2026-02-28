@@ -8,7 +8,7 @@ import { useCategories } from '@/hooks/useLocalData';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Trash2, Layers, RotateCcw, Loader2,
-    RefreshCw, Flag, CheckCircle2, X, Calendar, ChevronRight,
+    RefreshCw, Flag, CheckCircle2, X, ChevronRight,
 } from 'lucide-react';
 import { BudgetCategoryLimit, EnvelopeConfig } from '@/lib/db-types';
 import { budgetService } from '@/lib/localdb-services';
@@ -332,8 +332,8 @@ export default function EditBudgetPage() {
                                             exit={{ opacity: 0, height: 0 }}
                                             className="border-b border-gray-800 last:border-b-0"
                                         >
-                                            <div className="flex items-center gap-3 px-4 py-3.5">
-                                                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 text-base">
+                                            <div className="flex items-start gap-3 px-4 py-3.5">
+                                                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 text-base mt-0.5">
                                                     {selectedCat?.icon || '📂'}
                                                 </div>
 
@@ -371,47 +371,76 @@ export default function EditBudgetPage() {
                                                             className="flex-1 bg-transparent text-gray-400 text-xs font-mono focus:outline-none placeholder-gray-700"
                                                         />
                                                     </div>
-                                                    {/* ── One-time / expiry control ───────────────── */}
-                                                    <div className="flex items-center gap-1 mt-1.5">
-                                                        <Calendar className="w-3 h-3 text-gray-700 shrink-0" />
-                                                        <input
-                                                            type="month"
-                                                            value={row.activeUntil || ''}
-                                                            onChange={e =>
-                                                                updateRow(index, 'activeUntil', e.target.value)
-                                                            }
-                                                            title="Last month this category is active (leave blank for permanent)"
-                                                            className="flex-1 bg-transparent text-xs font-mono focus:outline-none focus:text-amber-400 transition-colors placeholder-gray-800 min-w-0"
-                                                            style={{ colorScheme: 'dark' }}
-                                                        />
-                                                        {row.activeUntil ? (
-                                                            <span className="text-[10px] text-amber-500/80 font-medium whitespace-nowrap">expires</span>
-                                                        ) : (
-                                                            <span className="text-[10px] text-gray-700 whitespace-nowrap">recurring</span>
-                                                        )}
-                                                        {row.activeUntil && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => updateRow(index, 'activeUntil', '')}
-                                                                className="text-gray-700 hover:text-gray-400 transition-colors shrink-0"
-                                                                title="Clear expiry — make permanent"
-                                                            >
-                                                                <X className="w-3 h-3" />
-                                                            </button>
-                                                        )}
-                                                    </div>
                                                 </div>
 
-                                                {categoryRows.length > 1 && (
+                                                {/* Right column: expiry toggle + trash */}
+                                                <div className="flex flex-col items-end gap-2 shrink-0">
                                                     <button
                                                         type="button"
-                                                        onClick={() => removeRow(index)}
-                                                        className="p-2 text-gray-700 hover:text-red-400 transition-colors shrink-0 active:scale-90"
+                                                        onClick={() => {
+                                                            if (row.activeUntil) {
+                                                                updateRow(index, 'activeUntil', '');
+                                                            } else {
+                                                                const now = new Date();
+                                                                updateRow(index, 'activeUntil', `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+                                                            }
+                                                        }}
+                                                        className="flex items-center gap-1.5 mt-0.5"
                                                     >
-                                                        <Trash2 className="w-4 h-4" />
+                                                        <span className={`text-[10px] font-medium ${row.activeUntil ? 'text-amber-500' : 'text-gray-600'}`}>
+                                                            {row.activeUntil ? 'Expires' : 'Recurring'}
+                                                        </span>
+                                                        <div className={`relative w-8 h-4 rounded-full transition-colors ${row.activeUntil ? 'bg-amber-600' : 'bg-gray-700'}`}>
+                                                            <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${row.activeUntil ? 'translate-x-4' : 'translate-x-0'}`} />
+                                                        </div>
                                                     </button>
-                                                )}
+                                                    {categoryRows.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeRow(index)}
+                                                            className="p-1 text-gray-700 hover:text-red-400 transition-colors active:scale-90"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
+
+                                            {/* Expiry month/year pickers — shown inline below when active */}
+                                            {row.activeUntil && (() => {
+                                                const [selYear, selMonth] = (row.activeUntil || '').split('-');
+                                                const curYear = new Date().getFullYear();
+                                                const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                                                return (
+                                                    <div className="flex items-center gap-2 px-4 pb-3 pl-[52px]">
+                                                        <select
+                                                            value={selMonth || '01'}
+                                                            onChange={e => updateRow(index, 'activeUntil', `${selYear || curYear}-${e.target.value}`)}
+                                                            className="bg-[#2c2c2e] text-amber-400 text-xs rounded-lg px-2 py-1.5 border border-amber-500/30 focus:outline-none"
+                                                        >
+                                                            {months.map((m, i) => (
+                                                                <option key={m} value={String(i + 1).padStart(2, '0')} className="bg-[#1c1c1e]">{m}</option>
+                                                            ))}
+                                                        </select>
+                                                        <select
+                                                            value={selYear || String(curYear)}
+                                                            onChange={e => updateRow(index, 'activeUntil', `${e.target.value}-${selMonth || '01'}`)}
+                                                            className="bg-[#2c2c2e] text-amber-400 text-xs rounded-lg px-2 py-1.5 border border-amber-500/30 focus:outline-none"
+                                                        >
+                                                            {Array.from({ length: 5 }, (_, i) => curYear + i).map(y => (
+                                                                <option key={y} value={String(y)} className="bg-[#1c1c1e]">{y}</option>
+                                                            ))}
+                                                        </select>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => updateRow(index, 'activeUntil', '')}
+                                                            className="p-1 text-gray-600 hover:text-red-400 transition-colors"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })()}
 
                                             {/* ── Sub-category limits (optional) ─────────── */}
                                             {selectedCat?.subCategories && selectedCat.subCategories.length > 0 && (
@@ -580,7 +609,7 @@ export default function EditBudgetPage() {
             </main>
 
             {/* ── Fixed bottom CTA ───────────────────────────────────────────── */}
-            <div className="fixed bottom-0 left-0 right-0 z-30 bg-black/80 backdrop-blur-xl border-t border-white/5 px-4 pt-3 pb-8 md:pb-4">
+            <div className="bg-black/80 backdrop-blur-xl border-t border-white/5 px-4 pt-3 pb-8 md:pb-4">
                 <div className="max-w-2xl mx-auto flex gap-3">
                     <button
                         type="button"
