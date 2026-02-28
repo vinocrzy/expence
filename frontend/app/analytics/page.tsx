@@ -10,7 +10,7 @@ import {
     BarChart2, TrendingUp, TrendingDown, 
     RefreshCw, Layers, PieChart as PieIcon, Activity,
     AlertCircle, Check, ChevronDown, Filter, ArrowUpRight,
-    PiggyBank, HandCoins, Tag, Briefcase, ExternalLink
+    PiggyBank, HandCoins, Tag, Briefcase, ExternalLink, Calendar
 } from 'lucide-react';
 import { 
     PieChart, Pie, Cell, BarChart, Bar, 
@@ -26,8 +26,14 @@ const COLORS = ['#8b5cf6', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'
 
 export default function AnalyticsPage() {
     const [view, setView] = useState<'EXPENSES' | 'PORTFOLIO'>('EXPENSES');
-    const [range, setRange] = useState<'MONTH' | 'QUARTER' | 'YEAR'>('MONTH');
+    const [range, setRange] = useState<'MONTH' | 'QUARTER' | 'YEAR' | 'CUSTOM'>('MONTH');
     const months = range === 'YEAR' ? 12 : range === 'QUARTER' ? 3 : 1;
+
+    // Custom date range state
+    const today = new Date().toISOString().substring(0, 10);
+    const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().substring(0, 10);
+    const [customStart, setCustomStart] = useState(firstOfMonth);
+    const [customEnd, setCustomEnd] = useState(today);
     
     // Load raw data
     const { transactions, loading: txLoading } = useTransactions();
@@ -51,12 +57,19 @@ export default function AnalyticsPage() {
     
     // Calculate date range for filtering transactions
     const dateRange = useMemo(() => {
+        if (range === 'CUSTOM' && customStart && customEnd) {
+            const start = new Date(customStart);
+            const end = new Date(customEnd);
+            start.setHours(0, 0, 0, 0);
+            end.setHours(23, 59, 59, 999);
+            return { start, end };
+        }
         const end = new Date();
         const start = new Date();
         start.setMonth(start.getMonth() - months);
         start.setHours(0,0,0,0);
         return { start, end };
-    }, [months]);
+    }, [range, months, customStart, customEnd]);
 
     const categoryOptions = useMemo(() => categories.map(c => ({ 
         id: c.id, 
@@ -194,7 +207,9 @@ export default function AnalyticsPage() {
                         // Parent category color
                         color = categories.find(c => c.name === name)?.color || COLORS[i % COLORS.length];
                     }
-                    return { name, value, color };
+                    const cat = !selectedDrilldownCategory ? categories.find(c => c.name === name) : null;
+                    const hasSubCategories = !selectedDrilldownCategory && (cat?.subCategories?.length ?? 0) > 0;
+                    return { name, value, color, hasSubCategories };
                 })
                 .sort((a, b) => b.value - a.value)
         };
@@ -329,36 +344,40 @@ export default function AnalyticsPage() {
 
                     {view === 'EXPENSES' && (
                         <>
+                            {/* Date range selector */}
                             <NativeSegmentedControl 
                                 value={range}
                                 onChange={(v) => setRange(v as any)}
                                 options={[
                                     { label: '1M', value: 'MONTH' },
                                     { label: '3M', value: 'QUARTER' },
-                                    { label: '1Y', value: 'YEAR' }
+                                    { label: '1Y', value: 'YEAR' },
+                                    { label: 'Custom', value: 'CUSTOM' },
                                 ]}
                             />
 
-                            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                                <div className="flex-1 md:w-64">
-                                     <MultiSelect 
-                                        options={categoryOptions}
-                                        selectedIds={selectedCategoryIds}
-                                        onChange={setSelectedCategoryIds}
-                                        placeholder="Filter Categories"
-                                     />
+                            {/* Custom date pickers – shown only when CUSTOM is selected */}
+                            {range === 'CUSTOM' && (
+                                <div className="flex items-center gap-2 bg-[#1c1c1e] border border-white/10 rounded-2xl px-4 py-3">
+                                    <Calendar className="w-4 h-4 text-blue-400 shrink-0" />
+                                    <input
+                                        type="date"
+                                        value={customStart}
+                                        max={customEnd}
+                                        onChange={e => setCustomStart(e.target.value)}
+                                        className="flex-1 bg-transparent text-white text-sm focus:outline-none"
+                                    />
+                                    <span className="text-gray-600 text-xs">→</span>
+                                    <input
+                                        type="date"
+                                        value={customEnd}
+                                        min={customStart}
+                                        max={today}
+                                        onChange={e => setCustomEnd(e.target.value)}
+                                        className="flex-1 bg-transparent text-white text-sm focus:outline-none"
+                                    />
                                 </div>
-                                {tagOptions.length > 0 && (
-                                    <div className="flex-1 md:w-64">
-                                         <MultiSelect 
-                                            options={tagOptions}
-                                            selectedIds={selectedTagIds}
-                                            onChange={setSelectedTagIds}
-                                            placeholder="Filter Tags"
-                                         />
-                                    </div>
-                                )}
-                            </div>
+                            )}
                         </>
                     )}
                 </div>
@@ -483,7 +502,8 @@ export default function AnalyticsPage() {
 
                             {/* Expense Breakdown */}
                             <div className="bg-[#18181b] rounded-3xl p-5 border border-white/5 min-h-[300px]">
-                                <div className="flex items-center justify-between mb-2">
+                                {/* Header row */}
+                                <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-sm font-bold text-gray-300 flex items-center gap-2">
                                         <PieIcon className="h-4 w-4 text-pink-500" /> 
                                         {selectedDrilldownCategory ? `${selectedDrilldownCategory} Breakdown` : 'Expense Breakdown'}
@@ -497,6 +517,30 @@ export default function AnalyticsPage() {
                                         </button>
                                     )}
                                 </div>
+
+                                {/* Category + Tag filters local to this section */}
+                                {!selectedDrilldownCategory && (
+                                    <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                                        <div className="flex-1">
+                                            <MultiSelect
+                                                options={categoryOptions}
+                                                selectedIds={selectedCategoryIds}
+                                                onChange={setSelectedCategoryIds}
+                                                placeholder="Filter Categories"
+                                            />
+                                        </div>
+                                        {tagOptions.length > 0 && (
+                                            <div className="flex-1">
+                                                <MultiSelect
+                                                    options={tagOptions}
+                                                    selectedIds={selectedTagIds}
+                                                    onChange={setSelectedTagIds}
+                                                    placeholder="Filter Tags"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 
                                 {chartCategoryData?.chartData?.length > 0 ? (
                                     <>
@@ -512,18 +556,16 @@ export default function AnalyticsPage() {
                                                     dataKey="value"
                                                     stroke="none"
                                                     onClick={(e) => {
-                                                        if (!selectedDrilldownCategory) {
-                                                            // Only allow drilling down from top-level
+                                                        if (!selectedDrilldownCategory && e.hasSubCategories) {
                                                             setSelectedDrilldownCategory(e.name);
                                                         }
                                                     }}
-                                                    className={!selectedDrilldownCategory ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}
                                                 >
                                                     {chartCategoryData.chartData.map((entry: any, index: number) => (
                                                         <Cell 
                                                             key={`cell-${index}`} 
                                                             fill={entry.color || COLORS[index % COLORS.length]} 
-                                                            style={{ outline: 'none' }}
+                                                            style={{ outline: 'none', cursor: (!selectedDrilldownCategory && entry.hasSubCategories) ? 'pointer' : 'default' }}
                                                         />
                                                     ))}
                                                 </Pie>
@@ -543,10 +585,21 @@ export default function AnalyticsPage() {
                                                 const percentage = total > 0 ? ((item.value / total) * 100).toFixed(0) : 0;
                                                 
                                                 return (
-                                                    <div key={item.name} className="flex items-center justify-between text-sm group">
+                                                    <div
+                                                        key={item.name}
+                                                        className={`flex items-center justify-between text-sm group ${(!selectedDrilldownCategory && item.hasSubCategories) ? 'cursor-pointer active:opacity-70' : ''}`}
+                                                        onClick={() => {
+                                                            if (!selectedDrilldownCategory && item.hasSubCategories) {
+                                                                setSelectedDrilldownCategory(item.name);
+                                                            }
+                                                        }}
+                                                    >
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
                                                             <span className="text-gray-200 font-medium">{item.name}</span>
+                                                            {(!selectedDrilldownCategory && item.hasSubCategories) && (
+                                                                <ChevronDown className="w-3 h-3 text-gray-500 -rotate-90" />
+                                                            )}
                                                         </div>
                                                         <div className="flex items-center gap-4">
                                                              <span className="text-white font-semibold">₹{Math.round(item.value).toLocaleString()}</span>
