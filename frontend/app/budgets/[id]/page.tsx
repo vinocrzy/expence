@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import NativeHeader from '@/components/dashboard/NativeHeader';
 import { budgetService, transactionService, categoryService, accountService, creditCardService, getHouseholdId } from '@/lib/localdb-services';
-import { getBudgetPeriodWindow } from '@/lib/budget-engine';
+import { getBudgetPeriodWindow, getSalaryCycleWindow, getLastWorkingDay } from '@/lib/budget-engine';
 import { 
     ArrowLeft, PieChart, TrendingUp, AlertCircle, 
     Calendar, Wallet, CheckCircle2, AlertTriangle, ArrowUpRight,
@@ -19,6 +19,7 @@ import {
 import { Transaction, Budget, Category, Account, CreditCard, BudgetCategoryLimit } from '@/lib/db-types';
 import PieChartDetailsList from '@/components/dashboard/PieChartDetailsList';
 import EnvelopeView from '@/components/EnvelopeView';
+import { useHouseholdSettings } from '@/hooks/useLocalData';
 
 export default function BudgetDetailPage() {
   const { id } = useParams();
@@ -31,6 +32,7 @@ export default function BudgetDetailPage() {
   const [allAccounts, setAllAccounts] = useState<(Account | CreditCard)[]>([]);
   
   const [loading, setLoading] = useState(true);
+  const { settings } = useHouseholdSettings();
   
   // View State
   const [viewDate, setViewDate] = useState(new Date());
@@ -81,7 +83,7 @@ export default function BudgetDetailPage() {
     let start: Date;
     let end: Date;
 
-    ({ start, end } = getBudgetPeriodWindow(budget, viewDate));
+    ({ start, end } = getBudgetPeriodWindow(budget, viewDate, settings));
 
     // 2. Filter Transactions
     const expenses = allTransactions.filter((t) => {
@@ -200,6 +202,10 @@ export default function BudgetDetailPage() {
       setViewDate(newDate);
   };
 
+  const isSalaryMode =
+    (settings?.salaryCycle?.cycleType === 'SALARY') &&
+    (budget?.budgetMode === 'RECURRING' || !budget?.budgetMode);
+
   const isRecurring = budget?.budgetMode === 'RECURRING' || !budget?.budgetMode; 
   
   // if (loading || !budget || !analytics) return ... (Removed blocking loader)
@@ -253,16 +259,29 @@ export default function BudgetDetailPage() {
 
             {/* Month Selector for Recurring */}
             {isRecurring && (
-                <div className="flex items-center bg-[#1c1c1e] rounded-xl p-1 border border-white/10">
-                    <button onClick={() => changeMonth(-1)} disabled={loading} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white disabled:opacity-50">
-                        <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <div className="px-4 font-bold min-w-[140px] text-center text-sm">
-                        {start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center bg-[#1c1c1e] rounded-xl p-1 border border-white/10">
+                        <button onClick={() => changeMonth(-1)} disabled={loading} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white disabled:opacity-50">
+                            <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <div className="px-4 font-bold min-w-[140px] text-center text-sm">
+                            {viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </div>
+                        <button onClick={() => changeMonth(1)} disabled={loading} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white disabled:opacity-50">
+                            <ChevronRight className="h-5 w-5" />
+                        </button>
                     </div>
-                    <button onClick={() => changeMonth(1)} disabled={loading} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white disabled:opacity-50">
-                        <ChevronRight className="h-5 w-5" />
-                    </button>
+                    {isSalaryMode && start && end && (
+                        <div className="flex items-center gap-1.5 text-xs text-blue-400/80">
+                            <Calendar className="h-3 w-3" />
+                            <span>
+                                {start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                {' – '}
+                                {end.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                {' · salary cycle'}
+                            </span>
+                        </div>
+                    )}
                 </div>
             )}
             

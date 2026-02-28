@@ -14,6 +14,7 @@ import {
   loanService,
   budgetService,
   sharedDataService,
+  householdSettingsService,
   getHouseholdId,
 } from '@/lib/localdb-services';
 import {
@@ -29,6 +30,7 @@ import type {
   CreditCard,
   Loan,
   Budget,
+  HouseholdSettings,
 } from '@/lib/db-types';
 import { events, EVENTS } from '@/lib/events';
 
@@ -397,4 +399,47 @@ export function useAnalytics(months: number = 12) {
     loading,
     refresh: loadAnalytics,
   };
+}
+
+// ============================================
+// HOUSEHOLD SETTINGS HOOK
+// ============================================
+
+/**
+ * Provides the current household's salary-cycle settings and an updater.
+ * Defaults to `cycleType: 'CALENDAR'` (backward-compatible) when no settings
+ * document exists yet.
+ */
+export function useHouseholdSettings() {
+  const [settings, setSettings] = useState<HouseholdSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadSettings = useCallback(async () => {
+    try {
+      const householdId = await getHouseholdId();
+      const data = await householdSettingsService.get(householdId);
+      setSettings(data);
+    } catch (error) {
+      console.error('Failed to load household settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSettings();
+    return events.on(EVENTS.SETTINGS_CHANGED, loadSettings);
+  }, [loadSettings]);
+
+  const updateSettings = useCallback(
+    async (patch: Partial<Pick<HouseholdSettings['salaryCycle'], 'cycleType'>>) => {
+      const householdId = await getHouseholdId();
+      const updated = await householdSettingsService.upsert(householdId, patch);
+      setSettings(updated);
+      events.emit(EVENTS.SETTINGS_CHANGED);
+    },
+    [],
+  );
+
+  return { settings, loading, updateSettings };
 }

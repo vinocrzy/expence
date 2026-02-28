@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import NativeHeader from '../../components/dashboard/NativeHeader';
-import { useBudgets } from '../../hooks/useLocalData';
+import { useBudgets, useHouseholdSettings } from '../../hooks/useLocalData';
 import { transactionService, getHouseholdId } from '../../lib/localdb-services';
 import { calculateBudgetSpent, getBudgetPeriodWindow } from '../../lib/budget-engine';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -15,6 +15,7 @@ import clsx from 'clsx';
 export default function BudgetsPage() {
   const router = useRouter();
   const { budgets, loading: budgetsLoading, updateBudget, deleteBudget, refresh } = useBudgets();
+  const { settings } = useHouseholdSettings();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [txLoading, setTxLoading] = useState(true);
   
@@ -47,7 +48,7 @@ export default function BudgetsPage() {
 
   // Calculate spent amounts using shared engine
   const budgetsWithSpent = budgets.map(b => {
-      const { start, end } = getBudgetPeriodWindow(b);
+      const { start, end } = getBudgetPeriodWindow(b, new Date(), settings);
       const spent = calculateBudgetSpent(b, transactions, start, end);
       return { ...b, totalSpent: spent };
   });
