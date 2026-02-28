@@ -113,6 +113,13 @@ export interface BudgetPlanItem {
 export interface BudgetCategoryLimit {
   categoryId: string;
   amount: number;
+  /**
+   * Optional expiry: the LAST month (YYYY-MM) this category is active.
+   * If set and the current period month is after this value, the category
+   * is automatically excluded from budget calculations and the edit UI.
+   * Leave undefined / empty for a permanent recurring category.
+   */
+  activeUntil?: string;
 }
 
 // ── Envelope Strategy ─────────────────────────────────────────────────────────

@@ -8,7 +8,7 @@ import { useCategories } from '@/hooks/useLocalData';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Trash2, Layers, RotateCcw, Loader2,
-    RefreshCw, Flag, CheckCircle2,
+    RefreshCw, Flag, CheckCircle2, X, Calendar,
 } from 'lucide-react';
 import { BudgetCategoryLimit, EnvelopeConfig } from '@/lib/db-types';
 import { budgetService } from '@/lib/localdb-services';
@@ -23,7 +23,7 @@ export default function EditBudgetPage() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [categoryRows, setCategoryRows] = useState<
-        { tempId: string; categoryId: string; amount: string }[]
+        { tempId: string; categoryId: string; amount: string; activeUntil?: string }[]
     >([]);
 
     const [envelopeEnabled, setEnvelopeEnabled] = useState(false);
@@ -59,6 +59,7 @@ export default function EditBudgetPage() {
                             tempId: Math.random().toString(),
                             categoryId: c.categoryId,
                             amount: c.amount.toString(),
+                            activeUntil: c.activeUntil ?? '',
                         })),
                     );
                 }
@@ -86,10 +87,10 @@ export default function EditBudgetPage() {
     const addCategoryRow = () =>
         setCategoryRows([
             ...categoryRows,
-            { tempId: Math.random().toString(), categoryId: '', amount: '' },
+            { tempId: Math.random().toString(), categoryId: '', amount: '', activeUntil: '' },
         ]);
 
-    const updateRow = (index: number, field: 'categoryId' | 'amount', value: string) => {
+    const updateRow = (index: number, field: 'categoryId' | 'amount' | 'activeUntil', value: string) => {
         const newRows = [...categoryRows];
         newRows[index] = { ...newRows[index], [field]: value };
         setCategoryRows(newRows);
@@ -111,6 +112,7 @@ export default function EditBudgetPage() {
             const config: BudgetCategoryLimit[] = categoryRows.map(row => ({
                 categoryId: row.categoryId,
                 amount: Number(row.amount),
+                ...(row.activeUntil ? { activeUntil: row.activeUntil } : {}),
             }));
 
             const envelopeConfig: EnvelopeConfig[] | undefined = envelopeEnabled
@@ -334,6 +336,35 @@ export default function EditBudgetPage() {
                                                             placeholder="Budget limit"
                                                             className="flex-1 bg-transparent text-gray-400 text-xs font-mono focus:outline-none placeholder-gray-700"
                                                         />
+                                                    </div>
+                                                    {/* ── One-time / expiry control ───────────────── */}
+                                                    <div className="flex items-center gap-1 mt-1.5">
+                                                        <Calendar className="w-3 h-3 text-gray-700 shrink-0" />
+                                                        <input
+                                                            type="month"
+                                                            value={row.activeUntil || ''}
+                                                            onChange={e =>
+                                                                updateRow(index, 'activeUntil', e.target.value)
+                                                            }
+                                                            title="Last month this category is active (leave blank for permanent)"
+                                                            className="flex-1 bg-transparent text-xs font-mono focus:outline-none focus:text-amber-400 transition-colors placeholder-gray-800 min-w-0"
+                                                            style={{ colorScheme: 'dark' }}
+                                                        />
+                                                        {row.activeUntil ? (
+                                                            <span className="text-[10px] text-amber-500/80 font-medium whitespace-nowrap">expires</span>
+                                                        ) : (
+                                                            <span className="text-[10px] text-gray-700 whitespace-nowrap">recurring</span>
+                                                        )}
+                                                        {row.activeUntil && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => updateRow(index, 'activeUntil', '')}
+                                                                className="text-gray-700 hover:text-gray-400 transition-colors shrink-0"
+                                                                title="Clear expiry — make permanent"
+                                                            >
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
 

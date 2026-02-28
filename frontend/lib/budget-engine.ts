@@ -12,7 +12,7 @@
  *   standard budgets keep working exactly as before.
  */
 
-import type { Budget, Transaction, Category, EnvelopeConfig, EnvelopeState, HouseholdSettings } from './db-types';
+import type { Budget, Transaction, Category, EnvelopeConfig, EnvelopeState, HouseholdSettings, BudgetCategoryLimit } from './db-types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATE HELPERS
@@ -106,6 +106,33 @@ export function getBudgetPeriodWindow(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CATEGORY EXPIRY HELPER
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Returns only those BudgetCategoryLimits that are active for the given period.
+ *
+ * A limit is excluded when `activeUntil` (format: "YYYY-MM") is set AND the
+ * period's month is strictly after that value.  Categories without `activeUntil`
+ * are always included (permanent recurring categories).
+ *
+ * Example:
+ *   activeUntil = "2026-02"  →  visible in Feb 2026, hidden from Mar 2026 onward.
+ *
+ * @param limits      The full budgetLimitConfig array
+ * @param periodStart The start date of the period being displayed / calculated
+ */
+export function filterActiveCategories(
+  limits: BudgetCategoryLimit[],
+  periodStart: Date,
+): BudgetCategoryLimit[] {
+  const periodYM = `${periodStart.getFullYear()}-${String(
+    periodStart.getMonth() + 1,
+  ).padStart(2, '0')}`;
+  return limits.filter(c => !c.activeUntil || periodYM <= c.activeUntil);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // STANDARD BUDGET ENGINE
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -122,7 +149,11 @@ export function getBudgetExpenses(
 ): Transaction[] {
   const trackedCategoryIds =
     budget.budgetLimitConfig && budget.budgetLimitConfig.length > 0
-      ? new Set(budget.budgetLimitConfig.map((c) => c.categoryId))
+      ? new Set(
+          filterActiveCategories(budget.budgetLimitConfig, start).map(
+            (c) => c.categoryId,
+          ),
+        )
       : null; // null = track all categories
 
   return transactions.filter((t) => {

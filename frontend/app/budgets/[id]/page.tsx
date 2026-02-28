@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import NativeHeader from '@/components/dashboard/NativeHeader';
 import { budgetService, transactionService, categoryService, accountService, creditCardService, getHouseholdId } from '@/lib/localdb-services';
-import { getBudgetPeriodWindow, getSalaryCycleWindow, getLastWorkingDay } from '@/lib/budget-engine';
+import { getBudgetPeriodWindow, getSalaryCycleWindow, getLastWorkingDay, filterActiveCategories } from '@/lib/budget-engine';
 import { 
     ArrowLeft, PieChart, TrendingUp, AlertCircle, 
     Calendar, Wallet, CheckCircle2, AlertTriangle, ArrowUpRight,
@@ -104,9 +104,9 @@ export default function BudgetDetailPage() {
         transactions: Transaction[];
     }>();
 
-    // Init Config
+    // Init Config (only include categories active for this period)
     if (budget.budgetLimitConfig && budget.budgetLimitConfig.length > 0) {
-        budget.budgetLimitConfig.forEach((limit: BudgetCategoryLimit) => {
+        filterActiveCategories(budget.budgetLimitConfig, start).forEach((limit: BudgetCategoryLimit) => {
             const cat = categories.find(c => c.id === limit.categoryId);
             breakdownMap.set(limit.categoryId, {
                 id: limit.categoryId,
